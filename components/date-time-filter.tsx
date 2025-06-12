@@ -9,7 +9,7 @@ import { Calendar, Clock, RefreshCw } from "lucide-react"
 import { getCurrentDayFullRange } from "@/lib/date-utils"
 
 interface DateTimeFilterProps {
-  onFilterChange: (startDate: string, endDate: string) => void
+  onFilterChange?: (startDate: string, endDate: string) => void
   initialStartDate?: string
   initialEndDate?: string
 }
@@ -50,13 +50,19 @@ export function DateTimeFilter({ onFilterChange, initialStartDate, initialEndDat
 
   // Auto-apply filter on component mount with default values
   useEffect(() => {
-    if (!initialStartDate && !initialEndDate) {
+    if (!initialStartDate && !initialEndDate && typeof onFilterChange === "function") {
       console.log("📅 DateTimeFilter: Auto-applying default full day range")
       handleApplyFilter()
     }
   }, [])
 
   const handleApplyFilter = () => {
+    // Check if onFilterChange is a function
+    if (typeof onFilterChange !== "function") {
+      console.warn("📅 DateTimeFilter: onFilterChange is not a function, skipping filter application")
+      return
+    }
+
     // Combine date and time
     const startDateTime = new Date(`${startDate}T${startTime}:00`).toISOString()
     const endDateTime = new Date(`${endDate}T${endTime}:59`).toISOString()
@@ -87,11 +93,13 @@ export function DateTimeFilter({ onFilterChange, initialStartDate, initialEndDat
     console.log("📅 DateTimeFilter: Reset to today with full day range")
 
     // Auto-apply after reset
-    setTimeout(() => {
-      const startDateTime = new Date(`${todayStr}T00:00:00`).toISOString()
-      const endDateTime = new Date(`${todayStr}T23:59:59`).toISOString()
-      onFilterChange(startDateTime, endDateTime)
-    }, 100)
+    if (typeof onFilterChange === "function") {
+      setTimeout(() => {
+        const startDateTime = new Date(`${todayStr}T00:00:00`).toISOString()
+        const endDateTime = new Date(`${todayStr}T23:59:59`).toISOString()
+        onFilterChange(startDateTime, endDateTime)
+      }, 100)
+    }
   }
 
   return (
@@ -139,11 +147,16 @@ export function DateTimeFilter({ onFilterChange, initialStartDate, initialEndDat
 
         {/* Action Buttons */}
         <div className="flex flex-col sm:flex-row gap-2">
-          <Button onClick={handleApplyFilter} className="flex-1">
+          <Button onClick={handleApplyFilter} className="flex-1" disabled={typeof onFilterChange !== "function"}>
             <Calendar className="h-4 w-4 mr-2" />
             ใช้ตัวกรอง
           </Button>
-          <Button onClick={handleResetToToday} variant="outline" className="flex-1">
+          <Button
+            onClick={handleResetToToday}
+            variant="outline"
+            className="flex-1"
+            disabled={typeof onFilterChange !== "function"}
+          >
             <RefreshCw className="h-4 w-4 mr-2" />
             รีเซ็ตเป็นวันนี้
           </Button>
@@ -156,6 +169,9 @@ export function DateTimeFilter({ onFilterChange, initialStartDate, initialEndDat
             {new Date(`${startDate}T${startTime}`).toLocaleString("th-TH")} -{" "}
             {new Date(`${endDate}T${endTime}`).toLocaleString("th-TH")}
           </div>
+          {typeof onFilterChange !== "function" && (
+            <div className="text-orange-600 text-xs mt-1">⚠️ ตัวกรองไม่พร้อมใช้งาน (onFilterChange ไม่ได้กำหนด)</div>
+          )}
         </div>
       </CardContent>
     </Card>
