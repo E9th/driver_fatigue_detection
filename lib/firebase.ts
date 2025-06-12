@@ -81,7 +81,7 @@ export { app, database, auth }
 
 /**
  * Retry wrapper for Firebase operations
- */ \
+ */
 const withRetry = async <T>(operation: () => Promise<T>, maxRetries = 3)
 : Promise<T | null> =>
 {
