@@ -1,11 +1,16 @@
 /**
  * Firebase Core Service
- * Handles Firebase initialization and core data operations
+ * Handles Firebase initialization and core data operations with error recovery
  */
 
 import { initializeApp, getApps } from "firebase/app"
-import { getDatabase, ref, onValue, off, query, limitToLast, get } from "firebase/database"
-import { getAuth } from "firebase/auth"
+import { getDatabase, ref, onValue, off, query, limitToLast, get, set } from "firebase/database"
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signOut as firebaseSignOut,
+} from "firebase/auth"
 import { firebaseConfig } from "./config"
 import type { DeviceData, HistoricalData } from "./types"
 
@@ -14,15 +19,28 @@ let app: any = null
 let database: any = null
 let auth: any = null
 
+// Error recovery state
+let initializationAttempts = 0
+const MAX_INIT_ATTEMPTS = 3
+let isInitializing = false
+
 /**
- * Initialize Firebase with error handling
+ * Initialize Firebase with error handling and retry logic
  * Only runs on client side
  */
-const initializeFirebase = () => {
-  if (typeof window === "undefined") return
+const initializeFirebase = async (): Promise<boolean> => {
+  if (typeof window === "undefined") return false
+
+  if (isInitializing) {
+    console.log("🔥 Firebase: Already initializing, waiting...")
+    return false
+  }
+
+  isInitializing = true
+  initializationAttempts++
 
   try {
-    console.log("🔥 Firebase: Initializing...")
+    console.log(`🔥 Firebase: Initializing... (attempt ${initializationAttempts}/${MAX_INIT_ATTEMPTS})`)
 
     const existingApps = getApps()
     if (existingApps.length === 0) {
@@ -35,10 +53,23 @@ const initializeFirebase = () => {
     auth = getAuth(app)
 
     console.log("✅ Firebase: Initialized successfully")
+    initializationAttempts = 0 // Reset on success
+    isInitializing = false
+    return true
   } catch (error) {
-    console.error("❌ Firebase initialization error:", error)
+    console.error(`❌ Firebase initialization error (attempt ${initializationAttempts}):`, error)
     database = null
     auth = null
+    isInitializing = false
+
+    // Retry logic
+    if (initializationAttempts < MAX_INIT_ATTEMPTS) {
+      console.log(`🔄 Firebase: Retrying initialization in 2 seconds...`)
+      setTimeout(() => initializeFirebase(), 2000)
+    } else {
+      console.error("❌ Firebase: Max initialization attempts reached, falling back to development mode")
+    }
+    return false
   }
 }
 
@@ -49,10 +80,31 @@ initializeFirebase()
 export { app, database, auth }
 
 /**
- * Subscribe to real-time current device data
- * @param deviceId - Device identifier
- * @param callback - Function to handle data updates
- * @returns Unsubscribe function
+ * Retry wrapper for Firebase operations
+ */ \
+const withRetry = async <T>(operation: () => Promise<T>, maxRetries = 3)
+: Promise<T | null> =>
+{
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      return await operation()
+    } catch (error) {
+      console.error(`❌ Firebase operation failed (attempt ${attempt}/${maxRetries}):`, error)
+
+      if (attempt === maxRetries) {
+        console.error("❌ Firebase: Max retries reached, operation failed")
+        return null
+      }
+
+      // Wait before retry
+      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+    }
+  }
+  return null
+}
+
+/**
+ * Subscribe to real-time current device data with error recovery
  */
 export const subscribeToCurrentData = (deviceId: string, callback: (data: DeviceData | null) => void): (() => void) => {
   if (!database) {
@@ -63,7 +115,6 @@ export const subscribeToCurrentData = (deviceId: string, callback: (data: Device
     return () => {}
   }
 
-  // Validate callback is a function
   if (typeof callback !== "function") {
     console.error(`❌ Firebase: Invalid callback provided to subscribeToCurrentData for ${deviceId}`)
     return () => {}
@@ -83,6 +134,12 @@ export const subscribeToCurrentData = (deviceId: string, callback: (data: Device
       (error) => {
         console.error(`❌ Firebase: Error subscribing to current data for ${deviceId}:`, error)
         callback(null)
+
+        // Attempt to reinitialize Firebase on connection error
+        if (error.code === "NETWORK_ERROR" || error.code === "PERMISSION_DENIED") {
+          console.log("🔄 Firebase: Attempting to reinitialize due to connection error...")
+          initializeFirebase()
+        }
       },
     )
   } catch (error) {
@@ -92,17 +149,16 @@ export const subscribeToCurrentData = (deviceId: string, callback: (data: Device
 
   return () => {
     console.log(`🔥 Firebase: Unsubscribing from current data for ${deviceId}`)
-    off(currentDataRef)
+    try {
+      off(currentDataRef)
+    } catch (error) {
+      console.error("❌ Error unsubscribing:", error)
+    }
   }
 }
 
 /**
- * Subscribe to historical device data with date filtering
- * @param deviceId - Device identifier
- * @param startDate - Start date for filtering
- * @param endDate - End date for filtering
- * @param callback - Function to handle data updates
- * @returns Unsubscribe function
+ * Subscribe to historical device data with date filtering and error recovery
  */
 export const subscribeToHistoricalData = (
   deviceId: string,
@@ -118,7 +174,6 @@ export const subscribeToHistoricalData = (
     return () => {}
   }
 
-  // Validate callback is a function
   if (typeof callback !== "function") {
     console.error(`❌ Firebase: Invalid callback provided to subscribeToHistoricalData for ${deviceId}`)
     return () => {}
@@ -140,7 +195,6 @@ export const subscribeToHistoricalData = (
         )
 
         if (data) {
-          // Transform Firebase data to HistoricalData format
           const historyArray = Object.entries(data).map(([id, item]: [string, any]) => ({
             id,
             timestamp: item.timestamp,
@@ -155,7 +209,6 @@ export const subscribeToHistoricalData = (
             face_detected_frames: item.face_detected_frames || 0,
           }))
 
-          // Filter by date range
           let filteredData = historyArray
           if (startDate && endDate) {
             const start = new Date(startDate).getTime()
@@ -166,7 +219,6 @@ export const subscribeToHistoricalData = (
             })
           }
 
-          // Sort by timestamp
           filteredData.sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
           callback(filteredData)
         } else {
@@ -176,6 +228,12 @@ export const subscribeToHistoricalData = (
       (error) => {
         console.error(`❌ Firebase: Error subscribing to historical data for ${deviceId}:`, error)
         callback([])
+
+        // Attempt to reinitialize Firebase on connection error
+        if (error.code === "NETWORK_ERROR" || error.code === "PERMISSION_DENIED") {
+          console.log("🔄 Firebase: Attempting to reinitialize due to connection error...")
+          initializeFirebase()
+        }
       },
     )
   } catch (error) {
@@ -185,8 +243,134 @@ export const subscribeToHistoricalData = (
 
   return () => {
     console.log(`🔥 Firebase: Unsubscribing from historical data for ${deviceId}`)
-    off(historyQuery)
+    try {
+      off(historyQuery)
+    } catch (error) {
+      console.error("❌ Error unsubscribing:", error)
+    }
   }
+}
+
+/**
+ * Authentication functions with error recovery
+ */
+export const signIn = async (email: string, password: string) => {
+  const result = await withRetry(async () => {
+    if (!auth) {
+      await initializeFirebase()
+      if (!auth) throw new Error("Firebase Auth not available")
+    }
+
+    const userCredential = await signInWithEmailAndPassword(auth, email, password)
+    return { success: true, user: userCredential.user }
+  })
+
+  return result || { success: false, error: "การเข้าสู่ระบบล้มเหลว" }
+}
+
+export const registerUser = async (userData: any) => {
+  const result = await withRetry(async () => {
+    if (!auth || !database) {
+      await initializeFirebase()
+      if (!auth || !database) throw new Error("Firebase not available")
+    }
+
+    const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password)
+    const uid = userCredential.user.uid
+
+    const userProfile = {
+      uid,
+      email: userData.email,
+      fullName: userData.fullName,
+      phone: userData.phone,
+      license: userData.license,
+      deviceId: userData.deviceId,
+      role: userData.role || "driver",
+      registeredAt: new Date().toISOString(),
+    }
+
+    await set(ref(database, `users/${uid}`), userProfile)
+    return { success: true, user: userCredential.user }
+  })
+
+  return result || { success: false, error: "การลงทะเบียนล้มเหลว" }
+}
+
+export const signOut = async () => {
+  const result = await withRetry(async () => {
+    if (!auth) {
+      await initializeFirebase()
+      if (!auth) throw new Error("Firebase Auth not available")
+    }
+
+    await firebaseSignOut(auth)
+    return { success: true }
+  })
+
+  return result || { success: false, error: "การออกจากระบบล้มเหลว" }
+}
+
+/**
+ * Get used device IDs with error recovery
+ */
+export const getUsedDeviceIds = async (): Promise<string[]> => {
+  if (!database) {
+    console.log("🔧 Firebase not available, returning mock data")
+    return ["01", "02", "03"]
+  }
+
+  const result = await withRetry(async () => {
+    console.log("🔥 Firebase: Getting used device IDs")
+    const usersRef = ref(database, "users")
+    const snapshot = await get(usersRef)
+
+    if (snapshot.exists()) {
+      const users = snapshot.val()
+      const usedDevices = Object.values(users)
+        .map((user: any) => {
+          const deviceId = user.deviceId || user.device_id || ""
+          return deviceId.replace("device_", "").padStart(2, "0")
+        })
+        .filter(Boolean)
+        .filter((id) => id !== "null" && id !== "00")
+
+      console.log("🔥 Firebase: Used devices:", usedDevices)
+      return usedDevices
+    } else {
+      console.log("🔥 Firebase: No users found, no devices used")
+      return []
+    }
+  })
+
+  return result || ["01", "02", "03"]
+}
+
+/**
+ * Check if email is already registered
+ */
+export const checkEmailAvailability = async (email: string): Promise<boolean> => {
+  if (!database) {
+    console.log("🔧 Firebase not available")
+    return true
+  }
+
+  const result = await withRetry(async () => {
+    console.log(`🔥 Firebase: Checking email availability: ${email}`)
+    const usersRef = ref(database, "users")
+    const snapshot = await get(usersRef)
+
+    if (snapshot.exists()) {
+      const users = snapshot.val()
+      const emailExists = Object.values(users).some((user: any) => user.email === email)
+      console.log(`🔥 Firebase: Email ${email} exists:`, emailExists)
+      return !emailExists
+    } else {
+      console.log(`🔥 Firebase: No users found, email ${email} is available`)
+      return true
+    }
+  })
+
+  return result !== null ? result : true
 }
 
 /**
@@ -219,7 +403,7 @@ export const getSafetyLevel = (ear: number): { level: string; color: string; des
  * Administrative functions for device and user management
  */
 export const getDeviceCount = async (): Promise<number> => {
-  try {
+  const result = await withRetry(async () => {
     if (!database) return 0
 
     const devicesRef = ref(database, "devices")
@@ -231,14 +415,13 @@ export const getDeviceCount = async (): Promise<number> => {
       return count
     }
     return 0
-  } catch (error) {
-    console.error("❌ Error getting device count:", error)
-    return 0
-  }
+  })
+
+  return result || 0
 }
 
 export const getActiveDeviceCount = async (): Promise<number> => {
-  try {
+  const result = await withRetry(async () => {
     if (!database) return 0
 
     const devicesRef = ref(database, "devices")
@@ -261,76 +444,9 @@ export const getActiveDeviceCount = async (): Promise<number> => {
       return activeCount
     }
     return 0
-  } catch (error) {
-    console.error("❌ Error getting active device count:", error)
-    return 0
-  }
+  })
+
+  return result || 0
 }
 
-/**
- * Get list of device IDs that are currently assigned to users
- * @returns Promise with array of used device IDs
- */
-export const getUsedDeviceIds = async (): Promise<string[]> => {
-  if (!database) {
-    console.log("🔧 Firebase not available")
-    return []
-  }
-
-  try {
-    console.log("🔥 Firebase: Getting used device IDs")
-    const usersRef = ref(database, "users")
-    const snapshot = await get(usersRef)
-
-    if (snapshot.exists()) {
-      const users = snapshot.val()
-      const usedDevices = Object.values(users)
-        .map((user: any) => {
-          const deviceId = user.deviceId || user.device_id || ""
-          return deviceId.replace("device_", "").padStart(2, "0")
-        })
-        .filter(Boolean)
-        .filter((id) => id !== "null" && id !== "00") // Filter out null and invalid IDs
-      console.log("🔥 Firebase: Used devices:", usedDevices)
-      return usedDevices
-    } else {
-      console.log("🔥 Firebase: No users found, no devices used")
-      return []
-    }
-  } catch (error) {
-    console.error("🔥 Firebase: Error getting used devices:", error)
-    return []
-  }
-}
-
-/**
- * Check if email is already registered
- * @param email - Email to check
- * @returns Promise with availability status
- */
-export const checkEmailAvailability = async (email: string): Promise<boolean> => {
-  if (!database) {
-    console.log("🔧 Firebase not available")
-    return true
-  }
-
-  try {
-    console.log(`🔥 Firebase: Checking email availability: ${email}`)
-    const usersRef = ref(database, "users")
-    const snapshot = await get(usersRef)
-
-    if (snapshot.exists()) {
-      const users = snapshot.val()
-      const emailExists = Object.values(users).some((user: any) => user.email === email)
-      console.log(`🔥 Firebase: Email ${email} exists:`, emailExists)
-      return !emailExists
-    } else {
-      console.log(`🔥 Firebase: No users found, email ${email} is available`)
-      return true
-    }
-  } catch (error) {
-    console.error("🔥 Firebase: Error checking email:", error)
-    return true
-  }
-}
-console.log("🔥 Firebase core service initialized")
+console.log("🔥 Firebase core service initialized with error recovery")

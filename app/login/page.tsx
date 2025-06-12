@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import Link from "next/link"
 import Image from "next/image"
-import { signIn } from "@/lib/auth"
+import { signIn } from "@/lib/firebase"
 import { Loader2, Eye, EyeOff } from "lucide-react"
 
 // Firebase
@@ -33,26 +33,31 @@ export default function LoginPage() {
     try {
       const result = await signIn(email, password)
 
-      if (result.success) {
+      if (result && result.success) {
         // ตรวจสอบ role ของผู้ใช้เพื่อ redirect ไปยังหน้าที่เหมาะสม
         try {
-          // ดึงข้อมูล user profile จาก Firebase
-          const userRef = ref(database, `users/${result.user.uid}`)
-          const snapshot = await get(userRef)
+          if (database) {
+            // ดึงข้อมูล user profile จาก Firebase
+            const userRef = ref(database, `users/${result.user.uid}`)
+            const snapshot = await get(userRef)
 
-          if (snapshot.exists()) {
-            const userData = snapshot.val()
+            if (snapshot.exists()) {
+              const userData = snapshot.val()
 
-            // ตรวจสอบ role และ redirect ตาม role
-            if (userData.role === "admin") {
-              // ถ้าเป็น admin ให้ไปที่หน้า admin dashboard
-              router.push("/admin/dashboard")
+              // ตรวจสอบ role และ redirect ตาม role
+              if (userData.role === "admin") {
+                // ถ้าเป็น admin ให้ไปที่หน้า admin dashboard
+                router.push("/admin/dashboard")
+              } else {
+                // ถ้าเป็น driver หรือ role อื่นๆ ให้ไปที่หน้า dashboard ปกติ
+                router.push("/dashboard")
+              }
             } else {
-              // ถ้าเป็น driver หรือ role อื่นๆ ให้ไปที่หน้า dashboard ปกติ
+              // ถ้าไม่พบข้อมูลผู้ใช้ ให้ไปที่ dashboard ปกติ
               router.push("/dashboard")
             }
           } else {
-            // ถ้าไม่พบข้อมูลผู้ใช้ ให้ไปที่ dashboard ปกติ
+            // ถ้า Firebase ไม่พร้อมใช้งาน ให้ไปที่ dashboard ปกติ
             router.push("/dashboard")
           }
         } catch (error) {
@@ -65,7 +70,7 @@ export default function LoginPage() {
       }
     } catch (error) {
       console.error("Login error:", error)
-      setError("เกิดข้อผิดพลาดในการเข้าสู่ระบบ")
+      setError("เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง")
     } finally {
       setIsLoading(false)
     }
@@ -77,11 +82,12 @@ export default function LoginPage() {
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <Image
-              src="/images/logo.png"
+              src="/logo.png"
               alt="Driver Fatigue Detection Logo"
-              width={64}
-              height={64}
-              className="h-16 w-16"
+              width={80}
+              height={80}
+              className="h-20 w-20 object-contain"
+              priority
             />
           </div>
           <CardTitle className="text-2xl font-bold">เข้าสู่ระบบ</CardTitle>
