@@ -1,7 +1,4 @@
-/**
- * Firebase Core Service
- * Handles Firebase initialization and core data operations with error recovery
- */
+"use client"
 
 import { initializeApp, getApps } from "firebase/app"
 import { getDatabase, ref, onValue, off, query, limitToLast, get, set } from "firebase/database"
@@ -14,20 +11,13 @@ import {
 import { firebaseConfig } from "./config"
 import type { DeviceData, HistoricalData } from "./types"
 
-// Firebase instances
 let app: any = null
 let database: any = null
 let auth: any = null
-
-// Error recovery state
 let initializationAttempts = 0
 const MAX_INIT_ATTEMPTS = 3
 let isInitializing = false
 
-/**
- * Initialize Firebase with error handling and retry logic
- * Only runs on client side
- */
 const initializeFirebase = async (): Promise<boolean> => {
   if (typeof window === "undefined") return false
 
@@ -53,7 +43,7 @@ const initializeFirebase = async (): Promise<boolean> => {
     auth = getAuth(app)
 
     console.log("✅ Firebase: Initialized successfully")
-    initializationAttempts = 0 // Reset on success
+    initializationAttempts = 0
     isInitializing = false
     return true
   } catch (error) {
@@ -62,33 +52,37 @@ const initializeFirebase = async (): Promise<boolean> => {
     auth = null
     isInitializing = false
 
-    // Retry logic
     if (initializationAttempts < MAX_INIT_ATTEMPTS) {
       console.log(`🔄 Firebase: Retrying initialization in 2 seconds...`)
       setTimeout(() => initializeFirebase(), 2000)
     } else {
-      console.error("❌ Firebase: Max initialization attempts reached, falling back to development mode")
+      console.error("❌ Firebase: Max initialization attempts reached")
     }
     return false
   }
 }
 
-// Initialize Firebase
 initializeFirebase()
 
-// Export Firebase instances
 export { app, database, auth }
 
-/**
- * Retry wrapper for Firebase operations
- */
-const withRetry = async <T>(operation: () => Promise<T>, maxRetries = 3)
-: Promise<T | null> =>
-{
+// ปรับปรุงฟังก์ชัน withRetry เพื่อจัดการกับข้อผิดพลาดเครือข่ายได้ดีขึ้น
+const withRetry = async <T,>(operation: () => Promise<T>, maxRetries = 3): Promise<T | null> => {
+  let lastError: any = null
+
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
+      // ตรวจสอบการเชื่อมต่อก่อนพยายามดำเนินการ
+      if (!navigator.onLine) {
+        console.error(`❌ Firebase: Network is offline (attempt ${attempt}/${maxRetries})`)
+        // รอสักครู่ก่อนลองใหม่
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+        continue
+      }
+
       return await operation()
-    } catch (error) {
+    } catch (error: any) {
+      lastError = error
       console.error(`❌ Firebase operation failed (attempt ${attempt}/${maxRetries}):`, error)
 
       if (attempt === maxRetries) {
@@ -96,16 +90,18 @@ const withRetry = async <T>(operation: () => Promise<T>, maxRetries = 3)
         return null
       }
 
-      // Wait before retry
-      await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+      // รอนานขึ้นระหว่างการลองใหม่แต่ละครั้ง
+      const retryDelay = 1000 * Math.pow(2, attempt - 1) // exponential backoff
+      console.log(`🔄 Firebase: Retrying in ${retryDelay / 1000} seconds...`)
+      await new Promise((resolve) => setTimeout(resolve, retryDelay))
     }
   }
+
+  // ส่งคืนข้อผิดพลาดสุดท้ายที่เกิดขึ้น
+  console.error("❌ Firebase: All retry attempts failed", lastError)
   return null
 }
 
-/**
- * Subscribe to real-time current device data with error recovery
- */
 export const subscribeToCurrentData = (deviceId: string, callback: (data: DeviceData | null) => void): (() => void) => {
   if (!database) {
     console.warn("🔧 Firebase not available, no real-time data")
@@ -135,7 +131,6 @@ export const subscribeToCurrentData = (deviceId: string, callback: (data: Device
         console.error(`❌ Firebase: Error subscribing to current data for ${deviceId}:`, error)
         callback(null)
 
-        // Attempt to reinitialize Firebase on connection error
         if (error.code === "NETWORK_ERROR" || error.code === "PERMISSION_DENIED") {
           console.log("🔄 Firebase: Attempting to reinitialize due to connection error...")
           initializeFirebase()
@@ -157,9 +152,6 @@ export const subscribeToCurrentData = (deviceId: string, callback: (data: Device
   }
 }
 
-/**
- * Subscribe to historical device data with date filtering and error recovery
- */
 export const subscribeToHistoricalData = (
   deviceId: string,
   startDate: string,
@@ -229,7 +221,6 @@ export const subscribeToHistoricalData = (
         console.error(`❌ Firebase: Error subscribing to historical data for ${deviceId}:`, error)
         callback([])
 
-        // Attempt to reinitialize Firebase on connection error
         if (error.code === "NETWORK_ERROR" || error.code === "PERMISSION_DENIED") {
           console.log("🔄 Firebase: Attempting to reinitialize due to connection error...")
           initializeFirebase()
@@ -251,21 +242,42 @@ export const subscribeToHistoricalData = (
   }
 }
 
-/**
- * Authentication functions with error recovery
- */
+// ปรับปรุงฟังก์ชัน signIn เพื่อจัดการกับข้อผิดพลาดเครือข่ายได้ดีขึ้น
+
 export const signIn = async (email: string, password: string) => {
+  // เพิ่มการตรวจสอบการเชื่อมต่อก่อนพยายามเข้าสู่ระบบ
+  if (!navigator.onLine) {
+    console.error("❌ Firebase: Network is offline")
+    return { success: false, error: "ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต" }
+  }
+
   const result = await withRetry(async () => {
     if (!auth) {
       await initializeFirebase()
       if (!auth) throw new Error("Firebase Auth not available")
     }
 
-    const userCredential = await signInWithEmailAndPassword(auth, email, password)
-    return { success: true, user: userCredential.user }
-  })
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password)
+      return { success: true, user: userCredential.user }
+    } catch (error: any) {
+      // จัดการกับข้อผิดพลาดเฉพาะของ Firebase Auth
+      if (error.code === "auth/network-request-failed") {
+        throw new Error("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต")
+      } else if (error.code === "auth/user-not-found" || error.code === "auth/wrong-password") {
+        return { success: false, error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" }
+      } else if (error.code === "auth/too-many-requests") {
+        return { success: false, error: "มีการพยายามเข้าสู่ระบบมากเกินไป โปรดลองอีกครั้งในภายหลัง" }
+      } else if (error.code === "auth/user-disabled") {
+        return { success: false, error: "บัญชีนี้ถูกระงับการใช้งาน โปรดติดต่อผู้ดูแลระบบ" }
+      }
+      // ถ้าเป็นข้อผิดพลาดอื่นๆ ให้โยนข้อผิดพลาดต่อไปเพื่อให้ withRetry จัดการ
+      throw error
+    }
+  }, 3) // เพิ่มจำนวนครั้งในการลองใหม่เป็น 3 ครั้ง
 
-  return result || { success: false, error: "การเข้าสู่ระบบล้มเหลว" }
+  // ถ้า result เป็น null (เกิดข้อผิดพลาดทั้งหมด) ให้ส่งข้อความข้อผิดพลาดทั่วไป
+  return result || { success: false, error: "การเข้าสู่ระบบล้มเหลว โปรดตรวจสอบการเชื่อมต่อและลองอีกครั้ง" }
 }
 
 export const registerUser = async (userData: any) => {
@@ -310,9 +322,6 @@ export const signOut = async () => {
   return result || { success: false, error: "การออกจากระบบล้มเหลว" }
 }
 
-/**
- * Get used device IDs with error recovery
- */
 export const getUsedDeviceIds = async (): Promise<string[]> => {
   if (!database) {
     console.log("🔧 Firebase not available, returning mock data")
@@ -345,9 +354,6 @@ export const getUsedDeviceIds = async (): Promise<string[]> => {
   return result || ["01", "02", "03"]
 }
 
-/**
- * Check if email is already registered
- */
 export const checkEmailAvailability = async (email: string): Promise<boolean> => {
   if (!database) {
     console.log("🔧 Firebase not available")
@@ -373,9 +379,6 @@ export const checkEmailAvailability = async (email: string): Promise<boolean> =>
   return result !== null ? result : true
 }
 
-/**
- * Utility functions for status and safety level calculations
- */
 export const getStatusInThai = (status: string): string => {
   const statusMap: { [key: string]: string } = {
     NORMAL: "ปกติ",
@@ -399,9 +402,6 @@ export const getSafetyLevel = (ear: number): { level: string; color: string; des
   }
 }
 
-/**
- * Administrative functions for device and user management
- */
 export const getDeviceCount = async (): Promise<number> => {
   const result = await withRetry(async () => {
     if (!database) return 0

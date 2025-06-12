@@ -30,6 +30,13 @@ export default function LoginPage() {
     setError(null)
     setIsLoading(true)
 
+    // ตรวจสอบการเชื่อมต่อก่อนพยายามเข้าสู่ระบบ
+    if (!navigator.onLine) {
+      setError("ไม่สามารถเชื่อมต่อกับเซิร์ฟเวอร์ได้ โปรดตรวจสอบการเชื่อมต่ออินเทอร์เน็ต")
+      setIsLoading(false)
+      return
+    }
+
     try {
       const result = await signIn(email, password)
 
@@ -66,11 +73,17 @@ export default function LoginPage() {
           router.push("/dashboard")
         }
       } else {
-        setError("อีเมลหรือรหัสผ่านไม่ถูกต้อง")
+        // แสดงข้อความข้อผิดพลาดที่ได้รับจาก Firebase
+        setError(result.error || "อีเมลหรือรหัสผ่านไม่ถูกต้อง")
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Login error:", error)
-      setError("เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง")
+      // แสดงข้อความข้อผิดพลาดที่เข้าใจง่าย
+      if (error.message && typeof error.message === "string") {
+        setError(error.message)
+      } else {
+        setError("เกิดข้อผิดพลาดในการเข้าสู่ระบบ กรุณาลองใหม่อีกครั้ง")
+      }
     } finally {
       setIsLoading(false)
     }
@@ -96,8 +109,17 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {error && (
-              <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md text-sm">
-                {error}
+              <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-3 rounded-md text-sm flex items-center">
+                <div className="mr-2 flex-shrink-0">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+                <div>{error}</div>
               </div>
             )}
             <div className="space-y-2">

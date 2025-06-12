@@ -26,17 +26,17 @@ interface ChartsSectionProps {
   showAllCharts?: boolean
 }
 
-// ✅ Named export function
 export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSectionProps) {
   const [activeChart, setActiveChart] = useState("ear")
 
-  // ✅ ตรวจสอบและประมวลผลข้อมูลจาก Firebase
-  // ข้อมูลจะถูกส่งมาจาก Firebase Realtime Database ในรูปแบบ HistoricalData[]
+  // ตรวจสอบและประมวลผลข้อมูลจาก Firebase
   const safeData = useMemo(() => {
     console.log("🔍 ChartsSection: Processing data", {
       dataLength: Array.isArray(data) ? data.length : 0,
       type: typeof data,
       isArray: Array.isArray(data),
+      hasStats: !!stats,
+      statsData: stats,
     })
 
     if (!data) {
@@ -56,8 +56,7 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
     return filteredData
   }, [data])
 
-  // ✅ ประมวลผลข้อมูลสำหรับกราฟเทคนิค (EAR และ Mouth Distance)
-  // ข้อมูลนี้มาจากการวิเคราะห์ใบหน้าของระบบ AI
+  // ประมวลผลข้อมูลสำหรับกราฟเทคนิค (EAR และ Mouth Distance)
   const technicalData = useMemo(() => {
     if (!Array.isArray(safeData) || safeData.length === 0) {
       console.warn("⚠️ SafeData is not valid for technicalData")
@@ -69,39 +68,48 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
         hour: "2-digit",
         minute: "2-digit",
       }),
-      ear: item.ear || 0, // Eye Aspect Ratio - ค่าการเปิด-ปิดตา
-      mouth: item.mouth_distance || 0, // ระยะห่างของปาก
-      face_frames: item.face_detected_frames || 0, // จำนวนเฟรมที่ตรวจพบใบหน้า
+      ear: item.ear || 0,
+      mouth: item.mouth_distance || 0,
+      face_frames: item.face_detected_frames || 0,
     }))
   }, [safeData])
 
-  // แก้ไขฟังก์ชัน statusDistribution เพื่อรวมข้อมูลหลายวันอย่างถูกต้อง
+  // สร้างข้อมูลสำหรับกราฟการกระจายสถานะ
   const statusDistribution = useMemo(() => {
-    if (!Array.isArray(safeData) || safeData.length === 0) return []
+    if (!Array.isArray(safeData) || safeData.length === 0) {
+      console.log("⚠️ No data for status distribution")
+      return []
+    }
 
-    // จัดกลุ่มข้อมูลตามวัน
-    const dailyGroups: { [date: string]: HistoricalData[] } = {}
-    safeData.forEach((item) => {
-      const date = new Date(item.timestamp).toDateString()
-      if (!dailyGroups[date]) dailyGroups[date] = []
-      dailyGroups[date].push(item)
-    })
-
-    // รวมข้อมูลสะสมจากแต่ละวัน
+    // ใช้ข้อมูลจาก stats ถ้ามี หรือคำนวณจากข้อมูลดิบ
     let totalYawns = 0
     let totalDrowsiness = 0
     let totalAlerts = 0
 
-    Object.values(dailyGroups).forEach((dayData) => {
-      const sortedDayData = [...dayData].sort(
-        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      )
-      const latestOfDay = sortedDayData[0]
+    if (stats) {
+      totalYawns = stats.totalYawns || 0
+      totalDrowsiness = stats.totalDrowsiness || 0
+      totalAlerts = stats.totalAlerts || 0
+    } else {
+      // คำนวณจากข้อมูลดิบ
+      const dailyGroups: { [date: string]: HistoricalData[] } = {}
+      safeData.forEach((item) => {
+        const date = new Date(item.timestamp).toDateString()
+        if (!dailyGroups[date]) dailyGroups[date] = []
+        dailyGroups[date].push(item)
+      })
 
-      totalYawns += latestOfDay.yawn_events || 0
-      totalDrowsiness += latestOfDay.drowsiness_events || 0
-      totalAlerts += latestOfDay.critical_alerts || 0
-    })
+      Object.values(dailyGroups).forEach((dayData) => {
+        const sortedDayData = [...dayData].sort(
+          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+        )
+        const latestOfDay = sortedDayData[0]
+
+        totalYawns += latestOfDay.yawn_events || 0
+        totalDrowsiness += latestOfDay.drowsiness_events || 0
+        totalAlerts += latestOfDay.critical_alerts || 0
+      })
+    }
 
     const totalNormal = Math.max(0, safeData.length - (totalYawns + totalDrowsiness + totalAlerts))
 
@@ -124,13 +132,13 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
       value: count,
       color: colors[status as keyof typeof colors] || "#6B7280",
     }))
-  }, [safeData])
+  }, [safeData, stats])
 
-  // แก้ไขฟังก์ชัน hourlyActivityData เพื่อใช้ข้อมูลสะสมแทนการนับสถานะ
+  // สร้างข้อมูลสำหรับกราฟกิจกรรมตามชั่วโมง
   const hourlyActivityData = useMemo(() => {
     if (!Array.isArray(safeData) || safeData.length === 0) return []
 
-    // สร้างข้อมูลครบ 24 ชั่วโมง (เริ่มต้นด้วย 0)
+    // สร้างข้อมูลครบ 24 ชั่วโมง
     const allHours = Array.from({ length: 24 }, (_, i) => {
       const hourKey = `${i.toString().padStart(2, "0")}:00`
       return {
@@ -154,7 +162,6 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
     Object.entries(hourlyGroups).forEach(([hourStr, records]) => {
       const hour = Number.parseInt(hourStr)
       if (hour >= 0 && hour < 24 && records.length > 0) {
-        // เรียงข้อมูลตามเวลาและใช้ข้อมูลล่าสุดในชั่วโมงนั้น
         const sortedRecords = [...records].sort(
           (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
         )
@@ -169,20 +176,46 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
     return allHours
   }, [safeData])
 
-  // แก้ไขฟังก์ชัน safetyStats เพื่อรวมข้อมูลหลายวันอย่างถูกต้อง
+  // คำนวณสถิติความปลอดภัย
   const safetyStats = useMemo(() => {
+    if (stats) {
+      // ใช้ข้อมูลจาก stats ที่ส่งมา
+      const earScore = Math.min(100, (stats.averageEAR || 0) * 300)
+      const yawnPenalty = Math.min(30, (stats.totalYawns || 0) * 2)
+      const drowsinessPenalty = Math.min(40, (stats.totalDrowsiness || 0) * 5)
+      const criticalPenalty = Math.min(50, (stats.totalAlerts || 0) * 25)
+
+      const finalScore = Math.max(0, Math.min(100, earScore - yawnPenalty - drowsinessPenalty - criticalPenalty))
+
+      let status = "ดีเยี่ยม"
+      if (finalScore < 20) status = "ต้องปรับปรุง"
+      else if (finalScore < 40) status = "แย่"
+      else if (finalScore < 60) status = "พอใช้"
+      else if (finalScore < 80) status = "ดี"
+
+      return {
+        totalYawns: stats.totalYawns || 0,
+        totalDrowsiness: stats.totalDrowsiness || 0,
+        totalCritical: stats.totalAlerts || 0,
+        avgEar: (stats.averageEAR || 0).toFixed(3),
+        score: Math.round(finalScore),
+        status,
+      }
+    }
+
+    // ถ้าไม่มี stats ให้คำนวณจากข้อมูลดิบ
     if (!Array.isArray(safeData) || safeData.length === 0) {
       return {
         totalYawns: 0,
         totalDrowsiness: 0,
         totalCritical: 0,
-        avgEar: 0,
+        avgEar: "0.000",
         score: 0,
         status: "ไม่มีข้อมูล",
       }
     }
 
-    // จัดกลุ่มข้อมูลตามวัน
+    // คำนวณจากข้อมูลดิบ
     const dailyGroups: { [date: string]: HistoricalData[] } = {}
     safeData.forEach((item) => {
       const date = new Date(item.timestamp).toDateString()
@@ -190,7 +223,6 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
       dailyGroups[date].push(item)
     })
 
-    // รวมข้อมูลสะสมจากแต่ละวัน
     let totalYawns = 0
     let totalDrowsiness = 0
     let totalAlerts = 0
@@ -206,12 +238,10 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
       totalAlerts += latestOfDay.critical_alerts || 0
     })
 
-    // คำนวณค่าเฉลี่ย EAR
     const validEarData = safeData.filter((item) => (item.ear || 0) > 0)
     const avgEar =
       validEarData.length > 0 ? validEarData.reduce((sum, item) => sum + (item.ear || 0), 0) / validEarData.length : 0
 
-    // คำนวณคะแนนความปลอดภัย
     const earScore = Math.min(100, avgEar * 300)
     const yawnPenalty = Math.min(30, totalYawns * 2)
     const drowsinessPenalty = Math.min(40, totalDrowsiness * 5)
@@ -233,7 +263,7 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
       score: Math.round(finalScore),
       status,
     }
-  }, [safeData])
+  }, [safeData, stats])
 
   // ถ้าไม่มีข้อมูลให้แสดงข้อความแจ้งเตือน
   if (!Array.isArray(safeData) || safeData.length === 0) {
@@ -372,5 +402,4 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
   )
 }
 
-// ✅ Default export
 export default ChartsSection
