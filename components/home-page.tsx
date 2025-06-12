@@ -61,8 +61,8 @@ export function HomePage() {
     } catch (error) {
       console.error("❌ Error loading device stats:", error)
       // Set fallback values
-      setDeviceCount(5)
-      setActiveDeviceCount(3)
+      setDeviceCount(1)
+      setActiveDeviceCount(1)
     } finally {
       setIsLoadingStats(false)
     }
@@ -88,83 +88,6 @@ export function HomePage() {
     }
   }
 
-  /**
-   * Navigate to different pages
-   */
-  const navigateToAbout = () => {
-    // สร้างหน้า About Us
-    const aboutContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-        <h1>เกี่ยวกับเรา</h1>
-        <p>Driver Fatigue Detection เป็นระบบตรวจจับความเหนื่อยล้าของผู้ขับขี่ที่พัฒนาด้วยเทคโนโลยี AI ล่าสุด</p>
-        <h2>วิสัยทัศน์</h2>
-        <p>เพื่อลดอุบัติเหตุจากการหลับในขณะขับขี่และสร้างความปลอดภัยบนท้องถนน</p>
-        <h2>ทีมงาน</h2>
-        <p>ทีมผู้เชี่ยวชาญด้าน AI และความปลอดภัยในการขับขี่</p>
-        <button onclick="window.close()" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 5px;">ปิด</button>
-      </div>
-    `
-    const newWindow = window.open("", "_blank", "width=800,height=600")
-    if (newWindow) {
-      newWindow.document.write(aboutContent)
-      newWindow.document.title = "เกี่ยวกับเรา - Driver Fatigue Detection"
-    }
-  }
-
-  const navigateToFeatures = () => {
-    scrollToSection("features")
-  }
-
-  const navigateToHowItWorks = () => {
-    scrollToSection("how-it-works")
-  }
-
-  const navigateToPricing = () => {
-    // สร้างหน้า Pricing
-    const pricingContent = `
-      <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
-        <h1>แผนการใช้งาน</h1>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px;">
-          <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
-            <h3>แผนฟรี</h3>
-            <p style="font-size: 2em; font-weight: bold;">฿0/เดือน</p>
-            <ul>
-              <li>อุปกรณ์ 1 เครื่อง</li>
-              <li>การแจ้งเตือนพื้นฐาน</li>
-              <li>รายงานรายวัน</li>
-            </ul>
-          </div>
-          <div style="border: 1px solid #3b82f6; padding: 20px; border-radius: 8px; background: #f0f9ff;">
-            <h3>แผนมาตรฐาน</h3>
-            <p style="font-size: 2em; font-weight: bold;">฿299/เดือน</p>
-            <ul>
-              <li>อุปกรณ์ 5 เครื่อง</li>
-              <li>การแจ้งเตือนแบบเรียลไทม์</li>
-              <li>รายงานรายสัปดาห์/เดือน</li>
-              <li>การส่งออกข้อมูล</li>
-            </ul>
-          </div>
-          <div style="border: 1px solid #ddd; padding: 20px; border-radius: 8px;">
-            <h3>แผนองค์กร</h3>
-            <p style="font-size: 2em; font-weight: bold;">฿999/เดือน</p>
-            <ul>
-              <li>อุปกรณ์ไม่จำกัด</li>
-              <li>การแจ้งเตือนขั้นสูง</li>
-              <li>รายงานแบบกำหนดเอง</li>
-              <li>การสนับสนุน 24/7</li>
-            </ul>
-          </div>
-        </div>
-        <button onclick="window.close()" style="margin-top: 20px; padding: 10px 20px; background: #3b82f6; color: white; border: none; border-radius: 5px;">ปิด</button>
-      </div>
-    `
-    const newWindow = window.open("", "_blank", "width=800,height=600")
-    if (newWindow) {
-      newWindow.document.write(pricingContent)
-      newWindow.document.title = "แผนการใช้งาน - Driver Fatigue Detection"
-    }
-  }
-
   return (
     <div className="min-h-screen bg-white dark:bg-gray-900">
       {/* Header */}
@@ -173,7 +96,13 @@ export function HomePage() {
           <div className="flex justify-between items-center py-4">
             {/* Logo */}
             <div className="flex items-center space-x-3">
-              <Image src="/logo.png" alt="Driver Fatigue Detection Logo" width={48} height={48} className="h-12 w-12" />
+              <Image
+                src="/logo.png"
+                alt="Driver Fatigue Detection Logo"
+                width={48}
+                height={48}
+                className="h-12 w-12"
+              />
               <div>
                 <h1 className="text-xl font-bold text-gray-900 dark:text-white">Driver Fatigue Detection</h1>
                 <p className="text-xs text-gray-500 dark:text-gray-400">ระบบตรวจจับความเหนื่อยล้าของผู้ขับขี่</p>
@@ -233,7 +162,6 @@ export function HomePage() {
                   size="lg"
                   variant="outline"
                   className="border-blue-600 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 text-lg px-8 py-6 border-2"
-                  onClick={navigateToFeatures}
                 >
                   ดูข้อมูลเพิ่มเติม
                 </Button>
@@ -254,8 +182,7 @@ export function HomePage() {
                     {isLoadingStats ? <Loader2 className="h-5 w-5 animate-spin" /> : formatDeviceCount(deviceCount)}
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {/* แสดงเป็น "อุปกรณ์" แทน "ผู้ใช้งาน" */}
-                    อุปกรณ์
+                    {deviceCount === 1 ? "อุปกรณ์" : "ผู้ใช้งาน"}
                   </div>
                 </div>
               </div>
@@ -266,7 +193,13 @@ export function HomePage() {
               <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl overflow-hidden border border-gray-200 dark:border-gray-700">
                 <div className="p-4 bg-blue-600 text-white flex items-center justify-between">
                   <div className="flex items-center space-x-2">
-                    <Image src="/logo.png" alt="Logo" width={24} height={24} className="h-6 w-6 brightness-0 invert" />
+                    <Image
+                      src="/logo.png"
+                      alt="Logo"
+                      width={24}
+                      height={24}
+                      className="h-6 w-6 brightness-0 invert"
+                    />
                     <span className="font-medium">Driver Fatigue Dashboard</span>
                   </div>
                   <div className="flex items-center space-x-2">
@@ -368,9 +301,7 @@ export function HomePage() {
                 <CardTitle className="text-lg">Real-Time Monitoring</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-base">
-                  ติดตามค่าความง่วง, ความเหนื่อยล้า และสถานะผู้ขับทันที ด้วยความแม่นยำสูง
-                </CardDescription>
+                <CardDescription className="text-base">ติดตามค่า EAR, MAR และสถานะผู้ขับทันที ด้วยความแม่นยำสูง</CardDescription>
               </CardContent>
             </Card>
 
@@ -604,11 +535,7 @@ export function HomePage() {
             >
               เริ่มต้นใช้งาน
             </Button>
-            <Button
-              size="lg"
-              className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-6"
-              onClick={navigateToFeatures}
-            >
+            <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100 text-lg px-8 py-6">
               ดูข้อมูลเพิ่มเติม
             </Button>
           </div>
@@ -622,7 +549,13 @@ export function HomePage() {
             {/* Company Info */}
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-3 mb-4">
-                <Image src="/logo.png" alt="Driver Fatigue Detection Logo" width={32} height={32} className="h-8 w-8" />
+                <Image
+                  src="/logo.png"
+                  alt="Driver Fatigue Detection Logo"
+                  width={32}
+                  height={32}
+                  className="h-8 w-8"
+                />
                 <span className="text-xl font-bold">Driver Fatigue Detection</span>
               </div>
               <p className="text-gray-400 mb-6 max-w-md">
@@ -654,36 +587,24 @@ export function HomePage() {
               <h3 className="text-lg font-semibold mb-4">ลิงค์ด่วน</h3>
               <ul className="space-y-2">
                 <li>
-                  <button
-                    onClick={navigateToAbout}
-                    className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                  >
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
                     เกี่ยวกับเรา
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button
-                    onClick={navigateToFeatures}
-                    className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                  >
+                  <a href="#features" className="text-gray-400 hover:text-white transition-colors">
                     ฟีเจอร์
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button
-                    onClick={navigateToHowItWorks}
-                    className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                  >
+                  <a href="#how-it-works" className="text-gray-400 hover:text-white transition-colors">
                     วิธีใช้งาน
-                  </button>
+                  </a>
                 </li>
                 <li>
-                  <button
-                    onClick={navigateToPricing}
-                    className="text-gray-400 hover:text-white transition-colors cursor-pointer"
-                  >
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
                     ราคา
-                  </button>
+                  </a>
                 </li>
               </ul>
             </div>
@@ -691,21 +612,31 @@ export function HomePage() {
             {/* Contact */}
             <div>
               <h3 className="text-lg font-semibold mb-4">ติดต่อเรา</h3>
-              <ul className="space-y-2">
-                <li className="flex items-center space-x-2">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3">
                   <Mail className="h-4 w-4 text-gray-400" />
                   <span className="text-gray-400">support@driverfatigue.com</span>
-                </li>
-                <li className="flex items-center space-x-2">
+                </div>
+                <div className="flex items-center space-x-3">
                   <Phone className="h-4 w-4 text-gray-400" />
                   <span className="text-gray-400">02-123-4567</span>
-                </li>
-              </ul>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center">
-            <p className="text-gray-400">© 2024 Driver Fatigue Detection. สงวนลิขสิทธิ์ทั้งหมด.</p>
+          <div className="border-t border-gray-800 mt-12 pt-8">
+            <div className="flex flex-col md:flex-row justify-between items-center">
+              <p className="text-gray-400 text-sm">© 2024 Driver Fatigue Detection. สงวนลิขสิทธิ์.</p>
+              <div className="flex space-x-6 mt-4 md:mt-0">
+                <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
+                  นโยบายความเป็นส่วนตัว
+                </a>
+                <a href="#" className="text-gray-400 hover:text-white text-sm transition-colors">
+                  ข้อกำหนดการใช้งาน
+                </a>
+              </div>
+            </div>
           </div>
         </div>
       </footer>

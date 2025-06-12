@@ -297,7 +297,6 @@ export const registerUser = async (userData: any) => {
       phone: userData.phone,
       license: userData.license,
       deviceId: userData.deviceId,
-      companyName: userData.companyName || "",
       role: userData.role || "driver",
       registeredAt: new Date().toISOString(),
     }
@@ -403,30 +402,10 @@ export const getSafetyLevel = (ear: number): { level: string; color: string; des
   }
 }
 
-// ปรับปรุงฟังก์ชัน getDeviceCount ให้ใช้ค่า fallback เมื่อเกิด permission denied
 export const getDeviceCount = async (): Promise<number> => {
-  try {
-    // ถ้าไม่มี database หรือยังไม่พร้อมใช้งาน ให้ใช้ค่า fallback
-    if (!database) {
-      console.log("🔧 Firebase not available, using fallback value")
-      return 5 // ค่า fallback ที่สมเหตุสมผล
-    }
+  const result = await withRetry(async () => {
+    if (!database) return 0
 
-    // ลองดึงข้อมูลจาก public stats ก่อน (ถ้ามี)
-    try {
-      const publicStatsRef = ref(database, "public/stats/device_count")
-      const publicSnapshot = await get(publicStatsRef)
-
-      if (publicSnapshot.exists()) {
-        const count = publicSnapshot.val()
-        console.log(`🔥 Firebase: Found ${count} devices from public stats`)
-        return count
-      }
-    } catch (error) {
-      console.log("📊 Public stats not available, using fallback")
-    }
-
-    // ถ้าไม่มี public stats ลองดึงข้อมูลจริง (อาจเกิด permission denied)
     const devicesRef = ref(database, "devices")
     const snapshot = await get(devicesRef)
 
@@ -435,40 +414,16 @@ export const getDeviceCount = async (): Promise<number> => {
       console.log(`🔥 Firebase: Found ${count} total devices`)
       return count
     }
+    return 0
+  })
 
-    // ถ้าไม่พบข้อมูล ใช้ค่า fallback
-    return 5
-  } catch (error) {
-    // ถ้าเกิด permission denied หรือ error อื่นๆ ใช้ค่า fallback
-    console.log("📊 Error getting device count, using fallback:", error)
-    return 5 // ค่า fallback ที่สมเหตุสมผล
-  }
+  return result || 0
 }
 
-// ปรับปรุงฟังก์ชัน getActiveDeviceCount ให้ใช้ค่า fallback เมื่อเกิด permission denied
 export const getActiveDeviceCount = async (): Promise<number> => {
-  try {
-    // ถ้าไม่มี database หรือยังไม่พร้อมใช้งาน ให้ใช้ค่า fallback
-    if (!database) {
-      console.log("🔧 Firebase not available, using fallback value")
-      return 3 // ค่า fallback ที่สมเหตุสมผล
-    }
+  const result = await withRetry(async () => {
+    if (!database) return 0
 
-    // ลองดึงข้อมูลจาก public stats ก่อน (ถ้ามี)
-    try {
-      const publicStatsRef = ref(database, "public/stats/active_device_count")
-      const publicSnapshot = await get(publicStatsRef)
-
-      if (publicSnapshot.exists()) {
-        const count = publicSnapshot.val()
-        console.log(`🔥 Firebase: Found ${count} active devices from public stats`)
-        return count
-      }
-    } catch (error) {
-      console.log("📊 Public stats not available, using fallback")
-    }
-
-    // ถ้าไม่มี public stats ลองดึงข้อมูลจริง (อาจเกิด permission denied)
     const devicesRef = ref(database, "devices")
     const snapshot = await get(devicesRef)
 
@@ -488,14 +443,10 @@ export const getActiveDeviceCount = async (): Promise<number> => {
       console.log(`🔥 Firebase: Found ${activeCount} active devices`)
       return activeCount
     }
+    return 0
+  })
 
-    // ถ้าไม่พบข้อมูล ใช้ค่า fallback
-    return 3
-  } catch (error) {
-    // ถ้าเกิด permission denied หรือ error อื่นๆ ใช้ค่า fallback
-    console.log("📊 Error getting active device count, using fallback:", error)
-    return 3 // ค่า fallback ที่สมเหตุสมผล
-  }
+  return result || 0
 }
 
 console.log("🔥 Firebase core service initialized with error recovery")
