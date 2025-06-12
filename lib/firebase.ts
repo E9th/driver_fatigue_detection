@@ -297,6 +297,7 @@ export const registerUser = async (userData: any) => {
       phone: userData.phone,
       license: userData.license,
       deviceId: userData.deviceId,
+      companyName: userData.companyName || "",
       role: userData.role || "driver",
       registeredAt: new Date().toISOString(),
     }
@@ -402,18 +403,48 @@ export const getSafetyLevel = (ear: number): { level: string; color: string; des
   }
 }
 
+// ปรับปรุงฟังก์ชันเพื่อใช้ข้อมูลจาก public stats หรือ fallback ไปดึงจากข้อมูลจริง
 export const getDeviceCount = async (): Promise<number> => {
   const result = await withRetry(async () => {
     if (!database) return 0
 
-    const devicesRef = ref(database, "devices")
-    const snapshot = await get(devicesRef)
+    // ลองดึงจาก public stats ก่อน (ไม่ต้อง auth)
+    try {
+      const publicStatsRef = ref(database, "public/stats/device_count")
+      const publicSnapshot = await get(publicStatsRef)
 
-    if (snapshot.exists()) {
-      const count = Object.keys(snapshot.val()).length
-      console.log(`🔥 Firebase: Found ${count} total devices`)
-      return count
+      if (publicSnapshot.exists()) {
+        const count = publicSnapshot.val()
+        console.log(`🔥 Firebase: Found ${count} devices from public stats`)
+        return count
+      }
+    } catch (error) {
+      console.log("📊 Public stats not available, trying direct access...")
     }
+
+    // ถ้าไม่มี public stats หรือไม่สามารถเข้าถึงได้ ให้ fallback ไปดึงจากข้อมูลจริง
+    try {
+      const devicesRef = ref(database, "devices")
+      const snapshot = await get(devicesRef)
+
+      if (snapshot.exists()) {
+        const count = Object.keys(snapshot.val()).length
+        console.log(`🔥 Firebase: Found ${count} total devices from direct access`)
+
+        // อัปเดต public stats สำหรับครั้งต่อไป (ถ้าเป็น admin)
+        try {
+          await set(ref(database, "public/stats/device_count"), count)
+          await set(ref(database, "public/stats/last_updated"), new Date().toISOString())
+        } catch (updateError) {
+          console.log("📊 Could not update public stats (permission denied)")
+        }
+
+        return count
+      }
+    } catch (error) {
+      console.log("📊 Direct access failed, using fallback")
+    }
+
     return 0
   })
 
@@ -424,29 +455,58 @@ export const getActiveDeviceCount = async (): Promise<number> => {
   const result = await withRetry(async () => {
     if (!database) return 0
 
-    const devicesRef = ref(database, "devices")
-    const snapshot = await get(devicesRef)
+    // ลองดึงจาก public stats ก่อน (ไม่ต้อง auth)
+    try {
+      const publicStatsRef = ref(database, "public/stats/active_device_count")
+      const publicSnapshot = await get(publicStatsRef)
 
-    if (snapshot.exists()) {
-      const devices = snapshot.val()
-      const now = Date.now()
-      const fiveMinutesAgo = now - 5 * 60 * 1000
-
-      let activeCount = 0
-      Object.values(devices).forEach((device: any) => {
-        const lastUpdate = device?.last_update || device?.current_data?.timestamp
-        if (lastUpdate && new Date(lastUpdate).getTime() > fiveMinutesAgo) {
-          activeCount++
-        }
-      })
-
-      console.log(`🔥 Firebase: Found ${activeCount} active devices`)
-      return activeCount
+      if (publicSnapshot.exists()) {
+        const count = publicSnapshot.val()
+        console.log(`🔥 Firebase: Found ${count} active devices from public stats`)
+        return count
+      }
+    } catch (error) {
+      console.log("📊 Public stats not available, trying direct access...")
     }
+
+    // ถ้าไม่มี public stats ให้ fallback ไปดึงจากข้อมูลจริง
+    try {
+      const devicesRef = ref(database, "devices")
+      const snapshot = await get(devicesRef)
+
+      if (snapshot.exists()) {
+        const devices = snapshot.val()
+        const now = Date.now()
+        const fiveMinutesAgo = now - 5 * 60 * 1000
+
+        let activeCount = 0
+        Object.values(devices).forEach((device: any) => {
+          const lastUpdate = device?.last_update || device?.current_data?.timestamp
+          if (lastUpdate && new Date(lastUpdate).getTime() > fiveMinutesAgo) {
+            activeCount++
+          }
+        })
+
+        console.log(`🔥 Firebase: Found ${activeCount} active devices from direct access`)
+
+        // อัปเดต public stats สำหรับครั้งต่อไป (ถ้าเป็น admin)
+        try {
+          await set(ref(database, "public/stats/active_device_count"), activeCount)
+          await set(ref(database, "public/stats/last_updated"), new Date().toISOString())
+        } catch (updateError) {
+          console.log("📊 Could not update public stats (permission denied)")
+        }
+
+        return activeCount
+      }
+    } catch (error) {
+      console.log("📊 Direct access failed, using fallback")
+    }
+
     return 0
   })
 
   return result || 0
 }
 
-console.log("🔥 Firebase core service initialized with error recovery")
+console.log("🔥 Firebase core service initialized with improved security and public stats support")
