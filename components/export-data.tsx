@@ -13,20 +13,31 @@ interface ExportDataProps {
   data: any
   filename?: string
   disabled?: boolean
+  dateRange?: {
+    startDate?: string
+    endDate?: string
+    startTime?: string
+    endTime?: string
+  }
+  stats?: {
+    safetyScore?: number
+    yawnCount?: number
+    drowsinessCount?: number
+    alertCount?: number
+  }
 }
 
-// แก้ไขอินเตอร์เฟซ UserProfile ให้ตรงกับข้อมูลจริง
 interface UserProfile {
-  fullName: string // เปลี่ยนจาก firstName, lastName เป็น fullName
+  fullName: string
   email: string
   phone: string
-  license: string // เปลี่ยนจาก licenseNumber เป็น license
+  license: string
   deviceId: string
   role?: string
   companyName?: string
 }
 
-export function ExportData({ data, filename, disabled = false }: ExportDataProps) {
+export function ExportData({ data, filename, disabled = false, dateRange, stats }: ExportDataProps) {
   const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
   const [isExporting, setIsExporting] = useState(false)
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
@@ -36,36 +47,23 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        // ดึงข้อมูลผู้ใช้ปัจจุบัน
         const user = auth.currentUser
         if (user) {
-          console.log("Current user:", user.uid) // Debug log
-
-          // ดึงข้อมูลจาก path ที่ถูกต้อง
           const userRef = ref(database, `users/${user.uid}`)
           const snapshot = await get(userRef)
 
           if (snapshot.exists()) {
-            console.log("User data found:", snapshot.val()) // Debug log
             const profileData = snapshot.val()
-
-            // ไม่รวมรหัสผ่านในการส่งออก
             const { password, ...safeProfileData } = profileData
             setUserProfile(safeProfileData)
           } else {
-            console.log("No user data found") // Debug log
-
-            // ลองดึงจาก path สำรอง (บางครั้งข้อมูลอาจอยู่ใน path อื่น)
             const altUserRef = ref(database, `drivers/${user.uid}`)
             const altSnapshot = await get(altUserRef)
 
             if (altSnapshot.exists()) {
-              console.log("Driver data found:", altSnapshot.val()) // Debug log
               const profileData = altSnapshot.val()
               const { password, ...safeProfileData } = profileData
               setUserProfile(safeProfileData)
-            } else {
-              console.error("No user profile data found in any location")
             }
           }
         }
@@ -77,46 +75,67 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
     fetchUserProfile()
   }, [])
 
-  // ส่งออกข้อมูลเป็น CSV (เฉพาะสถิติและข้อมูล Profile)
+  // รวมข้อมูลจากทั้งสองแหล่ง
+  const getCombinedData = () => {
+    // ใช้ stats ที่ส่งมาก่อน ถ้าไม่มีใช้จาก data
+    const combinedStats = {
+      safetyScore: stats?.safetyScore || data?.stats?.safetyScore || 0,
+      yawnCount: stats?.yawnCount || data?.stats?.yawnCount || 0,
+      drowsinessCount: stats?.drowsinessCount || data?.stats?.drowsinessCount || 0,
+      alertCount: stats?.alertCount || data?.stats?.alertCount || 0,
+    }
+
+    // ใช้ dateRange ที่ส่งมาก่อน ถ้าไม่มีใช้จาก data
+    const combinedDateRange = dateRange || data?.dateRange || {}
+
+    return {
+      stats: combinedStats,
+      dateRange: combinedDateRange,
+      deviceInfo: data?.deviceInfo || {},
+    }
+  }
+
+  // สร้างข้อความสำหรับช่วงเวลา
+  const getDateRangeText = (dateRangeData: any) => {
+    if (!dateRangeData.startDate && !dateRangeData.endDate) {
+      return "ไม่ระบุช่วงเวลา"
+    }
+
+    const startDate = dateRangeData.startDate ? new Date(dateRangeData.startDate) : null
+    const endDate = dateRangeData.endDate ? new Date(dateRangeData.endDate) : null
+
+    if (startDate && endDate) {
+      if (startDate.toDateString() === endDate.toDateString()) {
+        let dateText = `วันที่ ${startDate.toLocaleDateString("th-TH")}`
+        if (dateRangeData.startTime && dateRangeData.endTime) {
+          dateText += ` เวลา ${dateRangeData.startTime} - ${dateRangeData.endTime} น.`
+        }
+        return dateText
+      } else {
+        let dateText = `วันที่ ${startDate.toLocaleDateString("th-TH")} ถึง ${endDate.toLocaleDateString("th-TH")}`
+        if (dateRangeData.startTime && dateRangeData.endTime) {
+          dateText += ` เวลา ${dateRangeData.startTime} - ${dateRangeData.endTime} น.`
+        }
+        return dateText
+      }
+    }
+
+    return "ไม่ระบุช่วงเวลา"
+  }
+
+  // ส่งออกข้อมูลเป็น CSV
   const exportToCSV = () => {
-    if (!data || !userProfile) {
+    if (!userProfile) {
       toast({
         title: "ไม่มีข้อมูล",
-        description: "ไม่มีข้อมูลที่จะส่งออก หรือไม่พบข้อมูลผู้ใช้",
+        description: "ไม่พบข้อมูลผู้ใช้",
         variant: "destructive",
       })
       return
     }
 
-    // ดึงข้อมูลสถิติและช่วงเวลา
-    const stats = data.stats || {}
-    const deviceInfo = data.deviceInfo || {}
-    const dateRange = data.dateRange || {}
-
-    // สร้างข้อความสำหรับช่วงเวลา
-    let dateRangeText = "ไม่ระบุช่วงเวลา"
-    if (dateRange.startDate && dateRange.endDate) {
-      const startDate = new Date(dateRange.startDate)
-      const endDate = new Date(dateRange.endDate)
-
-      if (startDate.toDateString() === endDate.toDateString()) {
-        // กรณีเป็นวันเดียวกัน
-        dateRangeText = `วันที่ ${startDate.toLocaleDateString("th-TH")}`
-
-        // ถ้ามีเวลาเริ่มต้นและสิ้นสุด
-        if (dateRange.startTime && dateRange.endTime) {
-          dateRangeText += ` เวลา ${dateRange.startTime} - ${dateRange.endTime} น.`
-        }
-      } else {
-        // กรณีเป็นหลายวัน
-        dateRangeText = `วันที่ ${startDate.toLocaleDateString("th-TH")} ถึง ${endDate.toLocaleDateString("th-TH")}`
-
-        // ถ้ามีเวลาเริ่มต้นและสิ้นสุด
-        if (dateRange.startTime && dateRange.endTime) {
-          dateRangeText += ` เวลา ${dateRange.startTime} - ${dateRange.endTime} น.`
-        }
-      }
-    }
+    const combinedData = getCombinedData()
+    const dateRangeText = getDateRangeText(combinedData.dateRange)
 
     const csvContent = [
       "รายงานสรุปการขับขี่",
@@ -127,14 +146,14 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
       `อีเมล,${userProfile.email || ""}`,
       `เบอร์โทรศัพท์,${userProfile.phone || ""}`,
       `เลขที่ใบขับขี่,${userProfile.license || ""}`,
-      `รหัสอุปกรณ์,${userProfile.deviceId || deviceInfo.id || ""}`,
+      `รหัสอุปกรณ์,${userProfile.deviceId || combinedData.deviceInfo.id || ""}`,
       `บริษัท,${userProfile.companyName || "ไม่ระบุ"}`,
       "",
       "สถิติการขับขี่",
-      `คะแนนความปลอดภัย,${stats.safetyScore || 0}/100`,
-      `จำนวนครั้งที่หาว,${stats.yawnCount || 0}`,
-      `จำนวนครั้งที่ง่วง,${stats.drowsinessCount || 0}`,
-      `จำนวนการแจ้งเตือน,${stats.alertCount || 0}`,
+      `คะแนนความปลอดภัย,${combinedData.stats.safetyScore}/100`,
+      `จำนวนครั้งที่หาว,${combinedData.stats.yawnCount}`,
+      `จำนวนครั้งที่ง่วง,${combinedData.stats.drowsinessCount}`,
+      `จำนวนการแจ้งเตือน,${combinedData.stats.alertCount}`,
     ].join("\n")
 
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
@@ -150,48 +169,21 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
 
   // ส่งออกข้อมูลเป็น PDF
   const exportToPDF = async () => {
-    if (!data || !userProfile) {
+    if (!userProfile) {
       toast({
         title: "ไม่มีข้อมูล",
-        description: "ไม่มีข้อมูลที่จะส่งออก หรือไม่พบข้อมูลผู้ใช้",
+        description: "ไม่พบข้อมูลผู้ใช้",
         variant: "destructive",
       })
       return
     }
 
-    // ดึงข้อมูลสถิติและช่วงเวลา
-    const stats = data.stats || {}
-    const deviceInfo = data.deviceInfo || {}
-    const dateRange = data.dateRange || {}
-
-    // สร้างข้อความสำหรับช่วงเวลา
-    let dateRangeText = "ไม่ระบุช่วงเวลา"
-    if (dateRange.startDate && dateRange.endDate) {
-      const startDate = new Date(dateRange.startDate)
-      const endDate = new Date(dateRange.endDate)
-
-      if (startDate.toDateString() === endDate.toDateString()) {
-        // กรณีเป็นวันเดียวกัน
-        dateRangeText = `วันที่ ${startDate.toLocaleDateString("th-TH")}`
-
-        // ถ้ามีเวลาเริ่มต้นและสิ้นสุด
-        if (dateRange.startTime && dateRange.endTime) {
-          dateRangeText += ` เวลา ${dateRange.startTime} - ${dateRange.endTime} น.`
-        }
-      } else {
-        // กรณีเป็นหลายวัน
-        dateRangeText = `วันที่ ${startDate.toLocaleDateString("th-TH")} ถึง ${endDate.toLocaleDateString("th-TH")}`
-
-        // ถ้ามีเวลาเริ่มต้นและสิ้นสุด
-        if (dateRange.startTime && dateRange.endTime) {
-          dateRangeText += ` เวลา ${dateRange.startTime} - ${dateRange.endTime} น.`
-        }
-      }
-    }
+    const combinedData = getCombinedData()
+    const dateRangeText = getDateRangeText(combinedData.dateRange)
 
     // คำนวณระดับความปลอดภัย
     let safetyLevel = "ดีเยี่ยม"
-    const safetyScore = stats.safetyScore || 0
+    const safetyScore = combinedData.stats.safetyScore
     if (safetyScore < 50) {
       safetyLevel = "ต่ำ"
     } else if (safetyScore < 70) {
@@ -201,13 +193,13 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
     }
 
     // กำหนดสีตามระดับความปลอดภัย
-    let safetyColor = "#22c55e" // สีเขียว (ดีเยี่ยม)
+    let safetyColor = "#22c55e"
     if (safetyScore < 50) {
-      safetyColor = "#ef4444" // สีแดง (ต่ำ)
+      safetyColor = "#ef4444"
     } else if (safetyScore < 70) {
-      safetyColor = "#f97316" // สีส้ม (ปานกลาง)
+      safetyColor = "#f97316"
     } else if (safetyScore < 90) {
-      safetyColor = "#eab308" // สีเหลือง (ดี)
+      safetyColor = "#eab308"
     }
 
     const htmlContent = `
@@ -249,7 +241,7 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
      </div>
      <div class="info-card">
        <strong>เลขที่ใบขับขี่:</strong> ${userProfile.license || ""}<br>
-       <strong>รหัสอุปกรณ์:</strong> ${userProfile.deviceId || deviceInfo.id || ""}<br>
+       <strong>รหัสอุปกรณ์:</strong> ${userProfile.deviceId || combinedData.deviceInfo.id || ""}<br>
        <strong>บริษัท:</strong> ${userProfile.companyName || "ไม่ระบุ"}
      </div>
    </div>
@@ -261,21 +253,21 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
 
  <div class="section">
    <h2>คะแนนความปลอดภัย</h2>
-   <div class="score">${stats.safetyScore || 0}/100</div>
+   <div class="score">${combinedData.stats.safetyScore}/100</div>
    <div class="safety-level">ระดับความปลอดภัย: ${safetyLevel}</div>
    
    <div class="stats-grid">
      <div class="stat-card">
        <div class="stat-label">จำนวนครั้งที่หาว</div>
-       <div class="stat-value">${stats.yawnCount || 0}</div>
+       <div class="stat-value">${combinedData.stats.yawnCount}</div>
      </div>
      <div class="stat-card">
        <div class="stat-label">จำนวนครั้งที่ง่วง</div>
-       <div class="stat-value">${stats.drowsinessCount || 0}</div>
+       <div class="stat-value">${combinedData.stats.drowsinessCount}</div>
      </div>
      <div class="stat-card">
        <div class="stat-label">จำนวนการแจ้งเตือน</div>
-       <div class="stat-value">${stats.alertCount || 0}</div>
+       <div class="stat-value">${combinedData.stats.alertCount}</div>
      </div>
    </div>
  </div>

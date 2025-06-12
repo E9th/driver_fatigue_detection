@@ -21,10 +21,6 @@
           "$historyId": {
             ".validate": "newData.hasChildren(['device_id', 'ear', 'mouth_distance', 'status', 'timestamp'])"
           }
-        },
-        "last_update": {
-          ".read": true,
-          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('deviceId').val() === $deviceId)"
         }
       }
     },
@@ -61,19 +57,7 @@
       ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       "stats": {
         ".read": true,
-        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
-        "device_count": {
-          ".read": true,
-          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
-        },
-        "active_device_count": {
-          ".read": true,
-          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
-        },
-        "last_updated": {
-          ".read": true,
-          ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
-        }
+        ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
       }
     },
 
