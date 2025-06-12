@@ -1,0 +1,50 @@
+{
+  "rules": {
+    ".read": true,
+    ".write": true,
+    "devices": {
+      "$deviceId": {
+        ".read": true,
+        ".write": true,
+        "current_data": {
+          ".read": true,
+          ".write": true,
+          ".validate": "newData.hasChildren(['device_id', 'ear', 'mouth_distance', 'status', 'timestamp'])"
+        },
+        "history": {
+          ".read": true,
+          ".write": true,
+          ".indexOn": ["timestamp", "status"],
+          "$historyId": {
+            ".validate": "newData.hasChildren(['device_id', 'ear', 'mouth_distance', 'status', 'timestamp'])"
+          }
+        }
+      }
+    },
+    "alerts": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["timestamp", "device_id", "severity"],
+      "$alertId": {
+        ".validate": "newData.hasChildren(['device_id', 'alert_type', 'timestamp', 'severity'])"
+      }
+    },
+    "users": {
+      ".read": true,
+      ".write": true,
+      ".indexOn": ["deviceId", "email"],
+      "$userId": {
+        ".read": "$userId === auth.uid",
+        ".write": "$userId === auth.uid",
+        "devices": {
+          ".read": true,
+          ".write": true
+        },
+        "preferences": {
+          ".read": true,
+          ".write": true
+        }
+      }
+    }
+  }
+}
