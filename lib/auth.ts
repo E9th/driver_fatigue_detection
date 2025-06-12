@@ -7,13 +7,15 @@
 
 import { useState, useEffect } from "react"
 import { onAuthStateChanged } from "firebase/auth"
-import { ref, get } from "firebase/database"
+import { ref, get, remove } from "firebase/database" // Added 'remove' for deleteUser
 import {
   database,
   auth,
   signIn as firebaseSignIn,
   registerUser as firebaseRegisterUser,
   signOut as firebaseSignOut,
+  // Assuming these are also available from firebase.ts for admin functions
+  // deleteUser as firebaseDeleteUser, // This would be for Firebase Admin SDK, not client SDK
 } from "./firebase"
 import { DEVICE_UTILS, APP_CONFIG } from "./config"
 import type { RegisterData, UserProfile, AuthResponse } from "./types"
@@ -179,6 +181,116 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
 }
 
 /**
+ * Get all user profiles (for admin panel)
+ */
+export const getAllUsers = async (): Promise<UserProfile[]> => {
+  try {
+    if (APP_CONFIG.isDevelopmentMode) {
+      console.log("🔧 Development mode: Simulating getAllUsers")
+      const users = JSON.parse(localStorage.getItem("dev-users") || "[]")
+      return users.map((user: any) => ({
+        uid: user.uid,
+        role: user.role || "driver",
+        fullName: user.fullName || "",
+        email: user.email,
+        phone: user.phone || "",
+        license: user.license || "",
+        deviceId: user.deviceId || null,
+        registeredAt: user.registeredAt || new Date().toISOString(),
+        promotedToAdminAt: user.promotedToAdminAt,
+      }))
+    }
+
+    if (!database) {
+      console.warn("🔧 Firebase not available")
+      return []
+    }
+
+    console.log("🔥 Firebase: Getting all user profiles")
+    const usersRef = ref(database, "users")
+    const snapshot = await get(usersRef)
+
+    if (snapshot.exists()) {
+      const usersData = snapshot.val()
+      return Object.keys(usersData).map((uid) => {
+        const userData = usersData[uid]
+        return {
+          uid,
+          role: userData.role || "driver",
+          fullName: userData.fullName || "",
+          email: userData.email,
+          phone: userData.phone || "",
+          license: userData.license || "",
+          deviceId: userData.deviceId || null,
+          registeredAt: userData.registeredAt || new Date().toISOString(),
+          promotedToAdminAt: userData.promotedToAdminAt,
+        }
+      })
+    }
+
+    return []
+  } catch (error) {
+    console.error("🔥 Firebase: Error getting all user profiles:", error)
+    return []
+  }
+}
+
+/**
+ * Delete a user (for admin panel)
+ */
+export const deleteUser = async (uid: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    if (APP_CONFIG.isDevelopmentMode) {
+      console.log(`🔧 Development mode: Simulating deleteUser for UID: ${uid}`)
+      let users = JSON.parse(localStorage.getItem("dev-users") || "[]")
+      const initialLength = users.length
+      users = users.filter((user: any) => user.uid !== uid)
+      localStorage.setItem("dev-users", JSON.stringify(users))
+      if (users.length < initialLength) {
+        return { success: true }
+      } else {
+        return { success: false, error: "ไม่พบผู้ใช้ที่ต้องการลบ" }
+      }
+    }
+
+    if (!database) {
+      return { success: false, error: "Firebase database not available" }
+    }
+
+    console.log(`🔥 Firebase: Deleting user with UID: ${uid}`)
+    const userRef = ref(database, `users/${uid}`)
+    await remove(userRef) // Use Firebase Realtime Database remove operation
+
+    // Note: Deleting user authentication record (from firebase/auth) usually requires Firebase Admin SDK
+    // This client-side function only removes the profile from Realtime Database.
+    // For a complete user deletion (auth + database), a server-side function would be needed.
+
+    return { success: true }
+  } catch (error: any) {
+    console.error("❌ Firebase: Error deleting user:", error)
+    return { success: false, error: error.message || "เกิดข้อผิดพลาดในการลบผู้ใช้" }
+  }
+}
+
+/**
+ * Get display ID for a device
+ */
+export const getDeviceDisplayId = (deviceId: string | null): string => {
+  if (!deviceId) {
+    return "N/A"
+  }
+  return DEVICE_UTILS.getDisplayId ? DEVICE_UTILS.getDisplayId(deviceId) : deviceId;
+}
+
+/**
+ * Normalize a device ID
+ */
+export const normalizeDeviceId = (deviceId: string): string => {
+  return DEVICE_UTILS.normalize ? DEVICE_UTILS.normalize(deviceId) : deviceId;
+}
+
+
+/**
  * Development mode helper functions
  */
 const handleDevelopmentRegistration = (userData: RegisterData): AuthResponse => {
@@ -191,7 +303,7 @@ const handleDevelopmentRegistration = (userData: RegisterData): AuthResponse => 
     return { success: false, error: "อีเมลนี้ถูกใช้งานแล้ว" }
   }
 
-  const deviceId = DEVICE_UTILS.normalize(userData.deviceId)
+  const deviceId = normalizeDeviceId(userData.deviceId) // Using the new normalizeDeviceId
   const deviceUsed = users.some((u: any) => u.deviceId === deviceId)
 
   if (deviceUsed) {
