@@ -7,22 +7,19 @@
 
 import { useState, useEffect } from "react"
 import { onAuthStateChanged } from "firebase/auth"
-import { ref, get, remove } from "firebase/database" // Added 'remove' for deleteUser
+import { ref, get, remove } from "firebase/database"
 import {
   database,
   auth,
   signIn as firebaseSignIn,
   registerUser as firebaseRegisterUser,
   signOut as firebaseSignOut,
-  // Assuming these are also available from firebase.ts for admin functions
-  // deleteUser as firebaseDeleteUser, // This would be for Firebase Admin SDK, not client SDK
 } from "./firebase"
 import { DEVICE_UTILS, APP_CONFIG } from "./config"
 import type { RegisterData, UserProfile, AuthResponse } from "./types"
 
 /**
  * Custom hook for authentication state management
- * Provides user data, profile, and loading states
  */
 export const useAuthState = () => {
   const [user, setUser] = useState<any>(null)
@@ -74,7 +71,6 @@ export const registerUser = async (userData: RegisterData): Promise<AuthResponse
   try {
     console.log("🔥 Firebase: Registering user:", userData.email)
 
-    // Development mode handling
     if (APP_CONFIG.isDevelopmentMode) {
       return handleDevelopmentRegistration(userData)
     }
@@ -98,7 +94,6 @@ export const loginUser = async (email: string, password: string): Promise<AuthRe
   try {
     console.log("🔥 Firebase: Logging in user:", email)
 
-    // Development mode handling
     if (APP_CONFIG.isDevelopmentMode) {
       return handleDevelopmentLogin(email, password)
     }
@@ -144,7 +139,6 @@ export const signOut = async (): Promise<{ success: boolean; error?: string }> =
  */
 export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
   try {
-    // Development mode handling
     if (APP_CONFIG.isDevelopmentMode) {
       return getDevelopmentUserProfile(uid)
     }
@@ -181,24 +175,12 @@ export const getUserProfile = async (uid: string): Promise<UserProfile | null> =
 }
 
 /**
- * Get all user profiles (for admin panel)
+ * Get all users (Admin function)
  */
 export const getAllUsers = async (): Promise<UserProfile[]> => {
   try {
     if (APP_CONFIG.isDevelopmentMode) {
-      console.log("🔧 Development mode: Simulating getAllUsers")
-      const users = JSON.parse(localStorage.getItem("dev-users") || "[]")
-      return users.map((user: any) => ({
-        uid: user.uid,
-        role: user.role || "driver",
-        fullName: user.fullName || "",
-        email: user.email,
-        phone: user.phone || "",
-        license: user.license || "",
-        deviceId: user.deviceId || null,
-        registeredAt: user.registeredAt || new Date().toISOString(),
-        promotedToAdminAt: user.promotedToAdminAt,
-      }))
+      return getDevelopmentUsers()
     }
 
     if (!database) {
@@ -206,89 +188,77 @@ export const getAllUsers = async (): Promise<UserProfile[]> => {
       return []
     }
 
-    console.log("🔥 Firebase: Getting all user profiles")
+    console.log("🔥 Firebase: Getting all users")
     const usersRef = ref(database, "users")
     const snapshot = await get(usersRef)
 
     if (snapshot.exists()) {
       const usersData = snapshot.val()
-      return Object.keys(usersData).map((uid) => {
-        const userData = usersData[uid]
-        return {
-          uid,
-          role: userData.role || "driver",
-          fullName: userData.fullName || "",
-          email: userData.email,
-          phone: userData.phone || "",
-          license: userData.license || "",
-          deviceId: userData.deviceId || null,
-          registeredAt: userData.registeredAt || new Date().toISOString(),
-          promotedToAdminAt: userData.promotedToAdminAt,
-        }
-      })
+      return Object.entries(usersData).map(([uid, userData]: [string, any]) => ({
+        uid,
+        role: userData.role || "driver",
+        fullName: userData.fullName || "",
+        email: userData.email,
+        phone: userData.phone || "",
+        license: userData.license || "",
+        deviceId: userData.deviceId || null,
+        registeredAt: userData.registeredAt || new Date().toISOString(),
+        promotedToAdminAt: userData.promotedToAdminAt,
+      }))
     }
 
     return []
   } catch (error) {
-    console.error("🔥 Firebase: Error getting all user profiles:", error)
+    console.error("🔥 Firebase: Error getting all users:", error)
     return []
   }
 }
 
 /**
- * Delete a user (for admin panel)
+ * Delete user (Admin function)
  */
-export const deleteUser = async (uid: string): Promise<{ success: boolean; error?: string }> => {
+export const deleteUser = async (
+  uid: string,
+): Promise<{ success: boolean; error?: string; releasedDeviceId?: string }> => {
   try {
+    console.log(`🔥 Firebase: Deleting user ${uid}`)
+
     if (APP_CONFIG.isDevelopmentMode) {
-      console.log(`🔧 Development mode: Simulating deleteUser for UID: ${uid}`)
-      let users = JSON.parse(localStorage.getItem("dev-users") || "[]")
-      const initialLength = users.length
-      users = users.filter((user: any) => user.uid !== uid)
-      localStorage.setItem("dev-users", JSON.stringify(users))
-      if (users.length < initialLength) {
-        return { success: true }
-      } else {
-        return { success: false, error: "ไม่พบผู้ใช้ที่ต้องการลบ" }
-      }
+      return handleDevelopmentUserDeletion(uid)
     }
 
     if (!database) {
-      return { success: false, error: "Firebase database not available" }
+      throw new Error("Database not initialized")
     }
 
-    console.log(`🔥 Firebase: Deleting user with UID: ${uid}`)
+    const userProfile = await getUserProfile(uid)
+
     const userRef = ref(database, `users/${uid}`)
-    await remove(userRef) // Use Firebase Realtime Database remove operation
+    await remove(userRef)
 
-    // Note: Deleting user authentication record (from firebase/auth) usually requires Firebase Admin SDK
-    // This client-side function only removes the profile from Realtime Database.
-    // For a complete user deletion (auth + database), a server-side function would be needed.
-
-    return { success: true }
+    console.log("✅ Firebase: User deleted successfully")
+    return {
+      success: true,
+      releasedDeviceId: userProfile?.deviceId || undefined,
+    }
   } catch (error: any) {
-    console.error("❌ Firebase: Error deleting user:", error)
-    return { success: false, error: error.message || "เกิดข้อผิดพลาดในการลบผู้ใช้" }
+    console.error("🔥 Firebase: Error deleting user:", error)
+    return { success: false, error: error.message }
   }
 }
 
 /**
- * Get display ID for a device
- */
-export const getDeviceDisplayId = (deviceId: string | null): string => {
-  if (!deviceId) {
-    return "N/A"
-  }
-  return DEVICE_UTILS.getDisplayId ? DEVICE_UTILS.getDisplayId(deviceId) : deviceId;
-}
-
-/**
- * Normalize a device ID
+ * Device ID utility functions
  */
 export const normalizeDeviceId = (deviceId: string): string => {
-  return DEVICE_UTILS.normalize ? DEVICE_UTILS.normalize(deviceId) : deviceId;
+  if (!deviceId) return ""
+  return DEVICE_UTILS.normalize ? DEVICE_UTILS.normalize(deviceId) : deviceId
 }
 
+export const getDeviceDisplayId = (deviceId: string | null): string => {
+  if (!deviceId) return "N/A"
+  return DEVICE_UTILS.getDisplayId ? DEVICE_UTILS.getDisplayId(deviceId) : deviceId
+}
 
 /**
  * Development mode helper functions
@@ -303,7 +273,7 @@ const handleDevelopmentRegistration = (userData: RegisterData): AuthResponse => 
     return { success: false, error: "อีเมลนี้ถูกใช้งานแล้ว" }
   }
 
-  const deviceId = normalizeDeviceId(userData.deviceId) // Using the new normalizeDeviceId
+  const deviceId = normalizeDeviceId(userData.deviceId)
   const deviceUsed = users.some((u: any) => u.deviceId === deviceId)
 
   if (deviceUsed) {
@@ -372,6 +342,37 @@ const getDevelopmentUserProfile = (uid: string): UserProfile | null => {
   }
 
   return null
+}
+
+const getDevelopmentUsers = (): UserProfile[] => {
+  const users = JSON.parse(localStorage.getItem("dev-users") || "[]")
+  return users.map((user: any) => ({
+    uid: user.uid,
+    role: user.role || "driver",
+    fullName: user.fullName || "",
+    email: user.email,
+    phone: user.phone || "",
+    license: user.license || "",
+    deviceId: user.deviceId || null,
+    registeredAt: user.registeredAt || new Date().toISOString(),
+    promotedToAdminAt: user.promotedToAdminAt,
+  }))
+}
+
+const handleDevelopmentUserDeletion = (
+  uid: string,
+): { success: boolean; error?: string; releasedDeviceId?: string } => {
+  const users = JSON.parse(localStorage.getItem("dev-users") || "[]")
+  const userIndex = users.findIndex((u: any) => u.uid === uid)
+
+  if (userIndex !== -1) {
+    const deletedUser = users[userIndex]
+    users.splice(userIndex, 1)
+    localStorage.setItem("dev-users", JSON.stringify(users))
+    return { success: true, releasedDeviceId: deletedUser.deviceId }
+  }
+
+  return { success: false, error: "User not found" }
 }
 
 /**

@@ -92,12 +92,10 @@ export const loginUser = async (email: string, password: string) => {
   try {
     if (isDevelopmentMode) {
       console.log("🔧 Development mode: Simulating login")
-      // Check localStorage for development users
       const users = JSON.parse(localStorage.getItem("dev-users") || "[]")
       const user = users.find((u: any) => u.email === email)
 
       if (user) {
-        // Simulate successful login
         const mockUser = {
           uid: user.uid,
           email: user.email,
@@ -136,7 +134,6 @@ export const registerUser = async (email: string, password: string, userData: an
     if (isDevelopmentMode) {
       console.log("🔧 Development mode: Simulating user registration")
 
-      // Check if email already exists
       const users = JSON.parse(localStorage.getItem("dev-users") || "[]")
       const existingUser = users.find((u: any) => u.email === email)
 
@@ -144,7 +141,6 @@ export const registerUser = async (email: string, password: string, userData: an
         return { success: false, error: "อีเมลนี้ถูกใช้งานแล้ว" }
       }
 
-      // Create mock user
       const mockUser = {
         uid: `dev-user-${Date.now()}`,
         email,
@@ -153,7 +149,6 @@ export const registerUser = async (email: string, password: string, userData: an
         createdAt: new Date().toISOString(),
       }
 
-      // Save to localStorage
       users.push(mockUser)
       localStorage.setItem("dev-users", JSON.stringify(users))
 
@@ -163,17 +158,14 @@ export const registerUser = async (email: string, password: string, userData: an
     initializeFirebase()
     if (!auth || !database) throw new Error("Firebase not initialized")
 
-    // Check device availability first
     const deviceAvailable = await checkDeviceIdAvailability(userData.deviceId)
     if (!deviceAvailable) {
       return { success: false, error: "Device ID นี้ถูกใช้งานแล้ว" }
     }
 
-    // Create Firebase Auth user
     const userCredential = await createUserWithEmailAndPassword(auth, email, password)
     const user = userCredential.user
 
-    // Create user profile in Realtime Database
     const normalizedDeviceId = normalizeDeviceId(userData.deviceId)
     const userProfile = {
       uid: user.uid,
@@ -186,10 +178,8 @@ export const registerUser = async (email: string, password: string, userData: an
       registeredAt: new Date().toISOString(),
     }
 
-    // Save to users collection
     await set(ref(database, `users/${user.uid}`), userProfile)
 
-    // Mark device as used
     await set(ref(database, `devices/${normalizedDeviceId}/userId`), user.uid)
     await set(ref(database, `devices/${normalizedDeviceId}/assignedAt`), new Date().toISOString())
     await set(ref(database, `devices/${normalizedDeviceId}/status`), "assigned")
@@ -336,17 +326,14 @@ export const deleteUser = async (uid: string) => {
     initializeFirebase()
     if (!database) throw new Error("Database not initialized")
 
-    // Get user profile first to find device
     const userRef = ref(database, `users/${uid}`)
     const userSnapshot = await get(userRef)
 
     if (userSnapshot.exists()) {
       const userData = userSnapshot.val()
 
-      // Remove user from database
       await remove(userRef)
 
-      // Release device if assigned
       if (userData.deviceId) {
         await remove(ref(database, `devices/${userData.deviceId}/userId`))
         await remove(ref(database, `devices/${userData.deviceId}/assignedAt`))
