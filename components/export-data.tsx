@@ -33,7 +33,6 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
   const { toast } = useToast()
 
   // ดึงข้อมูล Profile ของผู้ใช้จาก Firebase
-  // แก้ไขการดึงข้อมูลผู้ใช้ให้ถูกต้อง
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
@@ -89,33 +88,60 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
       return
     }
 
-    // Format data for export
-    const exportData = {
-      ...data,
-      exportDate: new Date().toISOString(),
-      exportedBy: "Admin Dashboard",
+    // ดึงข้อมูลสถิติและช่วงเวลา
+    const stats = data.stats || {}
+    const deviceInfo = data.deviceInfo || {}
+    const dateRange = data.dateRange || {}
+
+    // สร้างข้อความสำหรับช่วงเวลา
+    let dateRangeText = "ไม่ระบุช่วงเวลา"
+    if (dateRange.startDate && dateRange.endDate) {
+      const startDate = new Date(dateRange.startDate)
+      const endDate = new Date(dateRange.endDate)
+
+      if (startDate.toDateString() === endDate.toDateString()) {
+        // กรณีเป็นวันเดียวกัน
+        dateRangeText = `วันที่ ${startDate.toLocaleDateString("th-TH")}`
+
+        // ถ้ามีเวลาเริ่มต้นและสิ้นสุด
+        if (dateRange.startTime && dateRange.endTime) {
+          dateRangeText += ` เวลา ${dateRange.startTime} - ${dateRange.endTime} น.`
+        }
+      } else {
+        // กรณีเป็นหลายวัน
+        dateRangeText = `วันที่ ${startDate.toLocaleDateString("th-TH")} ถึง ${endDate.toLocaleDateString("th-TH")}`
+
+        // ถ้ามีเวลาเริ่มต้นและสิ้นสุด
+        if (dateRange.startTime && dateRange.endTime) {
+          dateRangeText += ` เวลา ${dateRange.startTime} - ${dateRange.endTime} น.`
+        }
+      }
     }
 
     const csvContent = [
       "รายงานสรุปการขับขี่",
+      `ช่วงเวลา: ${dateRangeText}`,
       "",
       "ข้อมูลผู้ขับขี่",
       `ชื่อ-นามสกุล,${userProfile.fullName || ""}`,
       `อีเมล,${userProfile.email || ""}`,
       `เบอร์โทรศัพท์,${userProfile.phone || ""}`,
       `เลขที่ใบขับขี่,${userProfile.license || ""}`,
-      `รหัสอุปกรณ์,${userProfile.deviceId || ""}`,
+      `รหัสอุปกรณ์,${userProfile.deviceId || deviceInfo.id || ""}`,
       `บริษัท,${userProfile.companyName || "ไม่ระบุ"}`,
       "",
-      "ข้อมูลที่ส่งออก",
-      JSON.stringify(exportData, null, 2),
+      "สถิติการขับขี่",
+      `คะแนนความปลอดภัย,${stats.safetyScore || 0}/100`,
+      `จำนวนครั้งที่หาว,${stats.yawnCount || 0}`,
+      `จำนวนครั้งที่ง่วง,${stats.drowsinessCount || 0}`,
+      `จำนวนการแจ้งเตือน,${stats.alertCount || 0}`,
     ].join("\n")
 
     const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
     const link = document.createElement("a")
     const url = URL.createObjectURL(blob)
     link.setAttribute("href", url)
-    link.setAttribute("download", filename || `system-data-${formatDate(new Date())}.csv`)
+    link.setAttribute("download", filename || `safety-report-${formatDate(new Date())}.csv`)
     link.style.visibility = "hidden"
     document.body.appendChild(link)
     link.click()
@@ -133,11 +159,55 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
       return
     }
 
-    // Format data for export
-    const exportData = {
-      ...data,
-      exportDate: new Date().toISOString(),
-      exportedBy: "Admin Dashboard",
+    // ดึงข้อมูลสถิติและช่วงเวลา
+    const stats = data.stats || {}
+    const deviceInfo = data.deviceInfo || {}
+    const dateRange = data.dateRange || {}
+
+    // สร้างข้อความสำหรับช่วงเวลา
+    let dateRangeText = "ไม่ระบุช่วงเวลา"
+    if (dateRange.startDate && dateRange.endDate) {
+      const startDate = new Date(dateRange.startDate)
+      const endDate = new Date(dateRange.endDate)
+
+      if (startDate.toDateString() === endDate.toDateString()) {
+        // กรณีเป็นวันเดียวกัน
+        dateRangeText = `วันที่ ${startDate.toLocaleDateString("th-TH")}`
+
+        // ถ้ามีเวลาเริ่มต้นและสิ้นสุด
+        if (dateRange.startTime && dateRange.endTime) {
+          dateRangeText += ` เวลา ${dateRange.startTime} - ${dateRange.endTime} น.`
+        }
+      } else {
+        // กรณีเป็นหลายวัน
+        dateRangeText = `วันที่ ${startDate.toLocaleDateString("th-TH")} ถึง ${endDate.toLocaleDateString("th-TH")}`
+
+        // ถ้ามีเวลาเริ่มต้นและสิ้นสุด
+        if (dateRange.startTime && dateRange.endTime) {
+          dateRangeText += ` เวลา ${dateRange.startTime} - ${dateRange.endTime} น.`
+        }
+      }
+    }
+
+    // คำนวณระดับความปลอดภัย
+    let safetyLevel = "ดีเยี่ยม"
+    const safetyScore = stats.safetyScore || 0
+    if (safetyScore < 50) {
+      safetyLevel = "ต่ำ"
+    } else if (safetyScore < 70) {
+      safetyLevel = "ปานกลาง"
+    } else if (safetyScore < 90) {
+      safetyLevel = "ดี"
+    }
+
+    // กำหนดสีตามระดับความปลอดภัย
+    let safetyColor = "#22c55e" // สีเขียว (ดีเยี่ยม)
+    if (safetyScore < 50) {
+      safetyColor = "#ef4444" // สีแดง (ต่ำ)
+    } else if (safetyScore < 70) {
+      safetyColor = "#f97316" // สีส้ม (ปานกลาง)
+    } else if (safetyScore < 90) {
+      safetyColor = "#eab308" // สีเหลือง (ดี)
     }
 
     const htmlContent = `
@@ -145,7 +215,7 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
 <html>
 <head>
  <meta charset="UTF-8">
- <title>รายงานข้อมูล</title>
+ <title>รายงานข้อมูลความปลอดภัยในการขับขี่</title>
  <style>
    body { font-family: 'Sarabun', sans-serif; margin: 20px; line-height: 1.6; }
    .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
@@ -153,18 +223,24 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
    .section h2 { color: #333; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
    .info-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; }
-   .score { text-align: center; font-size: 2em; font-weight: bold; color: #22c55e; }
+   .score { text-align: center; font-size: 2em; font-weight: bold; color: ${safetyColor}; }
+   .stats-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; margin-top: 20px; }
+   .stat-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; text-align: center; }
+   .stat-value { font-size: 1.8em; font-weight: bold; margin: 10px 0; }
+   .stat-label { font-size: 0.9em; color: #666; }
+   .date-range { background: #f0f9ff; padding: 10px; border-left: 4px solid #0ea5e9; margin-top: 20px; }
+   .safety-level { text-align: center; font-size: 1.2em; margin-top: 10px; color: ${safetyColor}; }
    .note { background: #f0f9ff; padding: 10px; border-left: 4px solid #0ea5e9; margin-top: 20px; }
  </style>
 </head>
 <body>
  <div class="header">
-   <h1>รายงานข้อมูล</h1>
+   <h1>รายงานข้อมูลความปลอดภัยในการขับขี่</h1>
    <p>สร้างเมื่อ: ${new Date().toLocaleString("th-TH")}</p>
  </div>
  
  <div class="section">
-   <h2>ข้อมูลผู้ใช้</h2>
+   <h2>ข้อมูลผู้ขับขี่</h2>
    <div class="info-grid">
      <div class="info-card">
        <strong>ชื่อ-นามสกุล:</strong> ${userProfile.fullName || ""}<br>
@@ -173,19 +249,39 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
      </div>
      <div class="info-card">
        <strong>เลขที่ใบขับขี่:</strong> ${userProfile.license || ""}<br>
-       <strong>รหัสอุปกรณ์:</strong> ${userProfile.deviceId || ""}<br>
+       <strong>รหัสอุปกรณ์:</strong> ${userProfile.deviceId || deviceInfo.id || ""}<br>
        <strong>บริษัท:</strong> ${userProfile.companyName || "ไม่ระบุ"}
      </div>
+   </div>
+   
+   <div class="date-range">
+     <strong>ช่วงเวลาที่วิเคราะห์:</strong> ${dateRangeText}
    </div>
  </div>
 
  <div class="section">
-   <h2>ข้อมูลที่ส่งออก</h2>
-   <pre>${JSON.stringify(exportData, null, 2)}</pre>
+   <h2>คะแนนความปลอดภัย</h2>
+   <div class="score">${stats.safetyScore || 0}/100</div>
+   <div class="safety-level">ระดับความปลอดภัย: ${safetyLevel}</div>
+   
+   <div class="stats-grid">
+     <div class="stat-card">
+       <div class="stat-label">จำนวนครั้งที่หาว</div>
+       <div class="stat-value">${stats.yawnCount || 0}</div>
+     </div>
+     <div class="stat-card">
+       <div class="stat-label">จำนวนครั้งที่ง่วง</div>
+       <div class="stat-value">${stats.drowsinessCount || 0}</div>
+     </div>
+     <div class="stat-card">
+       <div class="stat-label">จำนวนการแจ้งเตือน</div>
+       <div class="stat-value">${stats.alertCount || 0}</div>
+     </div>
+   </div>
  </div>
 
  <div class="note">
-   <strong>หมายเหตุ:</strong> ข้อมูลในรายงานนี้คำนวณจากค่าสะสมที่บันทึกในระบบ ซึ่งแสดงผลรวมของเหตุการณ์ทั้งหมดตั้งแต่เริ่มใช้งานอุปกรณ์
+   <strong>หมายเหตุ:</strong> คะแนนความปลอดภัยคำนวณจากจำนวนเหตุการณ์ที่ตรวจพบในช่วงเวลาที่เลือก โดยการหาวจะหัก 1 คะแนน, อาการง่วงจะหัก 2 คะแนน, และการแจ้งเตือนจะหัก 5 คะแนน
  </div>
 </body>
 </html>
@@ -207,23 +303,19 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
         case "csv":
           exportToCSV()
           toast({
-            title: "ส่งออกข้อมูลสำเร็จ",
+            title: "ส่งออกสำเร็จ",
             description: "ไฟล์ CSV ถูกดาวน์โหลดแล้ว",
           })
           break
         case "pdf":
           await exportToPDF()
           toast({
-            title: "ส่งออกรายงานสำเร็จ",
-            description: "รายงาน PDF ถูกสร้างแล้ว",
+            title: "ส่งออกสำเร็จ",
+            description: "ไฟล์ PDF ถูกสร้างแล้ว",
           })
           break
         default:
-          toast({
-            title: "รูปแบบไม่รองรับ",
-            description: "กรุณาเลือกรูปแบบที่รองรับ",
-            variant: "destructive",
-          })
+          throw new Error("รูปแบบไฟล์ไม่ถูกต้อง")
       }
     } catch (error) {
       console.error("Export error:", error)
@@ -239,17 +331,18 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
 
   return (
     <div className="flex items-center gap-2">
-      <Select value={exportFormat} onValueChange={(value) => setExportFormat(value as "csv" | "pdf")}>
-        <SelectTrigger className="w-[120px]">
-          <SelectValue placeholder="รูปแบบ" />
+      <Select value={exportFormat} onValueChange={(value: "csv" | "pdf") => setExportFormat(value)}>
+        <SelectTrigger className="w-[100px]">
+          <SelectValue />
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="csv">CSV</SelectItem>
           <SelectItem value="pdf">PDF</SelectItem>
         </SelectContent>
       </Select>
-      <Button onClick={handleExport} variant="outline" disabled={disabled || isExporting}>
-        <Download className="mr-2 h-4 w-4" />
+
+      <Button onClick={handleExport} disabled={disabled || isExporting || !userProfile} size="sm">
+        <Download className="h-4 w-4 mr-1" />
         {isExporting ? "กำลังส่งออก..." : "ส่งออกข้อมูล"}
       </Button>
     </div>

@@ -1,19 +1,20 @@
 {
   "rules": {
-    ".read": true,
-    ".write": true,
+    ".read": "auth != null",
+    ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+
     "devices": {
       "$deviceId": {
-        ".read": true,
-        ".write": true,
+        ".read": "auth != null",
+        ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('devices').hasChild($deviceId))",
         "current_data": {
-          ".read": true,
-          ".write": true,
+          ".read": "auth != null",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('devices').hasChild($deviceId))",
           ".validate": "newData.hasChildren(['device_id', 'ear', 'mouth_distance', 'status', 'timestamp'])"
         },
         "history": {
-          ".read": true,
-          ".write": true,
+          ".read": "auth != null",
+          ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('users').child(auth.uid).child('devices').hasChild($deviceId))",
           ".indexOn": ["timestamp", "status"],
           "$historyId": {
             ".validate": "newData.hasChildren(['device_id', 'ear', 'mouth_distance', 'status', 'timestamp'])"
@@ -21,30 +22,37 @@
         }
       }
     },
+
     "alerts": {
-      ".read": true,
-      ".write": true,
+      ".read": "auth != null",
+      ".write": "auth != null && (root.child('users').child(auth.uid).child('role').val() === 'admin' || root.child('devices').child(newData.child('device_id').val()).child('user_id').val() === auth.uid)",
       ".indexOn": ["timestamp", "device_id", "severity"],
       "$alertId": {
         ".validate": "newData.hasChildren(['device_id', 'alert_type', 'timestamp', 'severity'])"
       }
     },
+
     "users": {
-      ".read": true,
-      ".write": true,
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
       ".indexOn": ["deviceId", "email"],
       "$userId": {
-        ".read": "$userId === auth.uid",
-        ".write": "$userId === auth.uid",
+        ".read": "auth != null && ($userId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+        ".write": "auth != null && ($userId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
         "devices": {
-          ".read": true,
-          ".write": true
+          ".read": "auth != null && ($userId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          ".write": "auth != null && ($userId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
         },
         "preferences": {
-          ".read": true,
-          ".write": true
+          ".read": "auth != null && ($userId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')",
+          ".write": "auth != null && ($userId === auth.uid || root.child('users').child(auth.uid).child('role').val() === 'admin')"
         }
       }
+    },
+
+    "system": {
+      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'",
+      ".write": "auth != null && root.child('users').child(auth.uid).child('role').val() === 'admin'"
     }
   }
 }
