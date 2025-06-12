@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { auth, database } from "@/lib/firebase"
@@ -237,9 +238,20 @@ export function ExportData({ data, filename, disabled = false }: ExportDataProps
   }
 
   return (
-    <Button onClick={handleExport} variant="outline" disabled={disabled || isExporting}>
-      <Download className="mr-2 h-4 w-4" />
-      {isExporting ? "กำลังส่งออก..." : "ส่งออกข้อมูล"}
-    </Button>
+    <div className="flex items-center gap-2">
+      <Select value={exportFormat} onValueChange={(value) => setExportFormat(value as "csv" | "pdf")}>
+        <SelectTrigger className="w-[120px]">
+          <SelectValue placeholder="รูปแบบ" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="csv">CSV</SelectItem>
+          <SelectItem value="pdf">PDF</SelectItem>
+        </SelectContent>
+      </Select>
+      <Button onClick={handleExport} variant="outline" disabled={disabled || isExporting}>
+        <Download className="mr-2 h-4 w-4" />
+        {isExporting ? "กำลังส่งออก..." : "ส่งออกข้อมูล"}
+      </Button>
+    </div>
   )
 }

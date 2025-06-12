@@ -17,6 +17,9 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts"
+import { Button } from "@/components/ui/button"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Download } from "lucide-react"
 import type { DailyStats } from "@/lib/data-service"
 import type { HistoricalData } from "@/lib/firebase"
 
@@ -28,6 +31,7 @@ interface ChartsSectionProps {
 
 export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSectionProps) {
   const [activeChart, setActiveChart] = useState("ear")
+  const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
 
   // ตรวจสอบและประมวลผลข้อมูลจาก Firebase
   const safeData = useMemo(() => {
@@ -74,7 +78,7 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
     }))
   }, [safeData])
 
-  // สร้างข้อมูลสำหรับกราฟการกระจายสถานะ
+  // สร้างข้อมูลสำหรับกราฟการกระจายสถานะ - แก้ไขการคำนวณเปอร์เซ็นต์
   const statusDistribution = useMemo(() => {
     if (!Array.isArray(safeData) || safeData.length === 0) {
       console.log("⚠️ No data for status distribution")
@@ -111,10 +115,16 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
       })
     }
 
-    const totalNormal = Math.max(0, safeData.length - (totalYawns + totalDrowsiness + totalAlerts))
+    // แก้ไขการคำนวณ totalNormal และสัดส่วน
+    // แทนที่จะใช้จำนวนข้อมูล ใช้จำนวนเหตุการณ์ทั้งหมดเป็นฐาน
+    const totalEvents = totalYawns + totalDrowsiness + totalAlerts
+    // ถ้าไม่มีเหตุการณ์ใดๆ ให้แสดงเป็นปกติ 100%
+    const normalEvents = totalEvents === 0 ? 1 : 0
+
+    const total = totalEvents + normalEvents
 
     const distribution = {
-      ปกติ: totalNormal,
+      ปกติ: normalEvents,
       หาว: totalYawns,
       ง่วงนอน: totalDrowsiness,
       อันตราย: totalAlerts,
@@ -127,11 +137,16 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
       อันตราย: "#ef4444",
     }
 
-    return Object.entries(distribution).map(([status, count]) => ({
-      name: status,
-      value: count,
-      color: colors[status as keyof typeof colors] || "#6B7280",
-    }))
+    // คำนวณเปอร์เซ็นต์ที่ถูกต้อง
+    return Object.entries(distribution).map(([status, count]) => {
+      const percentage = total > 0 ? Math.round((count / total) * 100) : 0
+      return {
+        name: status,
+        value: count,
+        percentage,
+        color: colors[status as keyof typeof colors] || "#6B7280",
+      }
+    })
   }, [safeData, stats])
 
   // สร้างข้อมูลสำหรับกราฟกิจกรรมตามชั่วโมง
@@ -265,6 +280,142 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
     }
   }, [safeData, stats])
 
+  // ฟังก์ชันส่งออกข้อมูล
+  const exportData = () => {
+    if (!safeData || safeData.length === 0) {
+      alert("ไม่มีข้อมูลที่จะส่งออก")
+      return
+    }
+
+    const filename = `driver-data-${new Date().toISOString().split("T")[0]}`
+
+    if (exportFormat === "csv") {
+      // สร้าง CSV
+      const headers = [
+        "timestamp",
+        "ear",
+        "mouth_distance",
+        "yawn_events",
+        "drowsiness_events",
+        "critical_alerts",
+        "status",
+      ]
+      const csvContent = [
+        headers.join(","),
+        ...safeData.map((item) =>
+          [
+            item.timestamp,
+            item.ear || 0,
+            item.mouth_distance || 0,
+            item.yawn_events || 0,
+            item.drowsiness_events || 0,
+            item.critical_alerts || 0,
+            item.status || "NORMAL",
+          ].join(","),
+        ),
+      ].join("\n")
+
+      const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" })
+      const link = document.createElement("a")
+      const url = URL.createObjectURL(blob)
+      link.setAttribute("href", url)
+      link.setAttribute("download", `${filename}.csv`)
+      link.style.visibility = "hidden"
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+    } else {
+      // สร้าง PDF (ในที่นี้จะใช้การพิมพ์แทน)
+      const printWindow = window.open("", "_blank")
+      if (printWindow) {
+        const htmlContent = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="UTF-8">
+            <title>รายงานข้อมูล</title>
+            <style>
+              body { font-family: 'Sarabun', sans-serif; margin: 20px; line-height: 1.6; }
+              .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+              .section { margin-bottom: 30px; }
+              .section h2 { color: #333; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
+              .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+              .info-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; }
+              .score { text-align: center; font-size: 2em; font-weight: bold; color: #22c55e; }
+              table { width: 100%; border-collapse: collapse; }
+              th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+              th { background-color: #f2f2f2; }
+            </style>
+          </head>
+          <body>
+            <div class="header">
+              <h1>รายงานข้อมูลการขับขี่</h1>
+              <p>สร้างเมื่อ: ${new Date().toLocaleString("th-TH")}</p>
+            </div>
+            
+            <div class="section">
+              <h2>สรุปข้อมูล</h2>
+              <div class="info-grid">
+                <div class="info-card">
+                  <strong>จำนวนครั้งที่หาว:</strong> ${safetyStats.totalYawns}<br>
+                  <strong>จำนวนครั้งที่ง่วง:</strong> ${safetyStats.totalDrowsiness}<br>
+                  <strong>จำนวนแจ้งเตือนด่วน:</strong> ${safetyStats.totalCritical}
+                </div>
+                <div class="info-card">
+                  <strong>ค่าเฉลี่ย EAR:</strong> ${safetyStats.avgEar}<br>
+                  <strong>คะแนนความปลอดภัย:</strong> ${safetyStats.score}/100<br>
+                  <strong>สถานะ:</strong> ${safetyStats.status}
+                </div>
+              </div>
+            </div>
+
+            <div class="section">
+              <h2>ข้อมูลดิบ (${safeData.length} รายการ)</h2>
+              <table>
+                <thead>
+                  <tr>
+                    <th>เวลา</th>
+                    <th>EAR</th>
+                    <th>ระยะปาก</th>
+                    <th>หาว</th>
+                    <th>ง่วง</th>
+                    <th>แจ้งเตือน</th>
+                    <th>สถานะ</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${safeData
+                    .slice(0, 20)
+                    .map(
+                      (item) => `
+                    <tr>
+                      <td>${new Date(item.timestamp).toLocaleString("th-TH")}</td>
+                      <td>${(item.ear || 0).toFixed(3)}</td>
+                      <td>${(item.mouth_distance || 0).toFixed(2)}</td>
+                      <td>${item.yawn_events || 0}</td>
+                      <td>${item.drowsiness_events || 0}</td>
+                      <td>${item.critical_alerts || 0}</td>
+                      <td>${item.status || "NORMAL"}</td>
+                    </tr>
+                  `,
+                    )
+                    .join("")}
+                  ${safeData.length > 20 ? `<tr><td colspan="7" style="text-align: center;">... และอีก ${safeData.length - 20} รายการ</td></tr>` : ""}
+                </tbody>
+              </table>
+            </div>
+          </body>
+          </html>
+        `
+        printWindow.document.write(htmlContent)
+        printWindow.document.close()
+        setTimeout(() => {
+          printWindow.print()
+        }, 500)
+      }
+    }
+  }
+
   // ถ้าไม่มีข้อมูลให้แสดงข้อความแจ้งเตือน
   if (!Array.isArray(safeData) || safeData.length === 0) {
     return (
@@ -301,6 +452,25 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
         </div>
       </div>
 
+      {/* ปุ่มส่งออกข้อมูล */}
+      <div className="flex justify-end mb-2">
+        <div className="flex items-center gap-2">
+          <Select value={exportFormat} onValueChange={(value) => setExportFormat(value as "csv" | "pdf")}>
+            <SelectTrigger className="w-[120px]">
+              <SelectValue placeholder="รูปแบบ" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="csv">CSV</SelectItem>
+              <SelectItem value="pdf">PDF</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button onClick={exportData} variant="outline" size="sm">
+            <Download className="mr-2 h-4 w-4" />
+            ส่งออกข้อมูล
+          </Button>
+        </div>
+      </div>
+
       {/* กราฟหลัก 2 คอลัมน์ */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
         {/* Status Distribution Pie Chart */}
@@ -319,7 +489,7 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
                   cx="50%"
                   cy="50%"
                   labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percentage }) => `${name} ${percentage}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
@@ -328,7 +498,18 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
-                <Tooltip formatter={(value: any) => [`${value} ครั้ง`, "จำนวน"]} />
+                <Tooltip
+                  formatter={(value: any, name: any, props: any) => {
+                    const entry = props.payload
+                    return [`${value} ครั้ง (${entry.percentage}%)`, name]
+                  }}
+                />
+                <Legend
+                  formatter={(value, entry) => {
+                    const { payload } = entry as any
+                    return `${value} ${payload.percentage}%`
+                  }}
+                />
               </PieChart>
             </ResponsiveContainer>
           </CardContent>
@@ -348,7 +529,10 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="hour" tick={{ fontSize: 10 }} interval={1} angle={-45} textAnchor="end" height={50} />
                 <YAxis tick={{ fontSize: 10 }} />
-                <Tooltip />
+                <Tooltip
+                  formatter={(value: any, name: any) => [value > 0 ? `${value} ครั้ง` : "ไม่มีข้อมูล", name]}
+                  labelFormatter={(label) => `เวลา ${label}`}
+                />
                 <Legend />
                 <Bar dataKey="หาว" fill="#f97316" />
                 <Bar dataKey="ง่วงนอน" fill="#f59e0b" />
