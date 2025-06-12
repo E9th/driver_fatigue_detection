@@ -1,42 +1,131 @@
 /**
- * Date Utilities
- * Specialized date handling functions for the application
+ * Date utility functions for the driver fatigue detection system
  */
-
-import { APP_CONFIG } from "./config"
 
 /**
- * Get current date and time in Thailand timezone
- * @returns Date object adjusted for Thailand timezone
+ * Get today's date range with full day coverage (00:00:00 to 23:59:59)
  */
-export const getThailandTime = (): Date => {
-  const now = new Date()
-  const utc = now.getTime() + now.getTimezoneOffset() * 60000
-  return new Date(utc + APP_CONFIG.THAILAND_TIMEZONE_OFFSET * 60000)
-}
+export function getTodayDateRange(): { start: string; end: string } {
+  const today = new Date()
 
-/**
- * Get today's date range for data filtering
- * @returns Object with start and end ISO strings for today
- */
-export const getTodayDateRange = () => {
-  const thailandTime = getThailandTime()
+  // Start of day: 00:00:00
+  const startOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0)
 
-  const startDate = new Date(thailandTime.getFullYear(), thailandTime.getMonth(), thailandTime.getDate(), 0, 0, 0, 0)
-
-  const endDate = new Date(thailandTime.getFullYear(), thailandTime.getMonth(), thailandTime.getDate(), 23, 59, 59, 999)
+  // End of day: 23:59:59
+  const endOfDay = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
 
   return {
-    start: startDate.toISOString(),
-    end: endDate.toISOString(),
+    start: startOfDay.toISOString(),
+    end: endOfDay.toISOString(),
   }
 }
 
 /**
- * Get date range for the current week
- * @returns Object with start and end ISO strings for current week
+ * Get current date range with full day coverage for charts and statistics
  */
-export const getThisWeekDateRange = () => {
+export function getCurrentDayFullRange(): { start: string; end: string } {
+  const today = new Date()
+
+  // Start: 12:00 AM (00:00:00)
+  const start = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0)
+
+  // End: 11:59 PM (23:59:59)
+  const end = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 23, 59, 59)
+
+  console.log("📅 Current day full range:", {
+    start: start.toISOString(),
+    end: end.toISOString(),
+    startLocal: start.toLocaleString("th-TH"),
+    endLocal: end.toLocaleString("th-TH"),
+  })
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  }
+}
+
+/**
+ * Format date for display
+ */
+export function formatDateForDisplay(date: Date): string {
+  return date.toLocaleDateString("th-TH", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  })
+}
+
+/**
+ * Format time for display
+ */
+export function formatTimeForDisplay(date: Date): string {
+  return date.toLocaleTimeString("th-TH", {
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+}
+
+/**
+ * Check if a date is today
+ */
+export function isToday(date: Date): boolean {
+  const today = new Date()
+  return (
+    date.getDate() === today.getDate() &&
+    date.getMonth() === today.getMonth() &&
+    date.getFullYear() === today.getFullYear()
+  )
+}
+
+/**
+ * Get date range for a specific number of days back
+ */
+export function getDateRangeBack(days: number): { start: string; end: string } {
+  const end = new Date()
+  const start = new Date()
+  start.setDate(start.getDate() - days)
+
+  // Set to start of day for start date
+  start.setHours(0, 0, 0, 0)
+  // Set to end of day for end date
+  end.setHours(23, 59, 59, 999)
+
+  return {
+    start: start.toISOString(),
+    end: end.toISOString(),
+  }
+}
+
+/**
+ * Format date for file names and general use (YYYY-MM-DD)
+ */
+export function formatDate(date: Date | string): string {
+  const dateObj = typeof date === "string" ? new Date(date) : date
+  return dateObj.toISOString().split("T")[0]
+}
+
+/**
+ * Format date and time for file names (YYYY-MM-DD_HH-mm-ss)
+ */
+export function formatDateTimeForFile(date: Date | string): string {
+  const dateObj = typeof date === "string" ? new Date(date) : date
+  return dateObj.toISOString().replace(/[:.]/g, "-").split(".")[0]
+}
+
+/**
+ * Get Thailand time
+ */
+export function getThailandTime(): Date {
+  const now = new Date()
+  const utc = now.getTime() + now.getTimezoneOffset() * 60000
+  return new Date(utc + 7 * 60 * 60 * 1000) // UTC+7 for Thailand
+}
+
+/**
+ * Get this week date range
+ */
+export function getThisWeekDateRange(): { start: string; end: string } {
   const thailandTime = getThailandTime()
   const dayOfWeek = thailandTime.getDay()
 
@@ -57,10 +146,9 @@ export const getThisWeekDateRange = () => {
 }
 
 /**
- * Get date range for the current month
- * @returns Object with start and end ISO strings for current month
+ * Get this month date range
  */
-export const getThisMonthDateRange = () => {
+export function getThisMonthDateRange(): { start: string; end: string } {
   const thailandTime = getThailandTime()
 
   // Start of month
@@ -76,12 +164,9 @@ export const getThisMonthDateRange = () => {
 }
 
 /**
- * Format date for display in Thai locale
- * @param date - Date to format
- * @param options - Intl.DateTimeFormat options
- * @returns Formatted date string
+ * Format Thai date
  */
-export const formatThaiDate = (date: Date | string, options: Intl.DateTimeFormatOptions = {}): string => {
+export function formatThaiDate(date: Date | string, options: Intl.DateTimeFormatOptions = {}): string {
   const dateObj = typeof date === "string" ? new Date(date) : date
   const defaultOptions: Intl.DateTimeFormatOptions = {
     year: "numeric",
@@ -94,12 +179,9 @@ export const formatThaiDate = (date: Date | string, options: Intl.DateTimeFormat
 }
 
 /**
- * Format time for display in Thai locale
- * @param date - Date to format
- * @param options - Intl.DateTimeFormat options
- * @returns Formatted time string
+ * Format Thai time
  */
-export const formatThaiTime = (date: Date | string, options: Intl.DateTimeFormatOptions = {}): string => {
+export function formatThaiTime(date: Date | string, options: Intl.DateTimeFormatOptions = {}): string {
   const dateObj = typeof date === "string" ? new Date(date) : date
   const defaultOptions: Intl.DateTimeFormatOptions = {
     hour: "2-digit",
@@ -112,12 +194,9 @@ export const formatThaiTime = (date: Date | string, options: Intl.DateTimeFormat
 }
 
 /**
- * Format date and time for display in Thai locale
- * @param date - Date to format
- * @param options - Intl.DateTimeFormat options
- * @returns Formatted date and time string
+ * Format Thai date time
  */
-export const formatThaiDateTime = (date: Date | string, options: Intl.DateTimeFormatOptions = {}): string => {
+export function formatThaiDateTime(date: Date | string, options: Intl.DateTimeFormatOptions = {}): string {
   const dateObj = typeof date === "string" ? new Date(date) : date
   const defaultOptions: Intl.DateTimeFormatOptions = {
     year: "numeric",
@@ -132,11 +211,9 @@ export const formatThaiDateTime = (date: Date | string, options: Intl.DateTimeFo
 }
 
 /**
- * Get relative time string (e.g., "2 hours ago")
- * @param date - Date to compare
- * @returns Relative time string in Thai
+ * Get relative time
  */
-export const getRelativeTime = (date: Date | string): string => {
+export function getRelativeTime(date: Date | string): string {
   const dateObj = typeof date === "string" ? new Date(date) : date
   const now = getThailandTime()
   const diffMs = now.getTime() - dateObj.getTime()
@@ -160,50 +237,14 @@ export const getRelativeTime = (date: Date | string): string => {
 }
 
 /**
- * Check if date is today
- * @param date - Date to check
- * @returns Boolean indicating if date is today
+ * Check if date is within last N days
  */
-export const isToday = (date: Date | string): boolean => {
-  const dateObj = typeof date === "string" ? new Date(date) : date
-  const today = getTodayDateRange()
-  const dateTime = dateObj.getTime()
-
-  return dateTime >= new Date(today.start).getTime() && dateTime <= new Date(today.end).getTime()
-}
-
-/**
- * Check if date is within the last N days
- * @param date - Date to check
- * @param days - Number of days to check
- * @returns Boolean indicating if date is within range
- */
-export const isWithinLastDays = (date: Date | string, days: number): boolean => {
+export function isWithinLastDays(date: Date | string, days: number): boolean {
   const dateObj = typeof date === "string" ? new Date(date) : date
   const now = getThailandTime()
   const daysAgo = new Date(now.getTime() - days * 24 * 60 * 60 * 1000)
 
   return dateObj >= daysAgo && dateObj <= now
-}
-
-/**
- * Format date for file names and general use
- * @param date - Date to format
- * @returns Formatted date string (YYYY-MM-DD)
- */
-export const formatDate = (date: Date | string): string => {
-  const dateObj = typeof date === "string" ? new Date(date) : date
-  return dateObj.toISOString().split("T")[0]
-}
-
-/**
- * Format date and time for file names
- * @param date - Date to format
- * @returns Formatted date and time string (YYYY-MM-DD_HH-mm-ss)
- */
-export const formatDateTimeForFile = (date: Date | string): string => {
-  const dateObj = typeof date === "string" ? new Date(date) : date
-  return dateObj.toISOString().replace(/[:.]/g, "-").split(".")[0]
 }
 
 console.log("📅 Date utilities loaded")

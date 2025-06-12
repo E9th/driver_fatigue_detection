@@ -45,7 +45,7 @@ import { UsageReports } from "@/components/usage-reports"
 import { subscribeToCurrentData } from "@/lib/firebase"
 import { dataService } from "@/lib/data-service"
 import { useAuthState, signOut } from "@/lib/auth"
-import { getTodayDateRange } from "@/lib/date-utils"
+import { getTodayDateRange, getCurrentDayFullRange } from "@/lib/date-utils"
 import { useToast } from "@/hooks/use-toast"
 import type { DeviceData, HistoricalData, DailyStats } from "@/lib/types"
 
@@ -77,6 +77,9 @@ export default function DriverDashboard() {
   const [todayData, setTodayData] = useState<HistoricalData[]>([])
   const [todayStats, setTodayStats] = useState<DailyStats | null>(null)
   const [hasTodayData, setHasTodayData] = useState(false)
+
+  // เพิ่ม state สำหรับ auto load
+  const [hasAutoLoaded, setHasAutoLoaded] = useState(false)
 
   /**
    * Set device ID from user profile
@@ -226,24 +229,38 @@ export default function DriverDashboard() {
    * Initialize dashboard with today's data
    */
   useEffect(() => {
-    if (deviceId) {
-      console.log("🚀 Initializing dashboard with today's data for device:", deviceId)
+    if (deviceId && !hasAutoLoaded) {
+      console.log("🚀 Auto-loading dashboard data for device:", deviceId)
+
+      // Set today's range for current status tab
       const todayRange = getTodayDateRange()
-      setDateRange(todayRange)
+
+      // Set full day range for charts tab (12:00 AM to 11:59 PM)
+      const fullDayRange = getCurrentDayFullRange()
+      setDateRange(fullDayRange)
+
       setRefreshKey((prev) => prev + 1)
+      setHasAutoLoaded(true)
+
+      console.log("📊 Auto-loaded with full day range:", {
+        charts: fullDayRange,
+        today: todayRange,
+      })
     }
-  }, [deviceId])
+  }, [deviceId, hasAutoLoaded])
 
   /**
    * Handle date range changes
    */
   const handleFilterChange = useCallback((startDate: string, endDate: string) => {
-    console.log("🔄 Date range changed:", {
+    console.log("🔄 Date range changed by user:", {
       from: new Date(startDate).toLocaleDateString("th-TH"),
       to: new Date(endDate).toLocaleDateString("th-TH"),
     })
     setDateRange({ start: startDate, end: endDate })
     setRefreshKey((prev) => prev + 1)
+    // Reset auto load flag when user manually changes date
+    setHasAutoLoaded(true)
   }, [])
 
   /**

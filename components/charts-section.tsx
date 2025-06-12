@@ -20,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download } from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 import type { DailyStats } from "@/lib/data-service"
 import type { HistoricalData } from "@/lib/firebase"
 
@@ -32,6 +33,7 @@ interface ChartsSectionProps {
 export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSectionProps) {
   const [activeChart, setActiveChart] = useState("ear")
   const [exportFormat, setExportFormat] = useState<"csv" | "pdf">("csv")
+  const { toast } = useToast()
 
   // ตรวจสอบและประมวลผลข้อมูลจาก Firebase
   const safeData = useMemo(() => {
@@ -78,78 +80,68 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
     }))
   }, [safeData])
 
-  // สร้างข้อมูลสำหรับกราฟการกระจายสถานะ - แก้ไขการคำนวณเปอร์เซ็นต์
+  // แก้ไขการคำนวณ statusDistribution - นับจาก status ของแต่ละ timestamp
   const statusDistribution = useMemo(() => {
     if (!Array.isArray(safeData) || safeData.length === 0) {
       console.log("⚠️ No data for status distribution")
       return []
     }
 
-    // ใช้ข้อมูลจาก stats ถ้ามี หรือคำนวณจากข้อมูลดิบ
-    let totalYawns = 0
-    let totalDrowsiness = 0
-    let totalAlerts = 0
+    // นับจำนวน timestamp ที่มี status แต่ละประเภท
+    let normalCount = 0
+    let yawnCount = 0
+    let drowsinessCount = 0
+    let criticalCount = 0
 
-    if (stats) {
-      totalYawns = stats.totalYawns || 0
-      totalDrowsiness = stats.totalDrowsiness || 0
-      totalAlerts = stats.totalAlerts || 0
-    } else {
-      // คำนวณจากข้อมูลดิบ
-      const dailyGroups: { [date: string]: HistoricalData[] } = {}
-      safeData.forEach((item) => {
-        const date = new Date(item.timestamp).toDateString()
-        if (!dailyGroups[date]) dailyGroups[date] = []
-        dailyGroups[date].push(item)
-      })
+    safeData.forEach((item) => {
+      const status = item.status || "NORMAL"
 
-      Object.values(dailyGroups).forEach((dayData) => {
-        const sortedDayData = [...dayData].sort(
-          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-        )
-        const latestOfDay = sortedDayData[0]
-
-        totalYawns += latestOfDay.yawn_events || 0
-        totalDrowsiness += latestOfDay.drowsiness_events || 0
-        totalAlerts += latestOfDay.critical_alerts || 0
-      })
-    }
-
-    // แก้ไขการคำนวณ totalNormal และสัดส่วน
-    // แทนที่จะใช้จำนวนข้อมูล ใช้จำนวนเหตุการณ์ทั้งหมดเป็นฐาน
-    const totalEvents = totalYawns + totalDrowsiness + totalAlerts
-    // ถ้าไม่มีเหตุการณ์ใดๆ ให้แสดงเป็นปกติ 100%
-    const normalEvents = totalEvents === 0 ? 1 : 0
-
-    const total = totalEvents + normalEvents
-
-    const distribution = {
-      ปกติ: normalEvents,
-      หาว: totalYawns,
-      ง่วงนอน: totalDrowsiness,
-      อันตราย: totalAlerts,
-    }
-
-    const colors = {
-      ปกติ: "#22c55e",
-      หาว: "#f97316",
-      ง่วงนอน: "#f59e0b",
-      อันตราย: "#ef4444",
-    }
-
-    // คำนวณเปอร์เซ็นต์ที่ถูกต้อง
-    return Object.entries(distribution).map(([status, count]) => {
-      const percentage = total > 0 ? Math.round((count / total) * 100) : 0
-      return {
-        name: status,
-        value: count,
-        percentage,
-        color: colors[status as keyof typeof colors] || "#6B7280",
+      if (status === "YAWN DETECTED") {
+        yawnCount++
+      } else if (status === "DROWSINESS DETECTED") {
+        drowsinessCount++
+      } else if (status.includes("CRITICAL") || status.includes("EXTENDED DROWSINESS")) {
+        criticalCount++
+      } else {
+        normalCount++
       }
     })
-  }, [safeData, stats])
 
-  // สร้างข้อมูลสำหรับกราฟกิจกรรมตามชั่วโมง
+    console.log("📊 Status counts from timestamps:", {
+      normal: normalCount,
+      yawn: yawnCount,
+      drowsiness: drowsinessCount,
+      critical: criticalCount,
+      total: safeData.length,
+    })
+
+    const distribution = [
+      {
+        name: "ปกติ",
+        value: normalCount,
+        color: "#22c55e",
+      },
+      {
+        name: "หาว",
+        value: yawnCount,
+        color: "#f97316",
+      },
+      {
+        name: "ง่วงนอน",
+        value: drowsinessCount,
+        color: "#f59e0b",
+      },
+      {
+        name: "อันตราย",
+        value: criticalCount,
+        color: "#ef4444",
+      },
+    ].filter((item) => item.value > 0) // แสดงเฉพาะที่มีค่ามากกว่า 0
+
+    return distribution
+  }, [safeData])
+
+  // แก้ไขการคำนวณ hourlyActivityData - นับจาก timestamp ที่มีเหตุการณ์
   const hourlyActivityData = useMemo(() => {
     if (!Array.isArray(safeData) || safeData.length === 0) return []
 
@@ -164,61 +156,32 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
       }
     })
 
-    // จัดกลุ่มข้อมูลตามชั่วโมง
-    const hourlyGroups: { [hour: number]: HistoricalData[] } = {}
-
+    // นับจำนวน timestamp ที่มีเหตุการณ์ในแต่ละชั่วโมง
     safeData.forEach((item) => {
       const hour = new Date(item.timestamp).getHours()
-      if (!hourlyGroups[hour]) hourlyGroups[hour] = []
-      hourlyGroups[hour].push(item)
-    })
+      const status = item.status || "NORMAL"
 
-    // ใช้ข้อมูลสะสมล่าสุดในแต่ละชั่วโมง
-    Object.entries(hourlyGroups).forEach(([hourStr, records]) => {
-      const hour = Number.parseInt(hourStr)
-      if (hour >= 0 && hour < 24 && records.length > 0) {
-        const sortedRecords = [...records].sort(
-          (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-        )
-        const latestRecord = sortedRecords[0]
-
-        allHours[hour].หาว = latestRecord.yawn_events || 0
-        allHours[hour].ง่วงนอน = latestRecord.drowsiness_events || 0
-        allHours[hour].อันตราย = latestRecord.critical_alerts || 0
+      if (hour >= 0 && hour < 24) {
+        if (status === "YAWN DETECTED") {
+          allHours[hour].หาว++
+        } else if (status === "DROWSINESS DETECTED") {
+          allHours[hour].ง่วงนอน++
+        } else if (status.includes("CRITICAL") || status.includes("EXTENDED DROWSINESS")) {
+          allHours[hour].อันตราย++
+        }
       }
     })
+
+    console.log(
+      "📊 Hourly activity from timestamps:",
+      allHours.filter((h) => h.หาว > 0 || h.ง่วงนอน > 0 || h.อันตราย > 0),
+    )
 
     return allHours
   }, [safeData])
 
-  // คำนวณสถิติความปลอดภัย
+  // คำนวณสถิติความปลอดภัย - นับจาก timestamp
   const safetyStats = useMemo(() => {
-    if (stats) {
-      // ใช้ข้อมูลจาก stats ที่ส่งมา
-      const earScore = Math.min(100, (stats.averageEAR || 0) * 300)
-      const yawnPenalty = Math.min(30, (stats.totalYawns || 0) * 2)
-      const drowsinessPenalty = Math.min(40, (stats.totalDrowsiness || 0) * 5)
-      const criticalPenalty = Math.min(50, (stats.totalAlerts || 0) * 25)
-
-      const finalScore = Math.max(0, Math.min(100, earScore - yawnPenalty - drowsinessPenalty - criticalPenalty))
-
-      let status = "ดีเยี่ยม"
-      if (finalScore < 20) status = "ต้องปรับปรุง"
-      else if (finalScore < 40) status = "แย่"
-      else if (finalScore < 60) status = "พอใช้"
-      else if (finalScore < 80) status = "ดี"
-
-      return {
-        totalYawns: stats.totalYawns || 0,
-        totalDrowsiness: stats.totalDrowsiness || 0,
-        totalCritical: stats.totalAlerts || 0,
-        avgEar: (stats.averageEAR || 0).toFixed(3),
-        score: Math.round(finalScore),
-        status,
-      }
-    }
-
-    // ถ้าไม่มี stats ให้คำนวณจากข้อมูลดิบ
     if (!Array.isArray(safeData) || safeData.length === 0) {
       return {
         totalYawns: 0,
@@ -230,37 +193,33 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
       }
     }
 
-    // คำนวณจากข้อมูลดิบ
-    const dailyGroups: { [date: string]: HistoricalData[] } = {}
+    // นับจำนวน timestamp ที่มีเหตุการณ์แต่ละประเภท
+    let yawnCount = 0
+    let drowsinessCount = 0
+    let criticalCount = 0
+
     safeData.forEach((item) => {
-      const date = new Date(item.timestamp).toDateString()
-      if (!dailyGroups[date]) dailyGroups[date] = []
-      dailyGroups[date].push(item)
+      const status = item.status || "NORMAL"
+
+      if (status === "YAWN DETECTED") {
+        yawnCount++
+      } else if (status === "DROWSINESS DETECTED") {
+        drowsinessCount++
+      } else if (status.includes("CRITICAL") || status.includes("EXTENDED DROWSINESS")) {
+        criticalCount++
+      }
     })
 
-    let totalYawns = 0
-    let totalDrowsiness = 0
-    let totalAlerts = 0
-
-    Object.values(dailyGroups).forEach((dayData) => {
-      const sortedDayData = [...dayData].sort(
-        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
-      )
-      const latestOfDay = sortedDayData[0]
-
-      totalYawns += latestOfDay.yawn_events || 0
-      totalDrowsiness += latestOfDay.drowsiness_events || 0
-      totalAlerts += latestOfDay.critical_alerts || 0
-    })
-
+    // คำนวณค่าเฉลี่ย EAR
     const validEarData = safeData.filter((item) => (item.ear || 0) > 0)
     const avgEar =
       validEarData.length > 0 ? validEarData.reduce((sum, item) => sum + (item.ear || 0), 0) / validEarData.length : 0
 
+    // คำนวณคะแนนความปลอดภัย
     const earScore = Math.min(100, avgEar * 300)
-    const yawnPenalty = Math.min(30, totalYawns * 2)
-    const drowsinessPenalty = Math.min(40, totalDrowsiness * 5)
-    const criticalPenalty = Math.min(50, totalAlerts * 25)
+    const yawnPenalty = Math.min(30, yawnCount * 2)
+    const drowsinessPenalty = Math.min(40, drowsinessCount * 5)
+    const criticalPenalty = Math.min(50, criticalCount * 25)
 
     const finalScore = Math.max(0, Math.min(100, earScore - yawnPenalty - drowsinessPenalty - criticalPenalty))
 
@@ -270,20 +229,32 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
     else if (finalScore < 60) status = "พอใช้"
     else if (finalScore < 80) status = "ดี"
 
+    console.log("📊 Safety stats from timestamps:", {
+      yawnCount,
+      drowsinessCount,
+      criticalCount,
+      avgEar: avgEar.toFixed(3),
+      finalScore: Math.round(finalScore),
+    })
+
     return {
-      totalYawns,
-      totalDrowsiness,
-      totalCritical: totalAlerts,
+      totalYawns: yawnCount,
+      totalDrowsiness: drowsinessCount,
+      totalCritical: criticalCount,
       avgEar: avgEar.toFixed(3),
       score: Math.round(finalScore),
       status,
     }
-  }, [safeData, stats])
+  }, [safeData])
 
   // ฟังก์ชันส่งออกข้อมูล
   const exportData = () => {
     if (!safeData || safeData.length === 0) {
-      alert("ไม่มีข้อมูลที่จะส่งออก")
+      toast({
+        title: "ไม่มีข้อมูล",
+        description: "ไม่มีข้อมูลที่จะส่งออก",
+        variant: "destructive",
+      })
       return
     }
 
@@ -324,8 +295,13 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
       document.body.appendChild(link)
       link.click()
       document.body.removeChild(link)
+
+      toast({
+        title: "ส่งออกข้อมูลสำเร็จ",
+        description: "ไฟล์ CSV ถูกดาวน์โหลดแล้ว",
+      })
     } else {
-      // สร้าง PDF (ในที่นี้จะใช้การพิมพ์แทน)
+      // สร้าง PDF (ใช้การพิมพ์)
       const printWindow = window.open("", "_blank")
       if (printWindow) {
         const htmlContent = `
@@ -333,7 +309,7 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
           <html>
           <head>
             <meta charset="UTF-8">
-            <title>รายงานข้อมูล</title>
+            <title>รายงานข้อมูลการขับขี่</title>
             <style>
               body { font-family: 'Sarabun', sans-serif; margin: 20px; line-height: 1.6; }
               .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
@@ -341,7 +317,6 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
               .section h2 { color: #333; border-bottom: 1px solid #ddd; padding-bottom: 10px; }
               .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
               .info-card { border: 1px solid #ddd; padding: 15px; border-radius: 8px; background: #f9f9f9; }
-              .score { text-align: center; font-size: 2em; font-weight: bold; color: #22c55e; }
               table { width: 100%; border-collapse: collapse; }
               th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
               th { background-color: #f2f2f2; }
@@ -351,15 +326,16 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
             <div class="header">
               <h1>รายงานข้อมูลการขับขี่</h1>
               <p>สร้างเมื่อ: ${new Date().toLocaleString("th-TH")}</p>
+              <p>วิธีการนับ: นับจากจำนวน timestamp ที่มีเหตุการณ์เกิดขึ้น</p>
             </div>
             
             <div class="section">
               <h2>สรุปข้อมูล</h2>
               <div class="info-grid">
                 <div class="info-card">
-                  <strong>จำนวนครั้งที่หาว:</strong> ${safetyStats.totalYawns}<br>
-                  <strong>จำนวนครั้งที่ง่วง:</strong> ${safetyStats.totalDrowsiness}<br>
-                  <strong>จำนวนแจ้งเตือนด่วน:</strong> ${safetyStats.totalCritical}
+                  <strong>จำนวน timestamp ที่หาว:</strong> ${safetyStats.totalYawns}<br>
+                  <strong>จำนวน timestamp ที่ง่วง:</strong> ${safetyStats.totalDrowsiness}<br>
+                  <strong>จำนวน timestamp อันตราย:</strong> ${safetyStats.totalCritical}
                 </div>
                 <div class="info-card">
                   <strong>ค่าเฉลี่ย EAR:</strong> ${safetyStats.avgEar}<br>
@@ -370,16 +346,13 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
             </div>
 
             <div class="section">
-              <h2>ข้อมูลดิบ (${safeData.length} รายการ)</h2>
+              <h2>ข้อมูลดิบ (${safeData.length} timestamp)</h2>
               <table>
                 <thead>
                   <tr>
                     <th>เวลา</th>
                     <th>EAR</th>
                     <th>ระยะปาก</th>
-                    <th>หาว</th>
-                    <th>ง่วง</th>
-                    <th>แจ้งเตือน</th>
                     <th>สถานะ</th>
                   </tr>
                 </thead>
@@ -392,15 +365,12 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
                       <td>${new Date(item.timestamp).toLocaleString("th-TH")}</td>
                       <td>${(item.ear || 0).toFixed(3)}</td>
                       <td>${(item.mouth_distance || 0).toFixed(2)}</td>
-                      <td>${item.yawn_events || 0}</td>
-                      <td>${item.drowsiness_events || 0}</td>
-                      <td>${item.critical_alerts || 0}</td>
                       <td>${item.status || "NORMAL"}</td>
                     </tr>
                   `,
                     )
                     .join("")}
-                  ${safeData.length > 20 ? `<tr><td colspan="7" style="text-align: center;">... และอีก ${safeData.length - 20} รายการ</td></tr>` : ""}
+                  ${safeData.length > 20 ? `<tr><td colspan="4" style="text-align: center;">... และอีก ${safeData.length - 20} timestamp</td></tr>` : ""}
                 </tbody>
               </table>
             </div>
@@ -413,6 +383,11 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
           printWindow.print()
         }, 500)
       }
+
+      toast({
+        title: "ส่งออกรายงานสำเร็จ",
+        description: "รายงาน PDF ถูกสร้างแล้ว",
+      })
     }
   }
 
@@ -447,7 +422,7 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
           <div className="text-xs sm:text-sm text-red-700">แจ้งเตือนด่วน</div>
         </div>
         <div className="bg-blue-50 p-3 sm:p-4 rounded-lg border border-blue-200">
-          <div className="text-xl sm:text-2xl font-bold text-blue-600">{stats?.totalSessions || 0}</div>
+          <div className="text-xl sm:text-2xl font-bold text-blue-600">{safeData.length}</div>
           <div className="text-xs sm:text-sm text-blue-700">เซสชัน</div>
         </div>
       </div>
@@ -473,13 +448,11 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
 
       {/* กราฟหลัก 2 คอลัมน์ */}
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 sm:gap-6">
-        {/* Status Distribution Pie Chart */}
+        {/* Status Distribution Pie Chart - นับจาก timestamp */}
         <Card>
           <CardHeader className="pb-3 sm:pb-4">
             <CardTitle className="text-base sm:text-lg">สัดส่วนสถานะการขับขี่</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              แสดงสัดส่วนเวลาที่คุณอยู่ในสถานะต่างๆ (คำนวณจากค่าสะสม)
-            </CardDescription>
+            <CardDescription className="text-xs sm:text-sm">แสดงสัดส่วนเหตุการณ์ที่เกิดขึ้น</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>
@@ -488,26 +461,28 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
                   data={statusDistribution}
                   cx="50%"
                   cy="50%"
-                  labelLine={false}
-                  label={({ name, percentage }) => `${name} ${percentage}%`}
                   outerRadius={80}
                   fill="#8884d8"
                   dataKey="value"
+                  label={false} // ปิด label ใน pie เพื่อไม่ให้ซ้อนกัน
                 >
                   {statusDistribution.map((entry, index) => (
                     <Cell key={`cell-${index}`} fill={entry.color} />
                   ))}
                 </Pie>
                 <Tooltip
-                  formatter={(value: any, name: any, props: any) => {
-                    const entry = props.payload
-                    return [`${value} ครั้ง (${entry.percentage}%)`, name]
+                  formatter={(value: any, name: any) => {
+                    const total = statusDistribution.reduce((sum, item) => sum + item.value, 0)
+                    const percentage = total > 0 ? Math.round((value / total) * 100) : 0
+                    return [`${value} ครั้ง (${percentage}%)`, name]
                   }}
                 />
                 <Legend
                   formatter={(value, entry) => {
                     const { payload } = entry as any
-                    return `${value} ${payload.percentage}%`
+                    const total = statusDistribution.reduce((sum, item) => sum + item.value, 0)
+                    const percentage = total > 0 ? Math.round((payload.value / total) * 100) : 0
+                    return `${value} ${percentage}%`
                   }}
                 />
               </PieChart>
@@ -515,13 +490,11 @@ export function ChartsSection({ data, stats, showAllCharts = false }: ChartsSect
           </CardContent>
         </Card>
 
-        {/* Hourly Activity Bar Chart */}
+        {/* Hourly Activity Bar Chart - นับจาก timestamp */}
         <Card>
           <CardHeader className="pb-3 sm:pb-4">
             <CardTitle className="text-base sm:text-lg">กิจกรรมตามช่วงเวลา (24 ชั่วโมง)</CardTitle>
-            <CardDescription className="text-xs sm:text-sm">
-              แสดงจำนวนเหตุการณ์ที่เกิดขึ้นในแต่ละชั่วโมงตลอดทั้งวัน (คำนวณจากค่าสะสม)
-            </CardDescription>
+            <CardDescription className="text-xs sm:text-sm">แสดงจำนวนเหตุการณ์ในแต่ละชั่วโมง</CardDescription>
           </CardHeader>
           <CardContent>
             <ResponsiveContainer width="100%" height={250}>

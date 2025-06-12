@@ -97,7 +97,7 @@ export function HomePage() {
             {/* Logo */}
             <div className="flex items-center space-x-3">
               <Image
-                src="/images/logo.png"
+                src="/logo.png"
                 alt="Driver Fatigue Detection Logo"
                 width={48}
                 height={48}
@@ -194,7 +194,7 @@ export function HomePage() {
                 <div className="p-4 bg-blue-600 text-white flex items-center justify-between">
                   <div className="flex items-center space-x-2">
                     <Image
-                      src="/images/logo.png"
+                      src="/logo.png"
                       alt="Logo"
                       width={24}
                       height={24}
@@ -498,7 +498,7 @@ export function HomePage() {
                   <div className="flex items-center">
                     <div className="w-12 h-12 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden mr-3">
                       <Image
-                        src="/images/somchai-avatar.png"
+                        src="/somchai-avatar.png"
                         alt="คุณสมชาย นิรภัย"
                         width={48}
                         height={48}
@@ -506,8 +506,8 @@ export function HomePage() {
                       />
                     </div>
                     <div>
-                      <div className="font-medium text-gray-900 dark:text-white">คุณสมชาย นิรภัย</div>
-                      <div className="text-sm text-gray-500">พนักงานขับรถบรรทุก, 8 ปีประสบการณ์</div>
+                      <div className="font-medium text-gray-900 dark:text-white">คุณสันติ แซ่หวาย</div>
+                      <div className="text-sm text-gray-500">พนักงานขับรถบรรทุก, ประสบการณ์ 8 ปี</div>
                     </div>
                   </div>
                 </CardContent>
@@ -550,7 +550,7 @@ export function HomePage() {
             <div className="col-span-1 md:col-span-2">
               <div className="flex items-center space-x-3 mb-4">
                 <Image
-                  src="/images/logo.png"
+                  src="/logo.png"
                   alt="Driver Fatigue Detection Logo"
                   width={32}
                   height={32}
