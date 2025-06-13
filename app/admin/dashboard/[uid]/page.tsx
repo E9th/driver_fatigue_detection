@@ -6,7 +6,7 @@ import Link from "next/link"
 
 import { getFilteredSafetyData } from "@/lib/firebase"
 import { getUserProfile } from "@/lib/auth"
-import type { UserProfile, SafetyData } from "@/lib/types"
+import type { UserProfile, SafetyData, HistoricalData } from "@/lib/types" // Added HistoricalData
 
 import { LoadingScreen } from "@/components/loading-screen"
 import { DateTimeFilter } from "@/components/date-time-filter"
@@ -91,7 +91,7 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
   const getSeverityBadge = (severity: number) => {
     switch (severity) {
       case 3: return <Badge variant="destructive">สูง</Badge>
-      case 2: return <Badge className="bg-yellow-500 text-white">ปานกลาง</Badge>
+      case 2: return <Badge className="bg-yellow-500 text-white hover:bg-yellow-500/80">ปานกลาง</Badge>
       default: return <Badge variant="secondary">ต่ำ</Badge>
     }
   }
@@ -176,13 +176,15 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
                 <p className="text-sm text-muted-foreground mb-4">คะแนนรวมในช่วงเวลาที่เลือก</p>
                 <Progress value={safetyData?.safetyScore ?? 0} className="h-3" />
                 <div className="mt-2 flex justify-end">
-                    <SafetyScoreTooltip 
-                        score={safetyData?.safetyScore ?? 0}
-                        totalYawns={safetyData?.stats?.yawnEvents ?? 0}
-                        totalDrowsiness={safetyData?.stats?.fatigueEvents ?? 0}
-                        totalAlerts={safetyData?.stats?.criticalEvents ?? 0}
-                        averageEAR={safetyData?.stats?.averageEAR ?? 0}
-                    />
+                    {safetyData?.stats && (
+                        <SafetyScoreTooltip 
+                            score={safetyData.safetyScore}
+                            totalYawns={safetyData.stats.yawnEvents}
+                            totalDrowsiness={safetyData.stats.fatigueEvents}
+                            totalAlerts={safetyData.stats.criticalEvents}
+                            averageEAR={safetyData.stats.averageEAR}
+                        />
+                    )}
                 </div>
              </CardContent>
           </Card>
@@ -223,7 +225,8 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <ChartsSection events={safetyData.events} />
+                    {/* FIXED: Pass the correct 'stats' prop to ChartsSection */}
+                    <ChartsSection stats={safetyData.stats} />
                 </CardContent>
               </Card>
             </Suspense>
