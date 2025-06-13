@@ -34,7 +34,7 @@ import {
 } from "lucide-react"
 
 // Components
-import { ChartsSection } from "@/components/charts-section"
+import ChartsSection from "@/components/charts-section"
 import { DateTimeFilter } from "@/components/date-time-filter"
 import { LoadingScreen } from "@/components/loading-screen"
 import { UsageHistory } from "@/components/usage-history"
