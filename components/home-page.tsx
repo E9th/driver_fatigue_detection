@@ -19,7 +19,9 @@ import {
   Loader2,
   Rocket,
   Heart,
-  Target
+  Target,
+  CheckCircle,
+  Bell // Added Bell icon import
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
