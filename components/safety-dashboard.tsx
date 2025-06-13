@@ -1,15 +1,10 @@
 "use client"
 
 import { useEffect, useState } from "react"
-// import { useAuth } from "@/context/AuthContext" // Removed problematic import
-import { useAuthState } from "@/lib/auth" // Use existing auth state
-import { getFilteredSafetyDataFixed as getFilteredSafetyData } from "@/lib/firebase-fix"
-// The following components do not exist and are removed.
-// import { SafetyDataTable } from "./safety-data-table"
-// import { SafetyDataFilters } from "./safety-data-filters"
-// import { SafetyScoreCard } from "./safety-score-card"
-// import { SafetyStatsCard } from "./safety-stats-card"
-// import { SafetyCriticalEventsCard } from "./safety-critical-events-card"
+import { useAuthState } from "@/lib/auth"
+import { getFilteredSafetyData } from "@/lib/firebase" // FIX: Changed import from firebase-fix to firebase
+import { Card } from "@/components/ui/card" // Added for structure
+import { CardContent, CardHeader, CardTitle } from "@/components/ui/card" // Added for structure
 
 export interface SafetyEvent {
   id: string
@@ -30,59 +25,48 @@ export interface SafetyData {
     yawnEvents: number
     fatigueEvents: number
     criticalEvents: number
+    averageEAR: number
   }
   safetyScore: number
 }
 
-const SafetyDashboard = () => {
-  // Use the existing useAuthState hook
-  const { user: currentUser, userProfile } = useAuthState()
+const SafetyDashboard = ({ deviceId, viewMode }: { deviceId: string, viewMode?: 'user' | 'admin' }) => {
+  const { userProfile, isLoading: authLoading } = useAuthState()
   const [safetyData, setSafetyData] = useState<SafetyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const [filters, setFilters] = useState<{
-    startDate: Date | null
-    endDate: Date | null
-    driverId: string | null
-    vehicleId: string | null
-  }>({
-    startDate: null,
-    endDate: null,
-    driverId: null,
-    vehicleId: null,
-  })
+  
+  // Default date range to the last 7 days for better initial data view
+  const [dateRange, setDateRange] = useState(() => {
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(endDate.getDate() - 7)
+    return {
+      startDate: startDate.toISOString(),
+      endDate: endDate.toISOString(),
+    }
+  });
 
   useEffect(() => {
     const loadSafetyData = async () => {
+      if (!deviceId) {
+        setLoading(false)
+        setError("Device ID is not available.")
+        return
+      }
+
       setLoading(true)
       setError(null)
 
       try {
-        if (!currentUser || !userProfile) {
-          setError("User not authenticated.")
-          setLoading(false)
-          return
-        }
-
         const data = await getFilteredSafetyData(
-          // Pass the correct deviceId from userProfile
-          userProfile.deviceId,
-          filters.startDate,
-          filters.endDate,
-          // The function signature in firebase-fix.ts doesn't match these, so I'll remove them for now.
-          // filters.driverId,
-          // filters.vehicleId,
+          deviceId,
+          dateRange.startDate,
+          dateRange.endDate,
         )
 
-        // @ts-ignore
         setSafetyData(data)
-        console.log("✅ SafetyDashboard: Data loaded successfully", {
-          eventsCount: data?.events?.length || 0,
-          yawnEvents: data?.stats.yawnEvents,
-          fatigueEvents: data?.stats.fatigueEvents,
-          criticalEvents: data?.stats.criticalEvents,
-          safetyScore: data?.safetyScore,
-        })
+        console.log("✅ SafetyDashboard: Data loaded successfully for device:", deviceId, data)
       } catch (e: any) {
         setError(e.message || "Failed to load safety data.")
         console.error("🔥 SafetyDashboard: Error loading data:", e)
@@ -90,26 +74,11 @@ const SafetyDashboard = () => {
         setLoading(false)
       }
     }
-    // Check if userProfile is loaded before calling
-    if (userProfile) {
-      loadSafetyData()
-    } else if (!loading) {
-      // If auth is loaded but no profile, set an error
-      setError("Could not load user profile.")
-      setLoading(false)
-    }
-  }, [currentUser, userProfile, filters])
 
-  const handleFilterChange = (newFilters: {
-    startDate: Date | null
-    endDate: Date | null
-    driverId: string | null
-    vehicleId: string | null
-  }) => {
-    setFilters(newFilters)
-  }
+    loadSafetyData()
+  }, [deviceId, dateRange])
 
-  if (loading) {
+  if (loading || authLoading) {
     return <div>Loading safety data...</div>
   }
 
@@ -118,38 +87,44 @@ const SafetyDashboard = () => {
   }
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Safety Dashboard</h1>
+    <div className="space-y-4">
+      <Card>
+        <CardHeader>
+          <CardTitle>Safety Score</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p className="text-2xl font-bold">{safetyData?.safetyScore ?? 'N/A'}</p>
+        </CardContent>
+      </Card>
+      
+      <Card>
+        <CardHeader>
+          <CardTitle>Event Statistics</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Yawns: {safetyData?.stats?.yawnEvents ?? 'N/A'}</p>
+          <p>Fatigue Events: {safetyData?.stats?.fatigueEvents ?? 'N/A'}</p>
+          <p>Critical Events: {safetyData?.stats?.criticalEvents ?? 'N/A'}</p>
+          <p>Average EAR: {safetyData?.stats?.averageEAR.toFixed(4) ?? 'N/A'}</p>
+        </CardContent>
+      </Card>
 
-      {/* Placeholder for missing components */}
-      <div className="border-dashed border-2 border-gray-300 p-4 rounded-lg text-center text-gray-500 mb-4">
-        <p>Placeholder for SafetyDataFilters</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
-        <div className="border-dashed border-2 border-gray-300 p-4 rounded-lg text-center text-gray-500">
-          <p>SafetyScoreCard</p>
-          <p>Score: {safetyData?.safetyScore || 0}</p>
-        </div>
-        <div className="border-dashed border-2 border-gray-300 p-4 rounded-lg text-center text-gray-500">
-          <p>SafetyStatsCard</p>
-          <p>Yawns: {safetyData?.stats.yawnEvents || 0}</p>
-          <p>Fatigue: {safetyData?.stats.fatigueEvents || 0}</p>
-        </div>
-        <div className="border-dashed border-2 border-gray-300 p-4 rounded-lg text-center text-gray-500">
-           <p>SafetyCriticalEventsCard</p>
-          <p>Critical Events: {safetyData?.stats.criticalEvents || 0}</p>
-        </div>
-      </div>
-
-      <div className="border-dashed border-2 border-gray-300 p-4 rounded-lg text-center text-gray-500">
-        <p>Placeholder for SafetyDataTable</p>
-        {safetyData?.events && safetyData.events.length > 0 ? (
-          <p>{safetyData.events.length} events found.</p>
-        ) : (
-          <div className="text-gray-500">No safety events found.</div>
-        )}
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Safety Events</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {safetyData?.events && safetyData.events.length > 0 ? (
+             <ul>
+              {safetyData.events.slice(0, 5).map(event => (
+                <li key={event.id}>{new Date(event.timestamp).toLocaleString('th-TH')} - {event.details}</li>
+              ))}
+             </ul>
+          ) : (
+            <p className="text-gray-500">No safety events found for the selected period.</p>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }
