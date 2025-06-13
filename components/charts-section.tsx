@@ -1,5 +1,5 @@
 import type React from "react"
-import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts"
+import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts"
 import type { DailyStats, HistoricalData } from "@/lib/types"
 
 interface ChartsSectionProps {
