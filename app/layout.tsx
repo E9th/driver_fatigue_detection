@@ -2,7 +2,7 @@ import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
 import { Settings } from "lucide-react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import Image from "next/image"
 
@@ -39,6 +39,9 @@ export default function RootLayout({
                 />
                 <DialogTitle>Driver Fatigue Detection</DialogTitle>
               </div>
+              <DialogDescription>
+                ตั้งค่าการทำงานของแอปพลิเคชัน
+              </DialogDescription>
             </DialogHeader>
             <div className="space-y-4">
               <div className="flex items-center justify-between">

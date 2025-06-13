@@ -58,7 +58,7 @@ import {
 } from "lucide-react"
 import { LoadingScreen } from "@/components/loading-screen"
 import { formatDate } from "@/lib/date-utils"
-import { database } from "@/lib/firebase-singleton"
+import { database } from "@/lib/firebase" // Changed from firebase-singleton
 import { ref, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import { deleteUser, signOut } from "@/lib/auth"
