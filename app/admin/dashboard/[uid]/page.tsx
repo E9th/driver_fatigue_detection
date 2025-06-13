@@ -1,7 +1,7 @@
 "use client"
 
 import { Suspense, useEffect, useState } from "react"
-import { SafetyDashboard } from "@/components/safety-dashboard"
+import SafetyDashboard from "@/components/safety-dashboard" // FIX: Changed to a default import
 import { LoadingScreen } from "@/components/loading-screen"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
@@ -33,7 +33,8 @@ export default function AdminUserDashboard({ params }: AdminUserDashboardProps) 
           return
         }
 
-        if (!profile.deviceId) {
+        // Although an admin might not have a deviceId, the user they are viewing should.
+        if (!profile.deviceId && profile.role !== 'admin') {
           setError("ผู้ใช้นี้ยังไม่ได้กำหนด Device ID")
           return
         }
@@ -98,7 +99,7 @@ export default function AdminUserDashboard({ params }: AdminUserDashboardProps) 
   return (
     <div className="container mx-auto py-6 space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/admin/dashboard">
+        <Link href="/admin">
           <Button variant="outline" size="icon">
             <ArrowLeft className="h-4 w-4" />
           </Button>
