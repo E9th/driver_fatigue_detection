@@ -8,7 +8,7 @@ import {
   createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
 } from "firebase/auth"
-import { firebaseConfig } from "./config" 
+import { firebaseConfig } from "./config" // Assuming config is in a separate file
 import type { DeviceData, HistoricalData, SafetyData } from "./types"
 
 let app: any = null
@@ -31,7 +31,33 @@ try {
 
 export { app, database, auth }
 
-// Other functions like subscribeToCurrentData, getFilteredSafetyData, signIn, etc. remain unchanged...
+// ... (withRetry function remains the same)
+
+const withRetry = async <T,>(operation: () => Promise<T>, maxRetries = 3): Promise<T | null> => {
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      if (typeof navigator !== 'undefined' && !navigator.onLine) {
+        console.error(`❌ Firebase: Network is offline (attempt ${attempt}/${maxRetries})`)
+        await new Promise((resolve) => setTimeout(resolve, 1000 * attempt))
+        continue
+      }
+      return await operation()
+    } catch (error: any) {
+      console.error(`❌ Firebase operation failed (attempt ${attempt}/${maxRetries}):`, error.message)
+      if (attempt === maxRetries) {
+        console.error("❌ Firebase: Max retries reached, operation failed")
+        return null
+      }
+      const retryDelay = 1000 * Math.pow(2, attempt - 1)
+      console.log(`🔄 Firebase: Retrying in ${retryDelay / 1000} seconds...`)
+      await new Promise((resolve) => setTimeout(resolve, retryDelay))
+    }
+  }
+  return null
+}
+
+
+// ... (subscribeToCurrentData, subscribeToHistoricalData, etc. remain the same)
 export const subscribeToCurrentData = (deviceId: string, callback: (data: DeviceData | null) => void): (() => void) => {
     if (!database) return () => {};
     const currentDataRef = ref(database, `devices/${deviceId}/current_data`);
@@ -133,10 +159,9 @@ export const getUsedDeviceIds = async (): Promise<string[]> => {
         return [];
     } catch (error) {
         console.error("Permission denied to get used device IDs for unauthenticated user. This is expected.", error);
-        return [];
+        return []; // Return empty array on permission error
     }
 };
-
 
 // --- REVISED FUNCTIONS ---
 
