@@ -9,7 +9,7 @@ import {
   signOut as firebaseSignOut,
 } from "firebase/auth"
 import { firebaseConfig } from "./config"
-import type { DeviceData, HistoricalData } from "./types"
+import type { DeviceData, HistoricalData, SafetyData } from "./types"
 
 let app: any = null
 let database: any = null
@@ -242,6 +242,141 @@ export const subscribeToHistoricalData = (
   }
 }
 
+/**
+ * ดึงข้อมูลความปลอดภัยจาก Firebase โดยรวมข้อมูลจากทั้ง history และ alerts
+ * @param deviceId รหัสอุปกรณ์
+ * @param startDate วันที่เริ่มต้น
+ * @param endDate วันที่สิ้นสุด
+ * @returns ข้อมูลความปลอดภัย
+ */
+export const getFilteredSafetyData = async (
+  deviceId: string,
+  startDate: string,
+  endDate: string,
+): Promise<SafetyData | null> => {
+  try {
+    if (!database) {
+      console.warn("🔧 Firebase not available for getFilteredSafetyData")
+      return null
+    }
+
+    console.log(`🔍 Firebase: Getting safety data for ${deviceId} from ${startDate} to ${endDate}`)
+
+    // ดึงข้อมูลจาก alerts
+    const alertsRef = ref(database, "alerts")
+    const alertsSnapshot = await get(alertsRef)
+
+    // ดึงข้อมูลจาก history
+    const historyRef = ref(database, `devices/${deviceId}/history`)
+    const historySnapshot = await get(historyRef)
+
+    // แปลงวันที่เป็น timestamp เพื่อใช้ในการกรอง
+    const startTime = new Date(startDate).getTime()
+    const endTime = new Date(endDate).getTime()
+
+    // กรองและแปลงข้อมูล alerts
+    const events: any[] = []
+    if (alertsSnapshot.exists()) {
+      const alertsData = alertsSnapshot.val()
+
+      Object.entries(alertsData).forEach(([id, alert]: [string, any]) => {
+        // ตรวจสอบว่า alert เป็นของ deviceId ที่ต้องการและอยู่ในช่วงเวลาที่กำหนด
+        if (
+          alert.device_id === deviceId &&
+          alert.timestamp &&
+          new Date(alert.timestamp).getTime() >= startTime &&
+          new Date(alert.timestamp).getTime() <= endTime
+        ) {
+          events.push({
+            id,
+            timestamp: alert.timestamp,
+            type:
+              alert.alert_type === "yawn_detected"
+                ? "yawn"
+                : alert.alert_type === "drowsiness_detected" || alert.alert_type === "critical_drowsiness"
+                  ? "fatigue"
+                  : "other",
+            severity: alert.severity === "high" ? 3 : alert.severity === "medium" ? 2 : 1,
+            details: alert.alert_type,
+          })
+        }
+      })
+    }
+
+    // คำนวณคะแนนความปลอดภัย
+    let safetyScore = 100
+
+    // นับจำนวนเหตุการณ์แต่ละประเภท
+    const yawnEvents = events.filter((e) => e.type === "yawn").length
+    const fatigueEvents = events.filter((e) => e.type === "fatigue").length
+    const criticalEvents = events.filter((e) => e.severity === 3).length
+
+    // หักคะแนนตามจำนวนเหตุการณ์
+    safetyScore -= Math.min(yawnEvents * 2, 30) // หักสูงสุด 30 คะแนนสำหรับการหาว
+    safetyScore -= Math.min(fatigueEvents * 5, 40) // หักสูงสุด 40 คะแนนสำหรับความเหนื่อยล้า
+    safetyScore -= Math.min(criticalEvents * 10, 50) // หักสูงสุด 50 คะแนนสำหรับเหตุการณ์วิกฤต
+
+    // ตรวจสอบค่า EAR เฉลี่ย
+    let totalEAR = 0
+    let validEARCount = 0
+
+    if (historySnapshot.exists()) {
+      const historyData = historySnapshot.val()
+
+      Object.values(historyData).forEach((item: any) => {
+        if (
+          item.timestamp &&
+          new Date(item.timestamp).getTime() >= startTime &&
+          new Date(item.timestamp).getTime() <= endTime &&
+          item.ear &&
+          item.ear > 0
+        ) {
+          totalEAR += item.ear
+          validEARCount++
+        }
+      })
+    }
+
+    const averageEAR = validEARCount > 0 ? totalEAR / validEARCount : 0
+
+    // หักคะแนนตามค่า EAR เฉลี่ย
+    if (averageEAR < 0.25) {
+      safetyScore -= 20
+    } else if (averageEAR < 0.3) {
+      safetyScore -= 10
+    }
+
+    // ปรับคะแนนให้อยู่ในช่วง 0-100
+    safetyScore = Math.max(0, Math.min(100, safetyScore))
+
+    console.log(`✅ Firebase: Safety data processed for ${deviceId}`, {
+      eventsCount: events.length,
+      yawnEvents,
+      fatigueEvents,
+      criticalEvents,
+      averageEAR,
+      safetyScore,
+    })
+
+    return {
+      deviceId,
+      events: events.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()),
+      safetyScore,
+      startDate,
+      endDate,
+      stats: {
+        yawnEvents,
+        fatigueEvents,
+        criticalEvents,
+        averageEAR,
+      },
+    }
+  } catch (error) {
+    console.error(`❌ Firebase: Error getting safety data for ${deviceId}:`, error)
+    return null
+  }
+}
+
 // ปรับปรุงฟังก์ชัน signIn เพื่อจัดการกับข้อผิดพลาดเครือข่ายได้ดีขึ้น
 
 export const signIn = async (email: string, password: string) => {
@@ -297,6 +432,7 @@ export const registerUser = async (userData: any) => {
       phone: userData.phone,
       license: userData.license,
       deviceId: userData.deviceId,
+      companyName: userData.companyName || "",
       role: userData.role || "driver",
       registeredAt: new Date().toISOString(),
     }
