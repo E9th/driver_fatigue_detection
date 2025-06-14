@@ -14,7 +14,7 @@ import ChartsSection from "@/components/charts-section"
 import { SafetyScoreTooltip } from "@/components/safety-score-tooltip"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Badge } from "@/components/ui/badge"
@@ -106,7 +106,7 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
   if (error || !safetyData) {
     return (
       <div className="container mx-auto py-6 space-y-6">
-        <Button variant="outline" onClick={() => router.push('/admin')}>
+        <Button variant="outline" onClick={() => router.push('/admin/dashboard')}>
           <ArrowLeft className="mr-2 h-4 w-4" /> กลับ
         </Button>
         <Alert variant="destructive">
