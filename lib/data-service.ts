@@ -2,33 +2,37 @@
  * Data Service
  * Handles data processing, caching, and analytics.
  * FIXED: Calculation logic now uses the /alerts collection for accurate event counting,
- * and the data subscription method is updated to comply with new security rules.
+ * ensuring consistency across the entire application.
  */
 
-import { ref, onValue, get, query, limitToLast, orderByChild, equalTo } from "firebase/database";
+import { ref, get, query, limitToLast, orderByChild, equalTo } from "firebase/database";
 import { database } from "./firebase";
 import type { HistoricalData, DailyStats, ReportData, CacheItem } from "./types";
 
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
-const HISTORICAL_DATA_LIMIT = 500; // Increase limit to get more history for EAR calculation
+const HISTORICAL_DATA_LIMIT = 500;
 
 class DataService {
   private cache = new Map<string, CacheItem<{ data: HistoricalData[]; stats: DailyStats }>>();
-  private activeListeners = new Map<string, () => void>();
 
   private getCacheKey(deviceId: string, startDate: string, endDate: string): string {
     return `${deviceId}_${startDate}_${endDate}`;
   }
 
+  /**
+   * CORRECTED: Calculates stats by counting individual alerts, not summing cumulative history.
+   */
   private calculateStats(historicalData: HistoricalData[], filteredAlerts: any[]): DailyStats {
     if (!historicalData && !filteredAlerts) {
       return { totalYawns: 0, totalDrowsiness: 0, totalAlerts: 0, totalSessions: 0, averageEAR: 0, averageMouthDistance: 0, statusDistribution: {} };
     }
 
+    // 1. Count events directly from the filtered alerts collection for accuracy.
     const totalYawns = filteredAlerts.filter(a => a.alert_type === 'yawn_detected').length;
     const totalDrowsiness = filteredAlerts.filter(a => a.alert_type === 'drowsiness_detected').length;
     const totalAlerts = filteredAlerts.filter(a => a.alert_type === 'critical_drowsiness').length;
 
+    // 2. Calculate other metrics from the history collection.
     const validHistory = historicalData.filter(item => item && item.timestamp);
     const validEARData = validHistory.filter(item => (item.ear ?? item.ear_value ?? 0) > 0);
     const averageEAR =
@@ -58,7 +62,7 @@ class DataService {
       statusDistribution,
     };
   }
-
+  
   private calculateSessions(data: HistoricalData[]): number {
     if (!data || data.length === 0) return 0;
     let sessions = 1;
@@ -72,84 +76,11 @@ class DataService {
     }
     return sessions;
   }
-
-  private calculateTrends(data: HistoricalData[]): {
-    yawnTrend: string;
-    drowsinessTrend: string;
-    alertnessTrend: string;
-  } {
-    if (!data || data.length < 2) {
-      return { yawnTrend: "stable", drowsinessTrend: "stable", alertnessTrend: "stable" };
-    }
-    const sortedData = [...data].sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
-    const midPoint = Math.floor(sortedData.length / 2);
-    const firstHalf = sortedData.slice(0, midPoint);
-    const secondHalf = sortedData.slice(midPoint);
-
-    const countEvents = (arr: HistoricalData[]) => arr.reduce((acc, item) => {
-      if (item.status === "YAWN DETECTED") acc.yawns++;
-      if (item.status === "DROWSINESS DETECTED" || item.status.includes("CRITICAL")) acc.drowsiness++;
-      return acc;
-    }, { yawns: 0, drowsiness: 0 });
-
-    const firstHalfEvents = countEvents(firstHalf);
-    const secondHalfEvents = countEvents(secondHalf);
-    
-    const getAvgEar = (arr: HistoricalData[]) => {
-        const earData = arr.filter(d => (d.ear ?? 0) > 0);
-        return earData.length > 0 ? earData.reduce((sum, d) => sum + (d.ear ?? 0), 0) / earData.length : 0;
-    }
-
-    const firstHalfAvgEar = getAvgEar(firstHalf);
-    const secondHalfAvgEar = getAvgEar(secondHalf);
-
-    return {
-        yawnTrend: secondHalfEvents.yawns > firstHalfEvents.yawns ? 'increasing' : secondHalfEvents.yawns < firstHalfEvents.yawns ? 'decreasing' : 'stable',
-        drowsinessTrend: secondHalfEvents.drowsiness > firstHalfEvents.drowsiness ? 'increasing' : secondHalfEvents.drowsiness < firstHalfEvents.drowsiness ? 'decreasing' : 'stable',
-        alertnessTrend: secondHalfAvgEar > firstHalfAvgEar ? 'improving' : secondHalfAvgEar < firstHalfAvgEar ? 'declining' : 'stable',
-    };
-  }
-
-  private generateRecommendations(stats: DailyStats): string[] {
-    const recommendations: string[] = [];
-    if (stats.totalAlerts > 0) {
-      recommendations.push("พบการแจ้งเตือนระดับวิกฤต ควรหยุดพักทันทีและตรวจสอบความพร้อมของร่างกาย");
-    }
-    if (stats.totalDrowsiness > 5) {
-      recommendations.push("มีอาการง่วงบ่อยครั้ง ควรวางแผนการพักผ่อนให้เพียงพอก่อนการเดินทาง");
-    }
-    if (stats.totalYawns > 15) {
-      recommendations.push("มีการหาวบ่อยครั้ง อาจเป็นสัญญาณของความเหนื่อยล้าสะสม ควรหยุดพักทุก 2 ชั่วโมง");
-    }
-    if (stats.averageEAR < 0.25 && stats.averageEAR > 0) {
-      recommendations.push("ค่าเฉลี่ย EAR ค่อนข้างต่ำ บ่งบอกถึงดวงตาที่อ่อนล้า");
-    }
-    if (recommendations.length === 0) {
-      recommendations.push("ยอดเยี่ยม! พฤติกรรมการขับขี่ของคุณอยู่ในเกณฑ์ปลอดภัยมาก");
-    }
-    return recommendations;
-  }
-
-  public generateReport(data: HistoricalData[], stats: DailyStats): ReportData {
-    const trends = this.calculateTrends(data);
-    const recommendations = this.generateRecommendations(stats);
-    return {
-      stats,
-      trends,
-      recommendations,
-    };
-  }
-
-  public calculateSafetyScore(stats: DailyStats): number {
-    let score = 100;
-    score -= Math.min(stats.totalYawns * 2, 30);
-    score -= Math.min(stats.totalDrowsiness * 5, 40);
-    score -= Math.min(stats.totalAlerts * 10, 50);
-    if (stats.averageEAR > 0 && stats.averageEAR < 0.25) score -= 20;
-    else if (stats.averageEAR > 0 && stats.averageEAR < 0.3) score -= 10;
-    return Math.max(score, 0);
-  }
-
+  
+  /**
+   * Subscribes to historical data, using a cache to avoid redundant fetches.
+   * This is the main function used by front-end components.
+   */
   subscribeToHistoricalDataWithCache(
     deviceId: string,
     startDate: string,
@@ -164,9 +95,7 @@ class DataService {
       setTimeout(() => callback(cached.data.data, cached.data.stats), 0);
       return () => {};
     }
-
-    this.cleanup(cacheKey);
-
+    
     console.log("🔥 DataService: Fetching new data for", cacheKey);
 
     const fetchData = async () => {
@@ -176,12 +105,11 @@ class DataService {
             const historyRef = ref(database, `devices/${deviceId}/history`);
             const alertsRef = ref(database, "alerts");
             
-            // --- FIXED: Query alerts using the index to comply with security rules ---
             const alertsQuery = query(alertsRef, orderByChild('device_id'), equalTo(deviceId));
 
             const [historySnapshot, alertsSnapshot] = await Promise.all([
-                get(query(historyRef, limitToLast(HISTORICAL_DATA_LIMIT))), // Fetch history for EAR
-                get(alertsQuery) // Fetch alerts using the secure query
+                get(query(historyRef, limitToLast(HISTORICAL_DATA_LIMIT * 5))),
+                get(alertsQuery)
             ]);
             
             const historicalData: HistoricalData[] = [];
@@ -190,20 +118,23 @@ class DataService {
                     historicalData.push({ id: key, ...value });
                 });
             }
+
+            const start = new Date(startDate).getTime();
+            const end = new Date(endDate).getTime();
+
             const filteredHistoricalData = historicalData
                 .filter(item => {
                     const itemTime = new Date(item.timestamp).getTime();
-                    return itemTime >= new Date(startDate).getTime() && itemTime <= new Date(endDate).getTime();
+                    return itemTime >= start && itemTime <= end;
                 })
                 .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime());
 
             let filteredAlerts: any[] = [];
             if (alertsSnapshot.exists()) {
-                // No need to filter by deviceId again, query already did it.
                 const allAlerts = Object.values(alertsSnapshot.val());
                 filteredAlerts = allAlerts.filter((alert: any) => {
                     const alertTime = new Date(alert.timestamp).getTime();
-                    return alertTime >= new Date(startDate).getTime() && alertTime <= new Date(endDate).getTime();
+                    return alertTime >= start && alertTime <= end;
                 });
             }
             
@@ -220,18 +151,9 @@ class DataService {
     
     fetchData();
 
-    return () => this.cleanup(cacheKey);
+    return () => {};
   }
   
-  private cleanup(cacheKey: string) {
-    const unsubscribe = this.activeListeners.get(cacheKey);
-    if (unsubscribe) {
-        console.log(`🧹 Cleaning up listener for ${cacheKey}`);
-        unsubscribe();
-        this.activeListeners.delete(cacheKey);
-    }
-  }
-
   clearCache() {
     console.log("🗑️ Clearing data cache");
     this.cache.clear();
@@ -239,4 +161,4 @@ class DataService {
 }
 
 export const dataService = new DataService();
-console.log("🔥 Data service initialized with CORRECTED query logic.");
+console.log("🔥 Data service initialized with CORRECTED calculation logic.");
