@@ -1,7 +1,10 @@
 "use client"
 
 import { initializeApp, getApps } from "firebase/app"
-import { getDatabase, ref, onValue, off, query, limitToLast, get, set, orderByChild, equalTo } from "firebase/database"
+import { 
+  getDatabase, ref, onValue, off, query, 
+  limitToLast, get, set, orderByChild, equalTo, startAt, endAt // FIX: Added startAt and endAt
+} from "firebase/database"
 import {
   getAuth,
   signInWithEmailAndPassword,
@@ -43,13 +46,6 @@ export const subscribeToCurrentData = (deviceId: string, callback: (data: Device
     return () => off(currentDataRef, 'value', listener);
 };
 
-/**
- * FIXED: Fetches safety data using secure queries that work with the established rules.
- * @param deviceId The device to fetch data for.
- * @param startDate The start of the date range.
- * @param endDate The end of the date range.
- * @returns A promise with the processed safety data.
- */
 export const getFilteredSafetyData = async (
   deviceId: string,
   startDate: string | Date,
@@ -61,25 +57,24 @@ export const getFilteredSafetyData = async (
     }
     const start = new Date(startDate).getTime();
     const end = new Date(endDate).getTime();
+    const startISO = new Date(startDate).toISOString();
+    const endISO = new Date(endDate).toISOString();
 
     try {
-        // Create secure queries
         const alertsQuery = query(ref(database, 'alerts'), orderByChild('device_id'), equalTo(deviceId));
-        const historyQuery = query(ref(database, `devices/${deviceId}/history`), orderByChild('timestamp'), startAt(new Date(start).toISOString()), endAt(new Date(end).toISOString()));
+        const historyQuery = query(ref(database, `devices/${deviceId}/history`), orderByChild('timestamp'), startAt(startISO), endAt(endISO));
 
         const [alertsSnapshot, historySnapshot] = await Promise.all([
             get(alertsQuery),
             get(historyQuery)
         ]);
-
-        // Process alerts (now correctly filtered by the query)
+        
         const allAlerts = alertsSnapshot.exists() ? Object.values(alertsSnapshot.val()) : [];
         const deviceAlerts = allAlerts.filter((alert: any) => {
             const alertTime = new Date(alert.timestamp).getTime();
             return alertTime >= start && alertTime <= end;
         });
 
-        // Process history
         const deviceHistory: HistoricalData[] = [];
         if(historySnapshot.exists()){
             Object.entries(historySnapshot.val()).forEach(([key, value]) => {
@@ -87,7 +82,6 @@ export const getFilteredSafetyData = async (
             });
         }
         
-        // Calculate stats based on the correctly fetched data
         const yawnEvents = deviceAlerts.filter(a => a.alert_type === 'yawn_detected').length;
         const fatigueEvents = deviceAlerts.filter(a => a.alert_type === 'drowsiness_detected').length;
         const criticalEvents = deviceAlerts.filter(a => a.alert_type === 'critical_drowsiness').length;
@@ -103,7 +97,7 @@ export const getFilteredSafetyData = async (
         else if (averageEAR > 0 && averageEAR < 0.3) safetyScore -= 10;
         
         const events = deviceAlerts.map((a: any, index: number) => ({
-            id: a.timestamp + index, // create unique id
+            id: a.timestamp + index,
             timestamp: a.timestamp,
             type: a.alert_type,
             severity: a.severity === 'high' ? 3 : a.severity === 'medium' ? 2 : 1,
@@ -125,7 +119,6 @@ export const getFilteredSafetyData = async (
     }
 };
 
-// --- AUTH FUNCTIONS (UNCHANGED) ---
 export const signIn = async (email: string, password: string) => {
   if (!auth) throw new Error("Auth not initialized");
   return await signInWithEmailAndPassword(auth, email, password)
@@ -147,7 +140,6 @@ export const signOut = async () => {
   return await firebaseSignOut(auth);
 };
 
-// --- PUBLIC STATS FUNCTIONS (UNCHANGED) ---
 export const getDeviceCount = async (): Promise<number> => {
   if (!database) return 0;
   try {
