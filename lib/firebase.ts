@@ -3,7 +3,7 @@
 import { initializeApp, getApps } from "firebase/app"
 import { 
   getDatabase, ref, onValue, off, query, 
-  limitToLast, get, set, orderByChild, equalTo, startAt, endAt // FIX: Added startAt and endAt
+  limitToLast, get, set, orderByChild, equalTo, startAt, endAt 
 } from "firebase/database"
 import {
   getAuth,
@@ -12,7 +12,7 @@ import {
   signOut as firebaseSignOut,
 } from "firebase/auth"
 import { firebaseConfig } from "./config" 
-import type { DeviceData, HistoricalData, SafetyData } from "./types"
+import type { DeviceData, HistoricalData, SafetyData, UserProfile, RegisterData, AuthResponse } from "./types"
 
 let app: any = null
 let database: any = null
@@ -61,7 +61,10 @@ export const getFilteredSafetyData = async (
     const endISO = new Date(endDate).toISOString();
 
     try {
+        console.log(`🔍 Querying alerts for device: ${deviceId}`);
         const alertsQuery = query(ref(database, 'alerts'), orderByChild('device_id'), equalTo(deviceId));
+        
+        console.log(`🔍 Querying history for device: ${deviceId} between ${startISO} and ${endISO}`);
         const historyQuery = query(ref(database, `devices/${deviceId}/history`), orderByChild('timestamp'), startAt(startISO), endAt(endISO));
 
         const [alertsSnapshot, historySnapshot] = await Promise.all([
@@ -74,13 +77,15 @@ export const getFilteredSafetyData = async (
             const alertTime = new Date(alert.timestamp).getTime();
             return alertTime >= start && alertTime <= end;
         });
+        console.log(`✅ Found ${deviceAlerts.length} alerts in date range.`);
 
         const deviceHistory: HistoricalData[] = [];
         if(historySnapshot.exists()){
             Object.entries(historySnapshot.val()).forEach(([key, value]) => {
-                deviceHistory.push({ id: key, ...value as any });
+                deviceHistory.push({ id: key, ...(value as any) });
             });
         }
+        console.log(`✅ Found ${deviceHistory.length} history records in date range.`);
         
         const yawnEvents = deviceAlerts.filter(a => a.alert_type === 'yawn_detected').length;
         const fatigueEvents = deviceAlerts.filter(a => a.alert_type === 'drowsiness_detected').length;
@@ -104,14 +109,17 @@ export const getFilteredSafetyData = async (
             details: a.alert_type.replace(/_/g, ' ').replace('detected', '').trim()
         })).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
-        return {
+        const result = {
             deviceId,
-            events: events,
+            events,
             safetyScore: Math.max(0, Math.round(safetyScore)),
             startDate: new Date(startDate).toISOString(),
             endDate: new Date(endDate).toISOString(),
             stats: { yawnEvents, fatigueEvents, criticalEvents, averageEAR }
         };
+
+        console.log("📊 Final safety data:", result);
+        return result;
 
     } catch (error) {
         console.error("Error in getFilteredSafetyData:", error);
@@ -139,27 +147,3 @@ export const signOut = async () => {
   if (!auth) throw new Error("Auth not initialized");
   return await firebaseSignOut(auth);
 };
-
-export const getDeviceCount = async (): Promise<number> => {
-  if (!database) return 0;
-  try {
-    const countRef = ref(database, "publicStats/totalDeviceCount");
-    const snapshot = await get(countRef);
-    return snapshot.exists() ? snapshot.val() : 0;
-  } catch (error) {
-    console.error("Error getting public device count:", error);
-    return 0; 
-  }
-}
-
-export const getActiveDeviceCount = async (): Promise<number> => {
-  if (!database) return 0;
-  try {
-    const countRef = ref(database, "publicStats/activeDeviceCount");
-    const snapshot = await get(countRef);
-    return snapshot.exists() ? snapshot.val() : 0;
-  } catch (error) {
-    console.error("Error getting public active device count:", error);
-    return 0;
-  }
-}

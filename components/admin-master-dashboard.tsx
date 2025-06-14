@@ -20,14 +20,23 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts"
 import {
-  AlertTriangle, Eye, Users, Activity, Clock, BarChart3, Search, User, LayoutDashboard, UserX, TrendingUp,
+  AlertTriangle, Eye, Users, Activity, Clock, BarChart3, Search, User, LayoutDashboard, UserX, TrendingUp, Settings, LogOut,
 } from "lucide-react"
 import { LoadingScreen } from "@/components/loading-screen"
 import { database } from "@/lib/firebase" 
 import { getAllUsers, deleteUser } from "@/lib/admin-utils"
+import { signOut } from "@/lib/auth"
 import { ref, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import type { UserProfile } from "@/lib/types"
@@ -84,60 +93,58 @@ export function AdminMasterDashboard() {
       try {
         if (!database) throw new Error("Firebase DB not available")
         
-        // Use admin-specific function to fetch users
-        const usersList = await getAllUsers()
+        const usersList = await getAllUsers();
         if (usersList) {
-            setUsers(usersList)
-            setFilteredUsers(usersList)
+            setUsers(usersList);
+            setFilteredUsers(usersList);
         }
 
-        // Fetch other data that admin has root access to
         const [alertsSnapshot, devicesSnapshot] = await Promise.all([
           get(ref(database, "alerts")),
           get(ref(database, "devices")),
-        ])
+        ]);
 
-        const alertsList: AlertData[] = alertsSnapshot.exists() ? Object.values(alertsSnapshot.val()) : []
-        setAlerts(alertsList)
+        const alertsList: AlertData[] = alertsSnapshot.exists() ? Object.values(alertsSnapshot.val()) : [];
+        setAlerts(alertsList);
         
-        const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {}
-        setDevices(devicesData)
+        const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {};
+        setDevices(devicesData);
 
       } catch (error) {
-        console.error("❌ Error loading initial admin data:", error)
-        toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถโหลดข้อมูลระบบได้ เนื่องจากติดปัญหาเรื่องสิทธิ์การเข้าถึง", variant: "destructive" })
+        console.error("❌ Error loading initial admin data:", error);
+        toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถโหลดข้อมูลระบบได้", variant: "destructive" });
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
-    }
-    loadAllData()
-  }, [toast])
+    };
+    loadAllData();
+  }, [toast]);
 
   useEffect(() => {
     if (loading) return;
 
-    const startTime = new Date(dateRange.startDate).getTime()
-    const endTime = new Date(dateRange.endDate).getTime()
+    const startTime = new Date(dateRange.startDate).getTime();
+    const endTime = new Date(dateRange.endDate).getTime();
     
     const filteredAlerts = alerts.filter(alert => {
-        const alertTime = new Date(alert.timestamp).getTime()
-        return alertTime >= startTime && alertTime <= endTime
-    })
+        const alertTime = new Date(alert.timestamp).getTime();
+        return alertTime >= startTime && alertTime <= endTime;
+    });
 
-    const driverUsers = users.filter((user) => user.role === "driver")
-    const adminUsers = users.filter((user) => user.role === "admin")
-    const devicesWithUsers = new Set(driverUsers.map(user => user.deviceId).filter(id => id && id !== "null"))
+    const driverUsers = users.filter((user) => user.role === "driver");
+    const adminUsers = users.filter((user) => user.role === "admin");
+    const devicesWithUsers = new Set(driverUsers.map(user => user.deviceId).filter(id => id && id !== "null"));
 
-    const now = Date.now()
-    const fiveMinutesAgo = now - 5 * 60 * 1000
+    const now = Date.now();
+    const fiveMinutesAgo = now - 5 * 60 * 1000;
     const activeDevicesCount = Object.values(devices).filter((device) => {
-      const lastUpdate = device?.current_data?.timestamp
-      return lastUpdate && new Date(lastUpdate).getTime() > fiveMinutesAgo
-    }).length
+      const lastUpdate = device?.current_data?.timestamp;
+      return lastUpdate && new Date(lastUpdate).getTime() > fiveMinutesAgo;
+    }).length;
 
-    const yawnAlerts = filteredAlerts.filter((alert) => alert.alert_type === "yawn_detected").length
-    const drowsinessAlerts = filteredAlerts.filter((alert) => alert.alert_type === "drowsiness_detected").length
-    const criticalAlerts = filteredAlerts.filter((alert) => alert.alert_type === "critical_drowsiness").length
+    const yawnAlerts = filteredAlerts.filter((alert) => alert.alert_type === "yawn_detected").length;
+    const drowsinessAlerts = filteredAlerts.filter((alert) => alert.alert_type === "drowsiness_detected").length;
+    const criticalAlerts = filteredAlerts.filter((alert) => alert.alert_type === "critical_drowsiness").length;
 
     setStats({
       totalDevices: devicesWithUsers.size,
@@ -147,8 +154,8 @@ export function AdminMasterDashboard() {
       totalYawns: yawnAlerts,
       totalDrowsiness: drowsinessAlerts,
       totalAlerts: criticalAlerts,
-    })
-  }, [users, alerts, devices, dateRange, loading])
+    });
+  }, [users, alerts, devices, dateRange, loading]);
 
   useEffect(() => {
     setFilteredUsers(
@@ -157,29 +164,32 @@ export function AdminMasterDashboard() {
           (user.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
           (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
       )
-    )
-  }, [searchTerm, users])
+    );
+  }, [searchTerm, users]);
 
-  const handleDateChange = (startDate: string, endDate: string) => {
-    setDateRange({ startDate, endDate })
-  }
+  const handleDateChange = useCallback((startDate: string, endDate: string) => {
+    setDateRange({ startDate, endDate });
+  }, []);
+  
+  const handleLogout = useCallback(async () => {
+    await signOut();
+    router.push("/");
+  }, [router]);
 
-  const handleDeleteUser = async (uid: string) => {
+  const handleDeleteUser = useCallback(async (uid: string) => {
     if (!uid) return;
     
-    // Optimistically update UI
-    const originalUsers = users;
+    const originalUsers = [...users];
     setUsers(prev => prev.filter(u => u.uid !== uid));
 
     const result = await deleteUser(uid);
     if (result.success) {
       toast({ title: "ลบผู้ใช้สำเร็จ" });
     } else {
-      // Revert UI on failure
-      setUsers(originalUsers);
+      setUsers(originalUsers); // Revert on failure
       toast({ title: "เกิดข้อผิดพลาด", description: result.error, variant: "destructive" });
     }
-  }
+  }, [users, toast]);
 
   const hourlyActivity = () => {
     const hourlyData = Array(24).fill(0).map((_, i) => ({ hour: i, yawns: 0, drowsiness: 0, alerts: 0 }))
@@ -213,6 +223,21 @@ export function AdminMasterDashboard() {
 
   return (
     <div className="space-y-6">
+       <div className="flex justify-between items-center">
+        <h1 className="text-2xl font-bold">แดชบอร์ดผู้ดูแลระบบ</h1>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon"><Settings className="h-4 w-4" /></Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end">
+            <DropdownMenuLabel>บัญชีของฉัน</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => router.push("/profile")}><User className="mr-2 h-4 w-4" /><span>ข้อมูลส่วนตัว</span></DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}><LogOut className="mr-2 h-4 w-4" /><span>ออกจากระบบ</span></DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      </div>
+
       <Tabs defaultValue="overview" className="space-y-6">
         <TabsList className="grid w-full grid-cols-2">
           <TabsTrigger value="overview">ภาพรวมระบบ</TabsTrigger>
