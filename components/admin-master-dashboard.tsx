@@ -27,12 +27,12 @@ import {
 } from "lucide-react"
 import { LoadingScreen } from "@/components/loading-screen"
 import { database } from "@/lib/firebase" 
-import { getAllUsers, deleteUser } from "@/lib/admin-utils" // FIX: Import from admin-utils
+import { getAllUsers, deleteUser } from "@/lib/admin-utils"
 import { ref, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import type { UserProfile } from "@/lib/types"
 import {
-  Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow,
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 
 interface AlertData {
@@ -84,10 +84,14 @@ export function AdminMasterDashboard() {
       try {
         if (!database) throw new Error("Firebase DB not available")
         
+        // Use admin-specific function to fetch users
         const usersList = await getAllUsers()
-        setUsers(usersList)
-        setFilteredUsers(usersList)
+        if (usersList) {
+            setUsers(usersList)
+            setFilteredUsers(usersList)
+        }
 
+        // Fetch other data that admin has root access to
         const [alertsSnapshot, devicesSnapshot] = await Promise.all([
           get(ref(database, "alerts")),
           get(ref(database, "devices")),
@@ -114,7 +118,7 @@ export function AdminMasterDashboard() {
 
     const startTime = new Date(dateRange.startDate).getTime()
     const endTime = new Date(dateRange.endDate).getTime()
-
+    
     const filteredAlerts = alerts.filter(alert => {
         const alertTime = new Date(alert.timestamp).getTime()
         return alertTime >= startTime && alertTime <= endTime
@@ -160,18 +164,21 @@ export function AdminMasterDashboard() {
     setDateRange({ startDate, endDate })
   }
 
-  const handleDeleteUser = async () => {
-    if (!userToDelete) return;
-    setIsLoading(true);
-    const result = await deleteUser(userToDelete);
+  const handleDeleteUser = async (uid: string) => {
+    if (!uid) return;
+    
+    // Optimistically update UI
+    const originalUsers = users;
+    setUsers(prev => prev.filter(u => u.uid !== uid));
+
+    const result = await deleteUser(uid);
     if (result.success) {
-      setUsers(prev => prev.filter(u => u.uid !== userToDelete));
       toast({ title: "ลบผู้ใช้สำเร็จ" });
     } else {
+      // Revert UI on failure
+      setUsers(originalUsers);
       toast({ title: "เกิดข้อผิดพลาด", description: result.error, variant: "destructive" });
     }
-    setUserToDelete(null);
-    setIsLoading(false);
   }
 
   const hourlyActivity = () => {
@@ -250,7 +257,7 @@ export function AdminMasterDashboard() {
                                     <TableCell><Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{user.role}</Badge>{isActive && <Badge className="ml-2 bg-green-100 text-green-800">ออนไลน์</Badge>}</TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/dashboard/${user.uid}`)}>แดชบอร์ด</Button>
-                                        {user.role !== 'admin' && <AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="ml-2" onClick={() => setUserToDelete(user.uid)}>ลบ</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>ยืนยันการลบ</AlertDialogTitle><AlertDialogDescription>คุณต้องการลบผู้ใช้ {user.fullName} หรือไม่?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>ยกเลิก</AlertDialogCancel><AlertDialogAction onClick={handleDeleteUser}>ยืนยัน</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
+                                        {user.role !== 'admin' && <AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="ml-2" onClick={() => setUserToDelete(user.uid)}>ลบ</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>ยืนยันการลบ</AlertDialogTitle><AlertDialogDescription>คุณต้องการลบผู้ใช้ {user.fullName} หรือไม่?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>ยกเลิก</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteUser(user.uid)}>ยืนยัน</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
                                     </TableCell>
                                 </TableRow>
                             )
