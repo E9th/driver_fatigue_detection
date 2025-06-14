@@ -1,50 +1,53 @@
 {
   "rules": {
-    ".read": true,
-    ".write": true,
-    "devices": {
-      "$deviceId": {
-        ".read": true,
-        ".write": true,
-        "current_data": {
-          ".read": true,
-          ".write": true,
-          ".validate": "newData.hasChildren(['device_id', 'ear', 'mouth_distance', 'status', 'timestamp'])"
-        },
-        "history": {
-          ".read": true,
-          ".write": true,
-          ".indexOn": ["timestamp", "status"],
-          "$historyId": {
-            ".validate": "newData.hasChildren(['device_id', 'ear', 'mouth_distance', 'status', 'timestamp'])"
-          }
-        }
-      }
-    },
-    "alerts": {
-      ".read": true,
-      ".write": true,
-      ".indexOn": ["timestamp", "device_id", "severity"],
-      "$alertId": {
-        ".validate": "newData.hasChildren(['device_id', 'alert_type', 'timestamp', 'severity'])"
-      }
-    },
+    // --- กฎสำหรับ Path หลัก (Root) ---
+    // โดยพื้นฐานจะไม่อนุญาตให้อ่านเขียน แต่จะให้สิทธิ์ Admin อ่านได้ทั้งหมด
+    ".read": "auth != null && root.child('users/' + auth.uid + '/role').val() === 'admin'",
+    ".write": "auth != null", // อนุญาตให้ user ที่ login แล้วเขียนได้ (แต่จะถูกจำกัดสิทธิ์ใน path ย่อยๆ)
+
+    // --- กฎสำหรับข้อมูลผู้ใช้ ---
     "users": {
-      ".read": true,
-      ".write": true,
-      ".indexOn": ["deviceId", "email"],
+      // Admin อ่านได้ทั้งหมด (สืบทอดจากกฎ Root)
       "$userId": {
-        ".read": "$userId === auth.uid",
-        ".write": "$userId === auth.uid",
-        "devices": {
-          ".read": true,
-          ".write": true
-        },
-        "preferences": {
-          ".read": true,
-          ".write": true
+        // ผู้ใช้จะอ่าน/เขียนข้อมูลของตัวเองได้ หรือ Admin สามารถอ่าน/เขียนข้อมูลของผู้ใช้ทุกคนได้
+        ".read": "auth.uid === $userId || root.child('users/' + auth.uid + '/role').val() === 'admin'",
+        ".write": "auth.uid === $userId || root.child('users/' + auth.uid + '/role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['uid', 'email', 'fullName', 'role', 'registeredAt'])"
+      },
+      ".indexOn": ["deviceId", "email"]
+    },
+
+    // --- กฎสำหรับข้อมูลอุปกรณ์ ---
+    "devices": {
+      // Admin อ่านได้ทั้งหมด (สืบทอดจากกฎ Root)
+      "$deviceId": {
+        // ผู้ใช้ทั่วไปจะอ่านข้อมูลได้เฉพาะอุปกรณ์ของตัวเองเท่านั้น
+        ".read": "root.child('users/' + auth.uid + '/deviceId').val() === $deviceId",
+        // การเขียนจะทำได้โดยผู้ใช้ที่เป็นเจ้าของอุปกรณ์ หรือ Admin
+        ".write": "root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/deviceId').val() === $deviceId",
+        "history": {
+            ".indexOn": ["timestamp"]
         }
       }
+    },
+    
+    // --- กฎสำหรับข้อมูลการแจ้งเตือน ---
+    "alerts": {
+      // Admin อ่านได้ทั้งหมด (สืบทอดจากกฎ Root)
+      "$alertId": {
+        // ผู้ใช้ทั่วไปจะอ่านได้เฉพาะ alert ของอุปกรณ์ตัวเอง
+        ".read": "data.child('device_id').val() === root.child('users/' + auth.uid + '/deviceId').val()",
+        // การเขียนจะทำได้โดยผู้ใช้ที่เป็นเจ้าของอุปกรณ์ หรือ Admin
+        ".write": "root.child('users/' + auth.uid + '/role').val() === 'admin' || newData.child('device_id').val() === root.child('users/' + auth.uid + '/deviceId').val()",
+        ".validate": "newData.hasChildren(['device_id', 'alert_type', 'timestamp', 'severity'])"
+      },
+       ".indexOn": ["device_id"]
+    },
+
+    // --- กฎสำหรับข้อมูลสาธารณะ ---
+    "publicStats": {
+      ".read": true, // อนุญาตให้ทุกคนอ่านได้
+      ".write": false // ไม่อนุญาตให้ใครเขียนได้จากฝั่ง client
     }
   }
 }
