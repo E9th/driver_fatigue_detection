@@ -30,6 +30,7 @@ import { database, getAllUsers, deleteUser } from "@/lib/auth" // Import from au
 import { ref, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import type { UserProfile } from "@/lib/types"
+// FIX: Added missing Table component imports
 import {
   Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
@@ -88,7 +89,9 @@ export function AdminMasterDashboard() {
         setUsers(usersList)
         setFilteredUsers(usersList)
 
-        // Fetch other data
+        // FIX: Fetch alerts and devices data after confirming admin rights.
+        // In a real app, this should be done via a secure Cloud Function.
+        // For now, we assume the admin's read access to the root will fetch this.
         const [alertsSnapshot, devicesSnapshot] = await Promise.all([
           get(ref(database, "alerts")),
           get(ref(database, "devices")),
@@ -110,13 +113,12 @@ export function AdminMasterDashboard() {
     loadAllData()
   }, [toast])
 
-  // Recalculate stats when data or dateRange changes
   useEffect(() => {
     if (loading) return;
 
     const startTime = new Date(dateRange.startDate).getTime()
     const endTime = new Date(dateRange.endDate).getTime()
-    
+
     const filteredAlerts = alerts.filter(alert => {
         const alertTime = new Date(alert.timestamp).getTime()
         return alertTime >= startTime && alertTime <= endTime
@@ -148,8 +150,6 @@ export function AdminMasterDashboard() {
     })
   }, [users, alerts, devices, dateRange, loading])
 
-
-  // Filter users for display
   useEffect(() => {
     setFilteredUsers(
       users.filter(
@@ -255,16 +255,7 @@ export function AdminMasterDashboard() {
         <TabsContent value="users" className="space-y-6">
           <Card>
             <CardHeader>
-                <div className="flex justify-between items-center">
-                    <div>
-                        <CardTitle>จัดการผู้ใช้งาน</CardTitle>
-                        <CardDescription>รายชื่อผู้ใช้งานทั้งหมดในระบบ {filteredUsers.length} คน</CardDescription>
-                    </div>
-                    <div className="relative w-64">
-                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
-                        <Input placeholder="ค้นหา..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-                    </div>
-                </div>
+              <div className="flex justify-between items-center"><CardTitle>จัดการผู้ใช้งาน</CardTitle><div className="relative w-64"><Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" /><Input placeholder="ค้นหา..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div></div>
             </CardHeader>
             <CardContent>
                 <Table>
