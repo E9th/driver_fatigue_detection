@@ -26,11 +26,11 @@ import {
   AlertTriangle, Eye, Users, Activity, Clock, BarChart3, Search, User, LayoutDashboard, UserX, TrendingUp,
 } from "lucide-react"
 import { LoadingScreen } from "@/components/loading-screen"
-import { database, getAllUsers, deleteUser } from "@/lib/auth" // Import from auth
+import { database } from "@/lib/firebase" 
+import { getAllUsers, deleteUser } from "@/lib/admin-utils" // FIX: Import from admin-utils
 import { ref, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import type { UserProfile } from "@/lib/types"
-// FIX: Added missing Table component imports
 import {
   Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
@@ -84,14 +84,10 @@ export function AdminMasterDashboard() {
       try {
         if (!database) throw new Error("Firebase DB not available")
         
-        // Use getAllUsers from auth which has admin privileges implicitly
         const usersList = await getAllUsers()
         setUsers(usersList)
         setFilteredUsers(usersList)
 
-        // FIX: Fetch alerts and devices data after confirming admin rights.
-        // In a real app, this should be done via a secure Cloud Function.
-        // For now, we assume the admin's read access to the root will fetch this.
         const [alertsSnapshot, devicesSnapshot] = await Promise.all([
           get(ref(database, "alerts")),
           get(ref(database, "devices")),
@@ -220,43 +216,26 @@ export function AdminMasterDashboard() {
           <div className="p-4 border rounded-lg bg-white dark:bg-gray-800">
              <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
           </div>
-
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ที่ใช้งาน</CardTitle><Activity className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.activeDevices}</div></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ผู้ขับขี่</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalUsers}</div></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ผู้ดูแลระบบ</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.adminUsers}</div></CardContent></Card>
           </div>
-
           <div className="grid gap-4 md:grid-cols-3">
              <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">การหาว</CardTitle><Eye className="h-4 w-4 text-yellow-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-yellow-600">{stats.totalYawns}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
              <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ความง่วง</CardTitle><BarChart3 className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{stats.totalDrowsiness}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
              <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">แจ้งเตือนด่วน</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{stats.totalAlerts}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
           </div>
-
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card>
-              <CardHeader><CardTitle>กิจกรรมตามช่วงเวลา</CardTitle></CardHeader>
-              <CardContent className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%"><BarChart data={hourlyActivity()}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="hour" tickFormatter={(hour) => `${hour}:00`} /><YAxis /><Tooltip /><Legend /><Bar dataKey="yawns" fill="#F59E0B" name="การหาว" /><Bar dataKey="drowsiness" fill="#F97316" name="ความง่วง" /><Bar dataKey="alerts" fill="#EF4444" name="แจ้งเตือนด่วน" /></BarChart></ResponsiveContainer>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader><CardTitle>การกระจายระดับความเสี่ยง</CardTitle></CardHeader>
-              <CardContent className="h-[350px]">
-                {riskDistribution().length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={riskDistribution()} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{riskDistribution().map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value: number, name: string) => [`${value} เหตุการณ์`, name]} /><Legend /></PieChart></ResponsiveContainer>
-                ) : (<div className="flex items-center justify-center h-full"><p className="text-gray-500">ไม่มีข้อมูลในช่วงเวลาที่เลือก</p></div>)}
-              </CardContent>
-            </Card>
+            <Card><CardHeader><CardTitle>กิจกรรมตามช่วงเวลา</CardTitle></CardHeader><CardContent className="h-[350px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={hourlyActivity()}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="hour" tickFormatter={(hour) => `${hour}:00`} /><YAxis /><Tooltip /><Legend /><Bar dataKey="yawns" fill="#F59E0B" name="การหาว" /><Bar dataKey="drowsiness" fill="#F97316" name="ความง่วง" /><Bar dataKey="alerts" fill="#EF4444" name="แจ้งเตือนด่วน" /></BarChart></ResponsiveContainer></CardContent></Card>
+            <Card><CardHeader><CardTitle>การกระจายระดับความเสี่ยง</CardTitle></CardHeader><CardContent className="h-[350px]">{riskDistribution().length > 0 ? (<ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={riskDistribution()} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{riskDistribution().map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value: number, name: string) => [`${value} เหตุการณ์`, name]} /><Legend /></PieChart></ResponsiveContainer>) : (<div className="flex items-center justify-center h-full"><p className="text-gray-500">ไม่มีข้อมูลในช่วงเวลาที่เลือก</p></div>)}</CardContent></Card>
           </div>
         </TabsContent>
 
         <TabsContent value="users" className="space-y-6">
           <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center"><CardTitle>จัดการผู้ใช้งาน</CardTitle><div className="relative w-64"><Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" /><Input placeholder="ค้นหา..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div></div>
-            </CardHeader>
+            <CardHeader><div className="flex justify-between items-center"><CardTitle>จัดการผู้ใช้งาน</CardTitle><div className="relative w-64"><Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" /><Input placeholder="ค้นหา..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div></div></CardHeader>
             <CardContent>
                 <Table>
                     <TableHeader><TableRow><TableHead>ชื่อ</TableHead><TableHead>อีเมล</TableHead><TableHead>Device ID</TableHead><TableHead>สถานะ</TableHead><TableHead className="text-right">จัดการ</TableHead></TableRow></TableHeader>

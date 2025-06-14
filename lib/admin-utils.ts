@@ -1,5 +1,62 @@
-import { ref, get, set } from "firebase/database"
+import { ref, get, set, remove } from "firebase/database"
 import { database } from "./firebase"
+import type { UserProfile } from "./types"
+
+/**
+ * Get all users (Admin function)
+ */
+export const getAllUsers = async (): Promise<UserProfile[]> => {
+  try {
+    if (!database) {
+      throw new Error("Firebase DB not available")
+    }
+    const usersRef = ref(database, "users")
+    const snapshot = await get(usersRef)
+    if (snapshot.exists()) {
+      const usersData = snapshot.val()
+      return Object.entries(usersData).map(([uid, data]: [string, any]) => ({
+        uid,
+        ...data,
+      }))
+    }
+    return []
+  } catch (error) {
+    console.error("❌ Error in getAllUsers:", error)
+    // Re-throw the error to be caught by the calling component
+    throw error
+  }
+}
+
+/**
+ * Delete user (Admin function)
+ */
+export const deleteUser = async (
+  uid: string,
+): Promise<{ success: boolean; error?: string; releasedDeviceId?: string }> => {
+  try {
+    if (!database) {
+      throw new Error("Database not initialized")
+    }
+
+    const userRef = ref(database, `users/${uid}`)
+    const userSnapshot = await get(userRef)
+
+    if (userSnapshot.exists()) {
+      const userData = userSnapshot.val()
+      await remove(userRef)
+      console.log("✅ Firebase: User deleted successfully")
+      return {
+        success: true,
+        releasedDeviceId: userData?.deviceId || undefined,
+      }
+    }
+    return { success: false, error: "User not found" }
+  } catch (error: any) {
+    console.error("🔥 Firebase: Error deleting user:", error)
+    return { success: false, error: error.message }
+  }
+}
+
 
 // ฟังก์ชันสำหรับเปลี่ยน Driver เป็น Admin
 export const promoteDriverToAdmin = async (
