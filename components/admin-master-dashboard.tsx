@@ -33,25 +33,25 @@ import {
   ResponsiveContainer,
 } from "recharts"
 import {
-  AlertTriangle,
-  Eye,
-  Users,
-  Activity,
-  Clock,
-  BarChart3,
-  Download,
-  Search,
-  User,
-  LayoutDashboard,
-  UserX,
+    AlertTriangle, Eye, Users, Activity, Clock, BarChart3,
+    Search, User, LayoutDashboard, UserX, TrendingUp
 } from "lucide-react"
 import { LoadingScreen } from "@/components/loading-screen"
-import { formatDate } from "@/lib/date-utils"
-import { database } from "@/lib/firebase" // Use the main firebase instance
+import { database } from "@/lib/firebase" 
 import { ref, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import { deleteUser, signOut } from "@/lib/auth"
 import type { UserProfile } from "@/lib/types"
+// FIX: Added missing Table component imports
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 
 
 interface AlertData {
@@ -70,7 +70,7 @@ export function AdminMasterDashboard() {
   const [dateRange, setDateRange] = useState(() => {
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setDate(endDate.getDate() - 7)
+    startDate.setDate(endDate.getDate() - 7) // Default to last 7 days
     return {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -95,7 +95,6 @@ export function AdminMasterDashboard() {
   const { toast } = useToast()
   const router = useRouter()
 
-  // Load all necessary initial data
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true)
@@ -130,7 +129,7 @@ export function AdminMasterDashboard() {
 
       } catch (error) {
         console.error("❌ Error loading initial admin data:", error)
-        toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถโหลดข้อมูลระบบได้", variant: "destructive" })
+        toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถโหลดข้อมูลระบบได้ เนื่องจากติดปัญหาเรื่องสิทธิ์การเข้าถึง", variant: "destructive" })
       } finally {
         setLoading(false)
       }
@@ -138,14 +137,12 @@ export function AdminMasterDashboard() {
     loadAllData()
   }, [toast])
 
-  // Recalculate stats when data or dateRange changes
   useEffect(() => {
-    if (loading) return
+    if (loading) return;
 
     const startTime = new Date(dateRange.startDate).getTime()
     const endTime = new Date(dateRange.endDate).getTime()
 
-    // Filter alerts based on the current date range
     const filteredAlerts = alerts.filter(alert => {
         const alertTime = new Date(alert.timestamp).getTime()
         return alertTime >= startTime && alertTime <= endTime
@@ -177,13 +174,12 @@ export function AdminMasterDashboard() {
     })
   }, [users, alerts, devices, dateRange, loading])
 
-  // Filter users for display
   useEffect(() => {
     setFilteredUsers(
       users.filter(
         (user) =>
-          user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          user.email.toLowerCase().includes(searchTerm.toLowerCase())
+          (user.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
       )
     )
   }, [searchTerm, users])
@@ -204,11 +200,6 @@ export function AdminMasterDashboard() {
     }
     setUserToDelete(null);
     setIsLoading(false);
-  }
-
-  const handleLogout = async () => {
-    await signOut();
-    router.push("/login");
   }
 
   const hourlyActivity = () => {
@@ -255,16 +246,16 @@ export function AdminMasterDashboard() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div></CardContent></Card>
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ที่ใช้งาน</CardTitle><Activity className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.activeDevices}</div></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div><p className="text-xs text-muted-foreground">อุปกรณ์ที่มีผู้ใช้</p></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ที่ใช้งาน</CardTitle><Activity className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.activeDevices}</div><p className="text-xs text-muted-foreground">ออนไลน์ใน 5 นาทีล่าสุด</p></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ผู้ขับขี่</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalUsers}</div></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ผู้ดูแลระบบ</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.adminUsers}</div></CardContent></Card>
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">การหาว</CardTitle><Eye className="h-4 w-4 text-yellow-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-yellow-600">{stats.totalYawns}</div></CardContent></Card>
-             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ความง่วง</CardTitle><BarChart3 className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{stats.totalDrowsiness}</div></CardContent></Card>
-             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">แจ้งเตือนด่วน</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{stats.totalAlerts}</div></CardContent></Card>
+             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">การหาว</CardTitle><Eye className="h-4 w-4 text-yellow-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-yellow-600">{stats.totalYawns}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
+             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ความง่วง</CardTitle><BarChart3 className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{stats.totalDrowsiness}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
+             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">แจ้งเตือนด่วน</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{stats.totalAlerts}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
           </div>
 
           <div className="grid gap-6 lg:grid-cols-2">
@@ -299,7 +290,7 @@ export function AdminMasterDashboard() {
                     <TableHeader><TableRow><TableHead>ชื่อ</TableHead><TableHead>อีเมล</TableHead><TableHead>Device ID</TableHead><TableHead>สถานะ</TableHead><TableHead className="text-right">จัดการ</TableHead></TableRow></TableHeader>
                     <TableBody>
                         {filteredUsers.map((user) => {
-                            const isActive = devices[user.deviceId] && Date.now() - new Date(devices[user.deviceId].current_data?.timestamp || 0).getTime() < 5 * 60 * 1000;
+                            const isActive = devices[user.deviceId] && devices[user.deviceId].current_data && Date.now() - new Date(devices[user.deviceId].current_data!.timestamp).getTime() < 5 * 60 * 1000;
                             return (
                                 <TableRow key={user.uid}>
                                     <TableCell>{user.fullName}</TableCell>
