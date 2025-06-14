@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -20,39 +20,19 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
-  BarChart,
-  Bar,
-  PieChart,
-  Pie,
-  Cell,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
+  BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts"
 import {
-    AlertTriangle, Eye, Users, Activity, Clock, BarChart3,
-    Search, User, LayoutDashboard, UserX, TrendingUp
+  AlertTriangle, Eye, Users, Activity, Clock, BarChart3, Search, User, LayoutDashboard, UserX, TrendingUp,
 } from "lucide-react"
 import { LoadingScreen } from "@/components/loading-screen"
-import { database } from "@/lib/firebase" 
+import { database, getAllUsers, deleteUser } from "@/lib/auth" // Import from auth
 import { ref, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
-import { deleteUser, signOut } from "@/lib/auth"
 import type { UserProfile } from "@/lib/types"
-// FIX: Added missing Table component imports
 import {
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
+  Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
-
 
 interface AlertData {
   alert_type: string
@@ -62,7 +42,9 @@ interface AlertData {
 }
 
 interface DeviceData {
-  timestamp: string;
+  current_data?: {
+      timestamp: string;
+  }
 }
 
 export function AdminMasterDashboard() {
@@ -70,7 +52,7 @@ export function AdminMasterDashboard() {
   const [dateRange, setDateRange] = useState(() => {
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setDate(endDate.getDate() - 7) // Default to last 7 days
+    startDate.setDate(endDate.getDate() - 7)
     return {
       startDate: startDate.toISOString(),
       endDate: endDate.toISOString(),
@@ -81,7 +63,7 @@ export function AdminMasterDashboard() {
   const [searchTerm, setSearchTerm] = useState("")
   const [userToDelete, setUserToDelete] = useState<string | null>(null)
   const [alerts, setAlerts] = useState<AlertData[]>([])
-  const [devices, setDevices] = useState<{ [key: string]: { current_data?: DeviceData } }>({});
+  const [devices, setDevices] = useState<{ [key: string]: DeviceData }>({});
   const [stats, setStats] = useState({
     totalDevices: 0,
     activeDevices: 0,
@@ -100,30 +82,21 @@ export function AdminMasterDashboard() {
       setLoading(true)
       try {
         if (!database) throw new Error("Firebase DB not available")
+        
+        // Use getAllUsers from auth which has admin privileges implicitly
+        const usersList = await getAllUsers()
+        setUsers(usersList)
+        setFilteredUsers(usersList)
 
-        // Fetch all necessary data in parallel
-        const [usersSnapshot, alertsSnapshot, devicesSnapshot] = await Promise.all([
-          get(ref(database, "users")),
+        // Fetch other data
+        const [alertsSnapshot, devicesSnapshot] = await Promise.all([
           get(ref(database, "alerts")),
           get(ref(database, "devices")),
         ])
 
-        const usersList: UserProfile[] = []
-        if (usersSnapshot.exists()) {
-          const usersData = usersSnapshot.val()
-          Object.entries(usersData).forEach(([uid, data]: [string, any]) => {
-            usersList.push({ uid, ...data })
-          })
-        }
-        setUsers(usersList)
-        setFilteredUsers(usersList)
-
-        const alertsList: AlertData[] = []
-        if (alertsSnapshot.exists()) {
-            alertsList.push(...Object.values(alertsSnapshot.val()))
-        }
+        const alertsList: AlertData[] = alertsSnapshot.exists() ? Object.values(alertsSnapshot.val()) : []
         setAlerts(alertsList)
-
+        
         const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {}
         setDevices(devicesData)
 
@@ -137,12 +110,13 @@ export function AdminMasterDashboard() {
     loadAllData()
   }, [toast])
 
+  // Recalculate stats when data or dateRange changes
   useEffect(() => {
     if (loading) return;
 
     const startTime = new Date(dateRange.startDate).getTime()
     const endTime = new Date(dateRange.endDate).getTime()
-
+    
     const filteredAlerts = alerts.filter(alert => {
         const alertTime = new Date(alert.timestamp).getTime()
         return alertTime >= startTime && alertTime <= endTime
@@ -174,6 +148,8 @@ export function AdminMasterDashboard() {
     })
   }, [users, alerts, devices, dateRange, loading])
 
+
+  // Filter users for display
   useEffect(() => {
     setFilteredUsers(
       users.filter(
@@ -222,8 +198,8 @@ export function AdminMasterDashboard() {
     const total = totalYawns + totalDrowsiness + totalAlerts
     if (total === 0) return []
     return [
-      { name: "ระวัง (หาว)", value: totalYawns, color: "#F59E0B" },
-      { name: "อันตราย (ง่วง)", value: totalDrowsiness, color: "#F97316" },
+      { name: "หาว", value: totalYawns, color: "#F59E0B" },
+      { name: "ง่วง", value: totalDrowsiness, color: "#F97316" },
       { name: "วิกฤต", value: totalAlerts, color: "#EF4444" },
     ].filter((item) => item.value > 0)
   }
@@ -246,8 +222,8 @@ export function AdminMasterDashboard() {
           </div>
 
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div><p className="text-xs text-muted-foreground">อุปกรณ์ที่มีผู้ใช้</p></CardContent></Card>
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ที่ใช้งาน</CardTitle><Activity className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.activeDevices}</div><p className="text-xs text-muted-foreground">ออนไลน์ใน 5 นาทีล่าสุด</p></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div></CardContent></Card>
+            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ที่ใช้งาน</CardTitle><Activity className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.activeDevices}</div></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ผู้ขับขี่</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalUsers}</div></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ผู้ดูแลระบบ</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.adminUsers}</div></CardContent></Card>
           </div>
@@ -262,18 +238,14 @@ export function AdminMasterDashboard() {
             <Card>
               <CardHeader><CardTitle>กิจกรรมตามช่วงเวลา</CardTitle></CardHeader>
               <CardContent className="h-[350px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={hourlyActivity()}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="hour" tickFormatter={(hour) => `${hour}:00`} /><YAxis /><Tooltip /><Legend /><Bar dataKey="yawns" fill="#F59E0B" name="การหาว" /><Bar dataKey="drowsiness" fill="#F97316" name="ความง่วง" /><Bar dataKey="alerts" fill="#EF4444" name="แจ้งเตือนด่วน" /></BarChart>
-                </ResponsiveContainer>
+                <ResponsiveContainer width="100%" height="100%"><BarChart data={hourlyActivity()}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="hour" tickFormatter={(hour) => `${hour}:00`} /><YAxis /><Tooltip /><Legend /><Bar dataKey="yawns" fill="#F59E0B" name="การหาว" /><Bar dataKey="drowsiness" fill="#F97316" name="ความง่วง" /><Bar dataKey="alerts" fill="#EF4444" name="แจ้งเตือนด่วน" /></BarChart></ResponsiveContainer>
               </CardContent>
             </Card>
             <Card>
               <CardHeader><CardTitle>การกระจายระดับความเสี่ยง</CardTitle></CardHeader>
               <CardContent className="h-[350px]">
                 {riskDistribution().length > 0 ? (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart><Pie data={riskDistribution()} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{riskDistribution().map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value: number, name: string) => [`${value} เหตุการณ์`, name]} /><Legend /></PieChart>
-                  </ResponsiveContainer>
+                  <ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={riskDistribution()} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{riskDistribution().map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value: number, name: string) => [`${value} เหตุการณ์`, name]} /><Legend /></PieChart></ResponsiveContainer>
                 ) : (<div className="flex items-center justify-center h-full"><p className="text-gray-500">ไม่มีข้อมูลในช่วงเวลาที่เลือก</p></div>)}
               </CardContent>
             </Card>
@@ -283,7 +255,16 @@ export function AdminMasterDashboard() {
         <TabsContent value="users" className="space-y-6">
           <Card>
             <CardHeader>
-              <div className="flex justify-between items-center"><CardTitle>จัดการผู้ใช้งาน</CardTitle><div className="relative w-64"><Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" /><Input placeholder="ค้นหาผู้ใช้..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div></div>
+                <div className="flex justify-between items-center">
+                    <div>
+                        <CardTitle>จัดการผู้ใช้งาน</CardTitle>
+                        <CardDescription>รายชื่อผู้ใช้งานทั้งหมดในระบบ {filteredUsers.length} คน</CardDescription>
+                    </div>
+                    <div className="relative w-64">
+                        <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" />
+                        <Input placeholder="ค้นหา..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+                    </div>
+                </div>
             </CardHeader>
             <CardContent>
                 <Table>
@@ -298,7 +279,7 @@ export function AdminMasterDashboard() {
                                     <TableCell>{user.deviceId || 'N/A'}</TableCell>
                                     <TableCell><Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{user.role}</Badge>{isActive && <Badge className="ml-2 bg-green-100 text-green-800">ออนไลน์</Badge>}</TableCell>
                                     <TableCell className="text-right">
-                                        <Button variant="outline" size="sm" onClick={() => router.push(`/admin/dashboard/${user.uid}`)}>แดชบอร์ด</Button>
+                                        <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/dashboard/${user.uid}`)}>แดชบอร์ด</Button>
                                         {user.role !== 'admin' && <AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="ml-2" onClick={() => setUserToDelete(user.uid)}>ลบ</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>ยืนยันการลบ</AlertDialogTitle><AlertDialogDescription>คุณต้องการลบผู้ใช้ {user.fullName} หรือไม่?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>ยกเลิก</AlertDialogCancel><AlertDialogAction onClick={handleDeleteUser}>ยืนยัน</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
                                     </TableCell>
                                 </TableRow>
