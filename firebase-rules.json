@@ -33,9 +33,12 @@
     
     // --- กฎสำหรับข้อมูลการแจ้งเตือน ---
     "alerts": {
-      // Admin อ่านได้ทั้งหมด (สืบทอดจากกฎ Root)
+      // อนุญาตให้ผู้ใช้ที่ Login แล้วสามารถ Query อ่านข้อมูลได้
+      // แต่ต้องเป็นการ Query ที่ระบุ device_id ของตัวเองเท่านั้น
+      ".read": "auth != null && query.orderByChild === 'device_id' && query.equalTo === root.child('users/' + auth.uid + '/deviceId').val()",
+      
       "$alertId": {
-        // ผู้ใช้ทั่วไปจะอ่านได้เฉพาะ alert ของอุปกรณ์ตัวเอง
+        // ผู้ใช้ทั่วไปจะอ่านได้เฉพาะ alert ของอุปกรณ์ตัวเอง (สำหรับการเข้าถึงโดยตรง)
         ".read": "data.child('device_id').val() === root.child('users/' + auth.uid + '/deviceId').val()",
         // การเขียนจะทำได้โดยผู้ใช้ที่เป็นเจ้าของอุปกรณ์ หรือ Admin
         ".write": "root.child('users/' + auth.uid + '/role').val() === 'admin' || newData.child('device_id').val() === root.child('users/' + auth.uid + '/deviceId').val()",
