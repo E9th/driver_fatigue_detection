@@ -1,43 +1,96 @@
 "use client"
-import { Button } from "@/components/ui/button"
 
-const DashboardPage = () => {
+import type { SafetyData, UserProfile } from "@/lib/types"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { AlertTriangle, Shield, TrendingUp, User } from "lucide-react"
+import ChartsSection from "@/components/charts-section"
+import { SafetyScoreTooltip } from "@/components/safety-score-tooltip"
+import { LoadingScreen } from "./loading-screen"
+
+// กำหนด Type ของ Props ที่จะรับเข้ามา
+interface DashboardPageProps {
+  safetyData: SafetyData | null
+  isLoading: boolean
+  userProfile?: UserProfile | null
+}
+
+// Component หลัก
+export const DashboardPage = ({ safetyData, isLoading, userProfile }: DashboardPageProps) => {
+  // หากกำลังโหลดข้อมูล ให้แสดงหน้า Loading
+  if (isLoading || !safetyData) {
+    return <LoadingScreen />
+  }
+
+  // แกะข้อมูลที่จำเป็นออกมาจาก safetyData
+  const { historicalData, stats, safetyScore } = safetyData
+
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">Dashboard</h1>
-
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-2">Welcome</h2>
-        <p>Welcome to your dashboard! This is where you can manage your account and access various features.</p>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-2">Account Overview</h2>
-        {/* Add account overview information here */}
-        <p>Account information will be displayed here.</p>
-      </section>
-
-      <section className="mb-8">
-        <h2 className="text-xl font-semibold mb-2">Quick Actions</h2>
-        <div className="flex space-x-4">
-          <Button>Update Profile</Button>
-          <Button>Change Password</Button>
+    <div className="flex flex-col gap-6 p-4 md:p-6">
+      <div className="flex items-center gap-4">
+        <User className="w-8 h-8" />
+        <div>
+          <h1 className="text-2xl font-bold">
+            แดชบอร์ดของ: {userProfile?.fullName || "Driver"}
+          </h1>
+          <p className="text-muted-foreground">
+            ข้อมูลภาพรวมความปลอดภัยในการขับขี่
+          </p>
         </div>
-      </section>
+      </div>
 
-      <section>
-        <h2 className="text-xl font-semibold mb-2">Debug Panel</h2>
-        <div className="flex space-x-4">
-          <Button variant="outline" size="sm" onClick={() => window.open("/", "_blank")} className="text-xs">
-            Go to Landing
-          </Button>
-          <Button variant="outline" size="sm" onClick={() => window.open("/register", "_blank")} className="text-xs">
-            Register Page
-          </Button>
-        </div>
-      </section>
+      {/* ส่วนของการ์ดแสดงสถิติ */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">คะแนนความปลอดภัย</CardTitle>
+            <SafetyScoreTooltip score={safetyScore} />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{safetyScore}</div>
+            <p className="text-xs text-muted-foreground">ยิ่งคะแนนสูง ยิ่งปลอดภัย</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">ค่าเฉลี่ย EAR</CardTitle>
+            <Shield className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.averageEAR ?? "N/A"}</div>
+            <p className="text-xs text-muted-foreground">ค่าการลืมตาเฉลี่ย</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">แจ้งเตือน (ทั้งหมด)</CardTitle>
+            <AlertTriangle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {(stats?.totalYawns ?? 0) + (stats?.totalDrowsiness ?? 0) + (stats?.totalAlerts ?? 0)}
+            </div>
+            <p className="text-xs text-muted-foreground">จำนวนครั้งที่ระบบแจ้งเตือน</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">แจ้งเตือน (วิกฤต)</CardTitle>
+            <TrendingUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{stats?.totalAlerts ?? 0}</div>
+            <p className="text-xs text-muted-foreground">จำนวนครั้งที่เสี่ยงอันตราย</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ส่วนของกราฟ */}
+      <div className="grid gap-6">
+        <ChartsSection data={historicalData || []} stats={stats} showAllCharts={true} />
+      </div>
     </div>
   )
 }
 
+// export default เพื่อให้สามารถนำไปใช้ที่อื่นได้
 export default DashboardPage
