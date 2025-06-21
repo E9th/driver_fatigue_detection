@@ -110,4 +110,4 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data = [], stats = null, 
   )
 }
 
-export default ChartsSection /
+export default ChartsSection
