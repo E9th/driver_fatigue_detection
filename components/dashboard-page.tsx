@@ -1,6 +1,6 @@
 "use client"
 
-import type { SafetyData, UserProfile } from "@/lib/types"
+import type { SafetyData, UserProfile, HistoricalData, AlertData } from "@/lib/types"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertTriangle, Shield, TrendingUp, User } from "lucide-react"
 import ChartsSection from "@/components/charts-section"
@@ -21,8 +21,8 @@ export const DashboardPage = ({ safetyData, isLoading, userProfile }: DashboardP
     return <LoadingScreen />
   }
 
-  // แกะข้อมูลที่จำเป็นออกมาจาก safetyData
-  const { historicalData, stats, safetyScore } = safetyData
+  // --- จุดแก้ไขที่ 1: เปลี่ยนจากการอ่าน historicalData มาเป็น events ---
+  const { events, stats, safetyScore } = safetyData
 
   return (
     <div className="flex flex-col gap-6 p-4 md:p-6">
@@ -86,7 +86,12 @@ export const DashboardPage = ({ safetyData, isLoading, userProfile }: DashboardP
 
       {/* ส่วนของกราฟ */}
       <div className="grid gap-6">
-        <ChartsSection data={historicalData || []} stats={stats} showAllCharts={true} />
+        {/* --- จุดแก้ไขที่ 2: ส่ง events ไปเป็น prop ที่ชื่อ data --- */}
+        <ChartsSection
+          data={events as HistoricalData[]}
+          stats={stats}
+          showAllCharts={true}
+        />
       </div>
     </div>
   )
