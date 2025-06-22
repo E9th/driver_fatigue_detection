@@ -1,12 +1,12 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Download, Loader2 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { useAuthState } from "@/lib/auth"
-import type { HistoricalData, DailyStats, UserProfile } from "@/lib/types"
+import type { HistoricalData, DailyStats } from "@/lib/types"
 import { dataService } from "@/lib/data-service"
 
 interface ExportDataProps {
@@ -17,13 +17,13 @@ interface ExportDataProps {
   disabled?: boolean
 }
 
+// FIX: Changed component name to PascalCase as per React standards
 export function ExportData({ data, stats, deviceId, dateRange, disabled = false }: ExportDataProps) {
   const [exportFormat, setExportFormat] = useState<"pdf" | "csv">("pdf")
   const [isExporting, setIsExporting] = useState(false)
   const { userProfile } = useAuthState()
   const { toast } = useToast()
 
-  // --- 1. IMPROVED CSV EXPORT ---
   const exportToCSV = () => {
     if (!data || data.length === 0) {
       toast({ title: "ไม่มีข้อมูลให้ส่งออก", variant: "destructive" })
@@ -31,22 +31,14 @@ export function ExportData({ data, stats, deviceId, dateRange, disabled = false 
     }
 
     const headers = [
-      "ID",
-      "Timestamp",
-      "Status",
-      "EAR",
-      "Mouth Distance",
-      "Yawn Events (Cumulative)",
-      "Drowsiness Events (Cumulative)",
-      "Critical Alerts (Cumulative)",
+      "ID", "Timestamp", "Status", "EAR", "Mouth Distance",
+      "Yawn Events (Cumulative)", "Drowsiness Events (Cumulative)", "Critical Alerts (Cumulative)",
     ]
-
     const csvRows = [headers.join(",")]
-
     data.forEach((row) => {
       const values = [
         `"${row.id}"`,
-        `"${new Date(row.timestamp).toLocaleString("sv-SE")}"`, // Use a neutral, sortable format
+        `"${new Date(row.timestamp).toLocaleString("sv-SE")}"`,
         `"${row.status}"`,
         row.ear?.toFixed(4) || "0.0000",
         row.mouth_distance?.toFixed(2) || "0.00",
@@ -68,7 +60,6 @@ export function ExportData({ data, stats, deviceId, dateRange, disabled = false 
     document.body.removeChild(link)
   }
 
-  // --- 2. USER-FRIENDLY PDF REPORT ---
   const exportToPDF = () => {
     if (!stats || !userProfile) {
       toast({ title: "ข้อมูลไม่พร้อมสำหรับสร้างรายงาน", variant: "destructive" })
@@ -78,6 +69,7 @@ export function ExportData({ data, stats, deviceId, dateRange, disabled = false 
     const report = dataService.generateReport(data, stats)
     const score = dataService.calculateSafetyScore(stats)
 
+    // ===== ส่วนที่แก้ไขอยู่ด้านล่างนี้ =====
     const htmlContent = `
       <!DOCTYPE html>
       <html lang="th">
@@ -119,7 +111,7 @@ export function ExportData({ data, stats, deviceId, dateRange, disabled = false 
                       <div class="label">คะแนนความปลอดภัย</div>
                   </div>
                   <div class="card" style="border-left: 5px solid #16a34a;">
-                      <div class="value">${stats.averageEAR.toFixed(3)}</div>
+                      <div class="value">${stats.averageEAR?.toFixed(3) || 'N/A'}</div> {/* <-- แก้ไขจุดที่ 1 */}
                       <div class="label">ค่าเฉลี่ย EAR (สูง=ดี)</div>
                   </div>
                    <div class="card" style="border-left: 5px solid #f59e0b;">
@@ -151,7 +143,7 @@ export function ExportData({ data, stats, deviceId, dateRange, disabled = false 
                           <tr>
                               <td>${new Date(event.timestamp).toLocaleString("th-TH")}</td>
                               <td>${event.status}</td>
-                              <td>${event.ear.toFixed(4)}</td>
+                              <td>${event.ear?.toFixed(4) || 'N/A'}</td> {/* <-- แก้ไขจุดที่ 2 */}
                           </tr>
                       `).join('')}
                       ${data.length === 0 ? '<tr><td colspan="3" style="text-align:center;">ไม่มีเหตุการณ์</td></tr>' : ''}
@@ -165,12 +157,12 @@ export function ExportData({ data, stats, deviceId, dateRange, disabled = false 
       </body>
       </html>
     `
+    // ===================================
 
     const printWindow = window.open("", "_blank")
     if (printWindow) {
       printWindow.document.write(htmlContent)
       printWindow.document.close()
-      // Use a timeout to ensure styles are applied before printing
       setTimeout(() => {
         printWindow.print()
       }, 500);
