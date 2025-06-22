@@ -21,7 +21,8 @@ interface AdminMasterDashboardProps {
   users: UserProfile[]
 }
 
-export function AdminMasterDashboard({ users }: AdminMasterDashboardProps) {
+// --- FIX: Add default value users = [] to prevent crash on initial render ---
+export function AdminMasterDashboard({ users = [] }: AdminMasterDashboardProps) {
   const [searchTerm, setSearchTerm] = useState('')
   const [exportFormat, setExportFormat] = useState<"pdf" | "csv">("csv")
   const [isExporting, setIsExporting] = useState(false)
@@ -72,7 +73,7 @@ export function AdminMasterDashboard({ users }: AdminMasterDashboardProps) {
       <!DOCTYPE html>
       <html lang="th">
       <head>
-          <meta charset="UTF-A">
+          <meta charset="UTF-8">
           <title>รายงานรายชื่อผู้ใช้งานทั้งหมด</title>
           <style>
               @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;500;700&display=swap');
@@ -166,7 +167,6 @@ export function AdminMasterDashboard({ users }: AdminMasterDashboardProps) {
           </p>
         </div>
         
-        {/* --- Export UI Changed Here --- */}
         <div className="flex items-center gap-2">
             <Select value={exportFormat} onValueChange={(value) => setExportFormat(value as "pdf" | "csv")}>
                 <SelectTrigger className="w-[120px]">
@@ -182,7 +182,6 @@ export function AdminMasterDashboard({ users }: AdminMasterDashboardProps) {
                 {isExporting ? "กำลังสร้าง..." : "Export"}
             </Button>
         </div>
-        {/* ----------------------------- */}
       </div>
       
       <div className="p-4 border bg-card text-card-foreground rounded-lg">
