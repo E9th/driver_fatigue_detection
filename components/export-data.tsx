@@ -55,6 +55,22 @@ export function ExportData({ data, stats, deviceId, dateRange, disabled = false 
     document.body.removeChild(link)
   }
 
+  const translateEventDetails = (detail: string) => {
+    switch (detail?.toLowerCase()) {
+      case 'yawn':
+        return 'การหาว';
+      case 'drowsiness':
+      case 'fatigue':
+        return 'อาการง่วง/อ่อนเพลีย';
+      case 'critical':
+        return 'เหตุการณ์ฉุกเฉิน';
+      case 'normal':
+        return 'ขับขี่ปกติ';
+      default:
+        return detail || 'ไม่ระบุ';
+    }
+  };
+
   const exportToPDF = () => {
     if (!stats || !userProfile) {
       toast({ title: "ข้อมูลไม่พร้อมสำหรับสร้างรายงาน", variant: "destructive" })
