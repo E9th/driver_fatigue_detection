@@ -23,7 +23,7 @@ export default function ReportsPage() {
   const [dateRange, setDateRange] = useState(() => {
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setMonth(endDate.getMonth() - 1) // Default to last 30 days for reports
+    startDate.setMonth(endDate.getMonth() - 1)
     return {
       start: startDate.toISOString(),
       end: endDate.toISOString(),
@@ -41,6 +41,9 @@ export default function ReportsPage() {
     setError(null)
 
     try {
+      console.log(">>> Calling getFilteredSafetyData from Reports Page");
+      console.log(">>> dataService keys:", Object.keys(dataService)); // Debugging log as you suggested
+      
       const data = await dataService.getFilteredSafetyData(
         userProfile.deviceId,
         dateRange.start,
@@ -60,9 +63,10 @@ export default function ReportsPage() {
       loadReportData()
     } else if (!authLoading && !userProfile) {
       setLoading(false)
-      setError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้")
+      setError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้ กรุณาล็อคอินอีกครั้ง")
+      router.push('/login');
     }
-  }, [authLoading, userProfile, loadReportData])
+  }, [authLoading, userProfile, loadReportData, router])
 
   const handleDateChange = (start: string, end: string) => {
     setDateRange({ start, end })
