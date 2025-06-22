@@ -128,7 +128,7 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold">แดชบอร์ดของผู้ใช้</h1>
+              <h1 className="text-2xl font-bold">แดชบอร์ดของผู้ขับขี่</h1>
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 {userProfile?.fullName} (Device ID: {userProfile?.deviceId})
               </p>
@@ -175,16 +175,6 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
             </CardContent>
           </Card>
         </div>
-        
-        <Suspense fallback={<LoadingScreen message="กำลังโหลดกราฟ..." />}>
-          <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><BarChart3 className="h-5 w-5 text-green-600"/>กราฟวิเคราะห์</CardTitle></CardHeader>
-            <CardContent>
-                {/* FIXED: Pass the correct 'stats' prop to ChartsSection */}
-                <ChartsSection stats={stats} />
-            </CardContent>
-          </Card>
-        </Suspense>
 
         <Card>
           <CardHeader><CardTitle>ประวัติเหตุการณ์ความปลอดภัย</CardTitle></CardHeader>
