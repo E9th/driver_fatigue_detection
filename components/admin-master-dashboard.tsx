@@ -17,7 +17,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger, // --- เพิ่ม import ที่ขาดไปที่นี่ ---
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
   DropdownMenu,
@@ -53,7 +53,7 @@ interface AlertData {
 
 interface DeviceData {
   current_data?: {
-    timestamp: string;
+      timestamp: string;
   }
 }
 
@@ -306,7 +306,7 @@ export function AdminMasterDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="flex justify-between items-center p-4 border rounded-lg bg-card">
+          <div className="flex justify-between items-center p-4 border rounded-lg bg-white dark:bg-gray-800">
             <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
             <Button onClick={handleExportSummary} variant="outline">
               <Download className="mr-2 h-4 w-4" />
