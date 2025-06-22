@@ -12,7 +12,7 @@ import { LoadingScreen } from "@/components/loading-screen"
 import { DateTimeFilter } from "@/components/date-time-filter"
 import ChartsSection from "@/components/charts-section"
 import { SafetyScoreTooltip } from "@/components/safety-score-tooltip"
-import ExportData from "@/components/export-data" //  <-- (1) เพิ่ม import
+import { ExportData } from "@/components/export-data" //  <-- (1) แก้ไขบรรทัดนี้
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
@@ -124,7 +124,6 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
       <div className="container mx-auto py-6 space-y-6">
         
-        {/* ===== (2) แก้ไขส่วนนี้ ===== */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button variant="outline" size="icon" onClick={() => router.push('/admin/dashboard')}>
@@ -141,7 +140,9 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
           <div className="flex items-center gap-2">
             {userProfile?.deviceId && (
               <ExportData
-                uid={uid}
+                // @ts-ignore
+                data={events} // Pass the events array
+                stats={stats}   // Pass the stats object
                 deviceId={userProfile.deviceId}
                 dateRange={dateRange}
               />
@@ -158,7 +159,6 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
             </DropdownMenu>
           </div>
         </div>
-        {/* ======================== */}
         
         <Card><CardContent className="p-4"><DateTimeFilter onFilterChange={handleFilterChange} initialStartDate={dateRange.start} initialEndDate={dateRange.end} /></CardContent></Card>
 
@@ -178,7 +178,7 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
                         averageEAR={stats.averageEAR}
                     />
                 </div>
-              </CardContent>
+              </Content>
           </Card>
           <Card className="lg:col-span-2">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Activity className="h-5 w-5 text-indigo-600"/>สรุปเหตุการณ์</CardTitle></CardHeader>
@@ -194,7 +194,6 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
           <Card>
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><BarChart3 className="h-5 w-5 text-green-600"/>กราฟวิเคราะห์</CardTitle></CardHeader>
             <CardContent>
-              {/* FIXED: Pass the correct 'stats' prop to ChartsSection */}
               <ChartsSection stats={stats} />
             </CardContent>
           </Card>
