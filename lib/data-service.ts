@@ -7,7 +7,6 @@ import { analyzeSafetyData } from "@/lib/data-analyzer";
 
 /**
  * Service for handling data operations.
- * Centralizes data fetching, processing, and report generation.
  */
 export const dataService = {
   /**
@@ -18,7 +17,6 @@ export const dataService = {
         throw new Error("Invalid Device ID provided.");
     }
     
-    // Construct refs to the correct paths
     const historyRef = ref(db, `history/${deviceId}`);
     const alertsRef = ref(db, `alerts/${deviceId}`);
 
@@ -36,25 +34,20 @@ export const dataService = {
         return itemDate >= new Date(startDateISO) && itemDate <= new Date(endDateISO);
     };
     
-    const filteredHistory = Object.entries(allHistoryData)
-        .map(([id, data]) => ({ id, ...(data as Omit<HistoricalData, 'id'>) }))
-        .filter(filterByDate);
+    const filteredHistory = Object.values(allHistoryData).filter(filterByDate);
+    const filteredAlerts = Object.values(allAlertsData).filter(filterByDate);
 
-    const filteredAlerts = Object.entries(allAlertsData)
-      .map(([id, data]) => ({ id, ...(data as Omit<SafetyEvent, 'id'>) }))
-      .filter(filterByDate);
-
-    const events: SafetyEvent[] = [...filteredAlerts, ...filteredHistory]
+    // Combine and map data correctly
+    const events: SafetyEvent[] = [...(filteredAlerts as SafetyEvent[]), ...(filteredHistory as HistoricalData[])]
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-      .map(event => ({
-        id: event.id,
+      .map((event, index) => ({
+        id: (event as any).id || `${event.timestamp}-${index}`,
         timestamp: event.timestamp,
         details: (event as any).status || (event as any).details || 'ไม่ระบุ',
         severity: event.severity || 1,
         ear: (event as any).ear
       }));
     
-    // This function call is now valid because analyzeSafetyData is correctly imported.
     return analyzeSafetyData(events, deviceId, startDateISO, endDateISO);
   },
 
@@ -65,21 +58,11 @@ export const dataService = {
     const recommendations: string[] = [];
     const score = this.calculateSafetyScore(stats);
 
-    if (score < 60) {
-      recommendations.push("คะแนนความปลอดภัยของคุณค่อนข้างต่ำ ควรเพิ่มความระมัดระวังในการขับขี่");
-    }
-    if (stats.criticalEvents > 5) {
-      recommendations.push("ตรวจพบเหตุการณ์วิกฤตหลายครั้ง โปรดตรวจสอบสภาพร่างกายและยานพาหนะก่อนเดินทาง");
-    } else if (stats.fatigueEvents > 10) {
-      recommendations.push("มีความเสี่ยงเรื่องความง่วงขณะขับขี่สูง ควรหยุดพักทุกๆ 1-2 ชั่วโมง");
-    }
-    if (stats.yawnEvents > 20) {
-      recommendations.push("สังเกตพบการหาวบ่อยครั้ง ซึ่งเป็นสัญญาณของความเหนื่อยล้า ควรนอนหลับให้เพียงพอก่อนขับรถ");
-    }
-    
-    if (recommendations.length === 0) {
-      recommendations.push("ยอดเยี่ยม! คุณขับขี่ได้อย่างปลอดภัยในช่วงเวลานี้ โปรดรักษามาตรฐานนี้ต่อไป");
-    }
+    if (score < 60) recommendations.push("คะแนนความปลอดภัยของคุณค่อนข้างต่ำ ควรเพิ่มความระมัดระวัง");
+    if (stats.criticalEvents > 5) recommendations.push("ตรวจพบเหตุการณ์วิกฤตหลายครั้ง โปรดตรวจสอบสภาพร่างกายและยานพาหนะ");
+    if (stats.fatigueEvents > 10) recommendations.push("มีความเสี่ยงเรื่องความง่วงสูง ควรหยุดพักทุกๆ 1-2 ชั่วโมง");
+    if (stats.yawnEvents > 20) recommendations.push("สังเกตพบการหาวบ่อยครั้ง ควรนอนหลับให้เพียงพอ");
+    if (recommendations.length === 0) recommendations.push("ยอดเยี่ยม! การขับขี่ของคุณปลอดภัยดี");
 
     return { recommendations };
   },
@@ -92,13 +75,10 @@ export const dataService = {
     score -= (stats.criticalEvents * 5);
     score -= (stats.fatigueEvents * 2);
     score -= (stats.yawnEvents * 0.5);
-    if (stats.averageEAR > 0.3) {
-      score += 5;
-    }
+    if (stats.averageEAR > 0.3) score += 5;
     return Math.max(0, Math.min(score, 100));
   },
   
-  // --- THE FIX: Re-exporting analyzeSafetyData so other modules can use it via dataService ---
+  // --- THE FIX: Re-exporting analyzeSafetyData as you correctly pointed out ---
   analyzeSafetyData,
-  // -----------------------------------------------------------------------------------------
 };
