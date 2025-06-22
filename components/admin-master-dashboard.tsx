@@ -206,36 +206,83 @@ export function AdminMasterDashboard() {
     const reportDate = new Date().toLocaleDateString("th-TH", { year: 'numeric', month: 'long', day: 'numeric' });
     const timeRange = `${new Date(dateRange.startDate).toLocaleDateString("th-TH")} - ${new Date(dateRange.endDate).toLocaleDateString("th-TH")}`;
     
+    // --- UPDATED PDF TEMPLATE ---
     const htmlContent = `
       <!DOCTYPE html>
-      <html lang="th"><head><meta charset="UTF-8"><title>รายงานสรุปภาพรวมระบบ</title>
-      <style>
-          @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
-          body { font-family: 'Sarabun', sans-serif; margin: 25px; color: #333; }
-          .container { max-width: 800px; margin: auto; } .header { text-align: center; margin-bottom: 25px; }
-          .header h1 { margin: 0; } .header p { margin: 5px 0; color: #555; }
-          .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-          .card { border: 1px solid #ddd; padding: 20px; border-radius: 8px; text-align: center; }
-          .card .value { font-size: 2.5em; font-weight: 700; } .card .label { font-size: 1em; color: #666; margin-top: 5px; }
-      </style></head>
+      <html lang="th">
+      <head>
+          <meta charset="UTF-8">
+          <title>รายงานสรุปภาพรวมระบบ</title>
+          <style>
+              @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
+              body { font-family: 'Sarabun', sans-serif; margin: 25px; color: #333; background-color: #f9fafb; }
+              .container { max-width: 800px; margin: auto; background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
+              .header { text-align: center; margin-bottom: 25px; }
+              .header h1 { margin: 0; color: #111827; font-size: 24px; }
+              .header p { margin: 5px 0; color: #6b7280; font-size: 14px; }
+              .section-title { font-size: 20px; font-weight: 700; color: #111827; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 20px; margin-top: 30px;}
+              .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+              .card { border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+              .card.risk-yellow { border-left: 5px solid #f59e0b; }
+              .card.risk-orange { border-left: 5px solid #f97316; }
+              .card.risk-red { border-left: 5px solid #ef4444; }
+              .card-icon { margin-bottom: 12px; }
+              .card .value { font-size: 2.2em; font-weight: 700; color: #1d4ed8; line-height: 1.1; }
+              .card .value .unit { font-size: 0.5em; font-weight: 400; color: #6b7280; margin-left: 4px; }
+              .card .label { font-size: 0.9em; color: #6b7280; margin-top: 5px; }
+              .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #9ca3af; }
+          </style>
+      </head>
       <body>
           <div class="container">
-              <div class="header"><h1>รายงานสรุปภาพรวมระบบ</h1><p>ข้อมูล ณ วันที่: ${reportDate}</p><p>ช่วงเวลาที่แสดงผล: ${timeRange}</p></div>
-              <h2>สถิติโดยรวม</h2>
-              <div class="grid">
-                  <div class="card"><div class="value">${stats.totalDevices}</div><div class="label">อุปกรณ์ทั้งหมด</div></div>
-                  <div class="card"><div class="value">${stats.activeDevices}</div><div class="label">อุปกรณ์ที่ใช้งาน</div></div>
-                  <div class="card"><div class="value">${stats.totalUsers}</div><div class="label">ผู้ขับขี่ทั้งหมด</div></div>
-                  <div class="card"><div class="value">${stats.adminUsers}</div><div class="label">ผู้ดูแลระบบ</div></div>
+              <div class="header">
+                  <h1>รายงานสรุปภาพรวมระบบ</h1>
+                  <p>ข้อมูล ณ วันที่: ${reportDate}</p>
+                  <p>ช่วงเวลาที่แสดงผล: ${timeRange}</p>
               </div>
-              <h2 style="margin-top: 30px;">สถิติเหตุการณ์</h2>
+
+              <h2 class="section-title">สถิติโดยรวม</h2>
               <div class="grid">
-                  <div class="card"><div class="value">${stats.totalYawns}</div><div class="label">การหาว</div></div>
-                  <div class="card"><div class="value">${stats.totalDrowsiness}</div><div class="label">ความง่วง</div></div>
-                  <div class="card" style="grid-column: span 2;"><div class="value">${stats.totalAlerts}</div><div class="label">แจ้งเตือนด่วน</div></div>
+                  <div class="card">
+                      <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></div>
+                      <div class="value">${stats.totalDevices} <span class="unit">เครื่อง</span></div><div class="label">อุปกรณ์ทั้งหมด</div>
+                  </div>
+                  <div class="card">
+                      <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
+                      <div class="value">${stats.activeDevices} <span class="unit">เครื่อง</span></div><div class="label">อุปกรณ์ที่ใช้งาน</div>
+                  </div>
+                  <div class="card">
+                      <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+                      <div class="value">${stats.totalUsers} <span class="unit">คน</span></div><div class="label">ผู้ขับขี่ทั้งหมด</div>
+                  </div>
+                  <div class="card">
+                      <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
+                      <div class="value">${stats.adminUsers} <span class="unit">คน</span></div><div class="label">ผู้ดูแลระบบ</div>
+                  </div>
+              </div>
+
+              <h2 class="section-title">สถิติเหตุการณ์</h2>
+              <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
+                  <div class="card risk-yellow">
+                      <div class="value" style="color:#d97706;">${stats.totalYawns} <span class="unit">ครั้ง</span></div>
+                      <div class="label">การหาว</div>
+                  </div>
+                  <div class="card risk-orange">
+                      <div class="value" style="color:#ea580c;">${stats.totalDrowsiness} <span class="unit">ครั้ง</span></div>
+                      <div class="label">ความง่วง</div>
+                  </div>
+                  <div class="card risk-red">
+                      <div class="value" style="color:#dc2626;">${stats.totalAlerts} <span class="unit">ครั้ง</span></div>
+                      <div class="label">แจ้งเตือนด่วน</div>
+                  </div>
+              </div>
+
+              <div class="footer">
+                  รายงานนี้สร้างโดยระบบ Driver Fatigue Detection
               </div>
           </div>
-      </body></html>`;
+      </body>
+      </html>`;
 
     const printWindow = window.open("", "_blank");
     if (printWindow) {
@@ -298,10 +345,7 @@ export function AdminMasterDashboard() {
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">แจ้งเตือนด่วน</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{stats.totalAlerts}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
-            {/* FIX: Removed () from hourlyActivity */}
             <Card><CardHeader><CardTitle>กิจกรรมตามช่วงเวลา</CardTitle></CardHeader><CardContent className="h-[350px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={hourlyActivity}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="hour" tickFormatter={(hour) => `${hour}:00`} /><YAxis /><Tooltip /><Legend /><Bar dataKey="yawns" fill="#F59E0B" name="การหาว" /><Bar dataKey="drowsiness" fill="#F97316" name="ความง่วง" /><Bar dataKey="alerts" fill="#EF4444" name="แจ้งเตือนด่วน" /></BarChart></ResponsiveContainer></CardContent></Card>
-            
-            {/* FIX: Removed () from riskDistribution */}
             <Card><CardHeader><CardTitle>การกระจายระดับความเสี่ยง</CardTitle></CardHeader><CardContent className="h-[350px]">{riskDistribution.length > 0 ? (<ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={riskDistribution} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{riskDistribution.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value, name) => [`${value} เหตุการณ์`, name]} /><Legend /></PieChart></ResponsiveContainer>) : (<div className="flex items-center justify-center h-full"><p className="text-gray-500">ไม่มีข้อมูลในช่วงเวลาที่เลือก</p></div>)}</CardContent></Card>
           </div>
         </TabsContent>
