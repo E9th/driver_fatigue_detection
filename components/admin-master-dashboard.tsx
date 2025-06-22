@@ -17,6 +17,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
+  AlertDialogTrigger, // --- เพิ่ม import ที่ขาดไปที่นี่ ---
 } from "@/components/ui/alert-dialog"
 import {
   DropdownMenu,
@@ -104,7 +105,6 @@ export function AdminMasterDashboard() {
         ]);
 
         const alertsData = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
-        // Convert alerts object to array
         const alertsList: AlertData[] = Object.keys(alertsData).reduce((acc: AlertData[], deviceId: string) => {
             const deviceAlerts = Object.values(alertsData[deviceId]) as Omit<AlertData, 'device_id'>[];
             deviceAlerts.forEach(alert => acc.push({ ...alert, device_id: deviceId }));
@@ -222,7 +222,6 @@ export function AdminMasterDashboard() {
     ].filter((item) => item.value > 0)
   }
 
-  // --- ฟังก์ชัน Export ที่เพิ่มเข้ามา ---
   const handleExportSummary = () => {
     const reportDate = new Date().toLocaleDateString("th-TH", { year: 'numeric', month: 'long', day: 'numeric' });
     const timeRange = `${new Date(dateRange.startDate).toLocaleDateString("th-TH")} - ${new Date(dateRange.endDate).toLocaleDateString("th-TH")}`;
@@ -278,7 +277,6 @@ export function AdminMasterDashboard() {
       setTimeout(() => printWindow.print(), 500);
     }
   };
-  // ------------------------------------
 
   if (loading) {
     return <LoadingScreen message="กำลังโหลดข้อมูลระบบ..." />
@@ -308,7 +306,6 @@ export function AdminMasterDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          {/* --- ปุ่ม Export ถูกเพิ่มเข้ามาที่นี่ --- */}
           <div className="flex justify-between items-center p-4 border rounded-lg bg-card">
             <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
             <Button onClick={handleExportSummary} variant="outline">
@@ -316,7 +313,6 @@ export function AdminMasterDashboard() {
               Export Summary (PDF)
             </Button>
           </div>
-          {/* ------------------------------------ */}
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ที่ใช้งาน</CardTitle><Activity className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.activeDevices}</div></CardContent></Card>
