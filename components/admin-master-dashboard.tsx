@@ -91,13 +91,9 @@ export function AdminMasterDashboard() {
     const loadAllData = async () => {
       setLoading(true)
       try {
-        if (!database) throw new Error("Firebase DB not available")
-        
         const usersList = await getAllUsers();
-        if (usersList) {
-            setUsers(usersList);
-            setFilteredUsers(usersList);
-        }
+        setUsers(usersList);
+        setFilteredUsers(usersList);
 
         const [alertsSnapshot, devicesSnapshot] = await Promise.all([
           get(ref(database, "alerts")),
@@ -106,7 +102,7 @@ export function AdminMasterDashboard() {
 
         const alertsData = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
         const alertsList: AlertData[] = Object.keys(alertsData).reduce((acc: AlertData[], deviceId: string) => {
-            const deviceAlerts = Object.values(alertsData[deviceId]) as Omit<AlertData, 'device_id'>[];
+            const deviceAlerts = alertsData[deviceId] ? Object.values(alertsData[deviceId]) as Omit<AlertData, 'device_id'>[] : [];
             deviceAlerts.forEach(alert => acc.push({ ...alert, device_id: deviceId }));
             return acc;
         }, []);
@@ -123,7 +119,8 @@ export function AdminMasterDashboard() {
       }
     };
     loadAllData();
-  }, [toast]);
+  // FIX: Changed dependency array to [] to ensure this runs only once on mount
+  }, []);
 
   useEffect(() => {
     if (loading) return;
@@ -191,7 +188,7 @@ export function AdminMasterDashboard() {
     if (result.success) {
       toast({ title: "ลบผู้ใช้สำเร็จ" });
     } else {
-      setUsers(originalUsers); // Revert on failure
+      setUsers(originalUsers);
       toast({ title: "เกิดข้อผิดพลาด", description: result.error, variant: "destructive" });
     }
   }, [users, toast]);
@@ -306,13 +303,22 @@ export function AdminMasterDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="flex justify-between items-center p-4 border rounded-lg bg-white dark:bg-gray-800">
-            <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
-            <Button onClick={handleExportSummary} variant="outline">
-              <Download className="mr-2 h-4 w-4" />
-              Export Summary (PDF)
-            </Button>
-          </div>
+          {/* FIX: Changed UI for filter/export section to be less intrusive */}
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>ตัวกรองข้อมูลและเครื่องมือ</CardTitle>
+                <Button onClick={handleExportSummary} variant="outline" size="sm">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Summary (PDF)
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
+            </CardContent>
+          </Card>
+          
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ที่ใช้งาน</CardTitle><Activity className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.activeDevices}</div></CardContent></Card>
