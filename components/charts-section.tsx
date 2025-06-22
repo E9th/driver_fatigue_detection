@@ -22,7 +22,7 @@ interface ChartsSectionProps {
 }
 
 const ChartsSection: React.FC<ChartsSectionProps> = ({ data = [], stats = null }) => {
-  // --- ส่วนของ Pie Chart (เหมือนเดิม) ---
+  // ส่วนของ Pie Chart (เหมือนเดิม)
   if (!stats) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
@@ -58,7 +58,7 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data = [], stats = null }
     )
   }
 
-  // --- ส่วนของ Line Chart (ที่เพิ่มเข้ามาใหม่) ---
+  // ส่วนของ Line Chart
   const lineChartData = data
     .filter((item): item is HistoricalData => "ear" in item && item.ear !== undefined)
     .map((item) => ({
@@ -68,7 +68,7 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data = [], stats = null }
 
   return (
     <div className="grid grid-cols-1 gap-6">
-      {/* --- กราฟเส้นแสดงค่า EAR --- */}
+      {/* กราฟเส้นแสดงค่า EAR */}
       <div className="p-4 border rounded-lg">
         <h3 className="text-lg font-medium text-center mb-4">ค่าสายตา (EAR) ตามช่วงเวลา</h3>
         {lineChartData.length > 0 ? (
@@ -90,7 +90,7 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data = [], stats = null }
         )}
       </div>
 
-      {/* --- กราฟวงกลม (เหมือนเดิม) --- */}
+      {/* กราฟวงกลม */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="p-4 border rounded-lg">
           <h3 className="text-lg font-medium text-center mb-4">ประเภทของเหตุการณ์</h3>
@@ -131,7 +131,8 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data = [], stats = null }
                   dataKey="value"
                 >
                   {severityData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={COLORS[index + 1 % COLORS.length]} />
+                    // --- จุดแก้ไข ---
+                    <Cell key={`cell-${index}`} fill={COLORS[(index + 1) % COLORS.length]} />
                   ))}
                 </Pie>
                 <Tooltip formatter={(value: number, name: string) => [`${value} ครั้ง`, name]} />
