@@ -44,18 +44,17 @@ import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 
-// Define types locally for clarity
 interface AlertData {
-  alert_type: string;
-  device_id: string;
-  severity: string;
-  timestamp: string;
+  alert_type: string
+  device_id: string
+  severity: string
+  timestamp: string
 }
 
 interface DeviceData {
   current_data?: {
-    timestamp: string;
-  };
+      timestamp: string;
+  }
 }
 
 export function AdminMasterDashboard() {
@@ -69,15 +68,13 @@ export function AdminMasterDashboard() {
       endDate: endDate.toISOString(),
     }
   })
-  
   const [users, setUsers] = useState<UserProfile[]>([])
   const [alerts, setAlerts] = useState<AlertData[]>([])
-  const [devices, setDevices] = useState<{ [key: string]: DeviceData }>({})
-
+  const [devices, setDevices] = useState<{ [key: string]: DeviceData }>({});
+  
   const { toast } = useToast()
   const router = useRouter()
 
-  // This effect fetches all initial data ONCE when the component mounts.
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true)
@@ -90,11 +87,11 @@ export function AdminMasterDashboard() {
           get(ref(database, "devices")),
         ]);
 
-        // --- CRITICAL FIX: Reverted to YOUR original, correct data fetching logic ---
+        // --- CRITICAL FIX: Using your original, correct data fetching logic ---
         const alertsVal = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
         const alertsList: AlertData[] = Object.values(alertsVal);
         setAlerts(alertsList);
-        // --------------------------------------------------------------------------
+        // --------------------------------------------------------------------
         
         const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {};
         setDevices(devicesData);
@@ -109,7 +106,6 @@ export function AdminMasterDashboard() {
     loadAllData();
   }, [toast]);
 
-  // This memo hook calculates stats only when its dependencies change.
   const stats = useMemo(() => {
     if (loading || !Array.isArray(alerts) || !Array.isArray(users)) {
         return { totalDevices: 0, activeDevices: 0, totalUsers: 0, adminUsers: 0, totalYawns: 0, totalDrowsiness: 0, totalAlerts: 0 };
@@ -144,7 +140,7 @@ export function AdminMasterDashboard() {
       totalDrowsiness: filteredAlerts.filter((a) => a.alert_type === "drowsiness_detected").length,
       totalAlerts: filteredAlerts.filter((a) => a.alert_type === "critical_drowsiness").length,
     };
-  }, [users, alerts, devices, dateRange, loading]);
+  }, [loading, users, alerts, devices, dateRange]);
   
   const [searchTerm, setSearchTerm] = useState("")
   const filteredUsers = useMemo(() => 
@@ -183,6 +179,7 @@ export function AdminMasterDashboard() {
     const hourlyData = Array(24).fill(0).map((_, i) => ({ hour: i, yawns: 0, drowsiness: 0, alerts: 0 }))
     if (!Array.isArray(alerts)) return hourlyData;
     const filteredAlerts = alerts.filter(alert => {
+        if (!alert || !alert.timestamp) return false;
         const alertTime = new Date(alert.timestamp).getTime()
         return alertTime >= new Date(dateRange.startDate).getTime() && alertTime <= new Date(dateRange.endDate).getTime()
     })
@@ -255,7 +252,7 @@ export function AdminMasterDashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">แดชบอร์ดผู้ดูแลระบบ</h1>
         <DropdownMenu>
           <DropdownMenuTrigger asChild><Button variant="outline" size="icon"><Settings className="h-4 w-4" /></Button></DropdownMenuTrigger>
@@ -275,16 +272,20 @@ export function AdminMasterDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="p-4 border rounded-lg bg-white dark:bg-gray-800">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">ตัวกรองและเครื่องมือ</h3>
-              <Button onClick={handleExportSummary} variant="outline" size="sm">
-                <Download className="mr-2 h-4 w-4" />
-                Export Summary
-              </Button>
-            </div>
-            <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
-          </div>
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>ตัวกรองและเครื่องมือ</CardTitle>
+                <Button onClick={handleExportSummary} variant="outline" size="sm">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Summary (PDF)
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
+            </CardContent>
+          </Card>
           
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div></CardContent></Card>
