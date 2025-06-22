@@ -3,8 +3,7 @@
 import { AdminMasterDashboard } from '@/components/admin-master-dashboard'
 import { AdminGuard } from '@/components/admin-guard'
 
-// This page now ONLY renders the main dashboard component, protected by a guard.
-// All data fetching and logic is correctly handled inside AdminMasterDashboard itself.
+// This page now correctly renders the main dashboard component, which handles its own data.
 export default function AdminDashboardPage() {
   return (
     <AdminGuard>
