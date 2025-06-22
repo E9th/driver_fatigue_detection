@@ -3,15 +3,9 @@
 import type { HistoricalData, DailyStats, Report, SafetyEvent, SafetyData } from "./types";
 import { get, ref } from "firebase/database";
 import { database as db } from "@/lib/firebase"; 
-import { analyzeSafetyData } from "@/lib/data-analyzer";
+import { analyzeSafetyData } from "@/lib/analyzer"; // FIX: Import from the new, isolated file.
 
-/**
- * Service for handling data operations.
- */
 export const dataService = {
-  /**
-   * Fetches and processes safety data for a given device within a date range.
-   */
   async getFilteredSafetyData(deviceId: string, startDateISO: string, endDateISO: string): Promise<SafetyData> {
     if (!deviceId || deviceId === 'null' || deviceId === 'undefined') {
         throw new Error("Invalid Device ID provided.");
@@ -37,7 +31,6 @@ export const dataService = {
     const filteredHistory = Object.values(allHistoryData).filter(filterByDate);
     const filteredAlerts = Object.values(allAlertsData).filter(filterByDate);
 
-    // Combine and map data correctly
     const events: SafetyEvent[] = [...(filteredAlerts as SafetyEvent[]), ...(filteredHistory as HistoricalData[])]
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
       .map((event, index) => ({
@@ -48,15 +41,13 @@ export const dataService = {
         ear: (event as any).ear
       }));
     
+    // This call will now work correctly.
     return analyzeSafetyData(events, deviceId, startDateISO, endDateISO);
   },
 
-  /**
-   * Generates a report with recommendations based on safety data.
-   */
-  generateReport(data: HistoricalData[], stats: DailyStats): Report {
+  generateReport(stats: DailyStats): Report {
     const recommendations: string[] = [];
-    const score = this.calculateSafetyScore(stats);
+    const score = dataService.calculateSafetyScore(stats);
 
     if (score < 60) recommendations.push("คะแนนความปลอดภัยของคุณค่อนข้างต่ำ ควรเพิ่มความระมัดระวัง");
     if (stats.criticalEvents > 5) recommendations.push("ตรวจพบเหตุการณ์วิกฤตหลายครั้ง โปรดตรวจสอบสภาพร่างกายและยานพาหนะ");
@@ -67,18 +58,12 @@ export const dataService = {
     return { recommendations };
   },
 
-  /**
-   * Calculates a safety score based on daily stats.
-   */
   calculateSafetyScore(stats: DailyStats): number {
     let score = 100;
     score -= (stats.criticalEvents * 5);
     score -= (stats.fatigueEvents * 2);
     score -= (stats.yawnEvents * 0.5);
     if (stats.averageEAR > 0.3) score += 5;
-    return Math.max(0, Math.min(score, 100));
+    return Math.round(Math.max(0, Math.min(score, 100)));
   },
-  
-  // --- THE FIX: Re-exporting analyzeSafetyData as you correctly pointed out ---
-  analyzeSafetyData,
 };
