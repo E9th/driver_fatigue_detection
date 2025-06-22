@@ -2,40 +2,47 @@
 
 import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
-
-// UI Components
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { DateTimeFilter } from "@/components/date-time-filter"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Input } from "@/components/ui/input"
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
 import {
-  DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
-  DropdownMenuSeparator, DropdownMenuTrigger,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { LoadingScreen } from "@/components/loading-screen"
-import { DateTimeFilter } from "@/components/date-time-filter"
-
-// Libraries & Utilities
-import { useToast } from "@/hooks/use-toast"
-import { ref, get } from "firebase/database"
-import { database } from "@/lib/firebase"
-import { signOut } from "@/lib/auth"
-import { getAllUsers, deleteUser } from "@/lib/admin-utils"
 import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts"
 import {
   AlertTriangle, Eye, Users, Activity, Clock, BarChart3, Search, User, Settings, LogOut, Download,
 } from "lucide-react"
-
-// Types
+import { LoadingScreen } from "@/components/loading-screen"
+import { database } from "@/lib/firebase"
+import { getAllUsers, deleteUser } from "@/lib/admin-utils"
+import { signOut } from "@/lib/auth"
+import { ref, get } from "firebase/database"
+import { useToast } from "@/hooks/use-toast"
 import type { UserProfile } from "@/lib/types"
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table"
 
 interface AlertData {
   alert_type: string;
@@ -81,9 +88,11 @@ export function AdminMasterDashboard() {
           get(ref(database, "devices")),
         ]);
 
+        // --- THE DEFINITIVE FIX: Using your original, correct data fetching logic ---
         const alertsVal = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
-        const alertsList: AlertData[] = Object.values(alertsVal);
+        const alertsList: AlertData[] = Object.values(alertsVal || {});
         setAlerts(alertsList);
+        // --------------------------------------------------------------------------
         
         const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {};
         setDevices(devicesData);
@@ -99,6 +108,7 @@ export function AdminMasterDashboard() {
   }, [toast]);
 
   const stats = useMemo(() => {
+    // Defensive guard to ensure stats are only calculated when data is ready and correct.
     if (loading || !Array.isArray(alerts) || !Array.isArray(users)) {
         return { totalDevices: 0, activeDevices: 0, totalUsers: 0, adminUsers: 0, totalYawns: 0, totalDrowsiness: 0, totalAlerts: 0 };
     }
@@ -106,10 +116,11 @@ export function AdminMasterDashboard() {
     const startTime = new Date(dateRange.startDate).getTime();
     const endTime = new Date(dateRange.endDate).getTime();
     
+    // Defensive filter to ensure we only process valid alert objects
     const filteredAlerts = alerts.filter(alert => {
-        if (!alert || typeof alert !== 'object' || !alert.timestamp) return false;
-        const alertTime = new Date(alert.timestamp).getTime();
-        return alertTime >= startTime && alertTime <= endTime;
+        return alert && typeof alert === 'object' && typeof alert.timestamp === 'string' &&
+               new Date(alert.timestamp).getTime() >= startTime && 
+               new Date(alert.timestamp).getTime() <= endTime;
     });
 
     const driverUsers = users.filter((user) => user.role === "driver");
@@ -170,11 +181,13 @@ export function AdminMasterDashboard() {
   const hourlyActivity = useMemo(() => {
     const hourlyData = Array(24).fill(0).map((_, i) => ({ hour: i, yawns: 0, drowsiness: 0, alerts: 0 }))
     if (!Array.isArray(alerts)) return hourlyData;
+
     const filteredAlerts = alerts.filter(alert => {
         if (!alert || typeof alert !== 'object' || !alert.timestamp) return false;
         const alertTime = new Date(alert.timestamp).getTime()
         return alertTime >= new Date(dateRange.startDate).getTime() && alertTime <= new Date(dateRange.endDate).getTime()
     })
+
     filteredAlerts.forEach((alert) => {
       const hour = new Date(alert.timestamp).getHours()
       if (alert.alert_type === "yawn_detected") hourlyData[hour].yawns++
