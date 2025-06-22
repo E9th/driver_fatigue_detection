@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useMemo } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -69,24 +69,13 @@ export function AdminMasterDashboard() {
     }
   })
   const [users, setUsers] = useState<UserProfile[]>([])
-  const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([])
-  const [searchTerm, setSearchTerm] = useState("")
-  const [userToDelete, setUserToDelete] = useState<string | null>(null)
   const [alerts, setAlerts] = useState<AlertData[]>([])
   const [devices, setDevices] = useState<{ [key: string]: DeviceData }>({});
-  const [stats, setStats] = useState({
-    totalDevices: 0,
-    activeDevices: 0,
-    totalUsers: 0,
-    adminUsers: 0,
-    totalYawns: 0,
-    totalDrowsiness: 0,
-    totalAlerts: 0,
-  })
-
+  
   const { toast } = useToast()
   const router = useRouter()
 
+  // This effect fetches all initial data ONCE when the component mounts.
   useEffect(() => {
     const loadAllData = async () => {
       setLoading(true)
@@ -99,11 +88,11 @@ export function AdminMasterDashboard() {
           get(ref(database, "devices")),
         ]);
 
-        // --- FIX: Reverted to your original, working data fetching logic for alerts ---
+        // --- FIX: Reverted to YOUR original, working data fetching logic for alerts ---
         const alertsVal = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
-        // This line is now identical to your original working code
-        const alertsList: AlertData[] = Object.values(alertsVal).flatMap(deviceAlerts => Object.values(deviceAlerts as object));
+        const alertsList: AlertData[] = Object.values(alertsVal);
         setAlerts(alertsList);
+        // --------------------------------------------------------------------------
         
         const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {};
         setDevices(devicesData);
@@ -116,20 +105,22 @@ export function AdminMasterDashboard() {
       }
     };
     loadAllData();
-  }, []); // Using [] ensures this effect runs only once on mount, preventing loops.
+  }, [toast]); // Using [toast] as per your original code, which is fine.
 
-  useEffect(() => {
-    if (loading) return;
-
+  // This memo hook calculates stats only when its dependencies change.
+  const stats = useMemo(() => {
+    if (!Array.isArray(alerts) || !Array.isArray(users)) {
+        return { totalDevices: 0, activeDevices: 0, totalUsers: 0, adminUsers: 0, totalYawns: 0, totalDrowsiness: 0, totalAlerts: 0 };
+    }
+      
     const startTime = new Date(dateRange.startDate).getTime();
     const endTime = new Date(dateRange.endDate).getTime();
     
-    // Ensure alerts is an array before filtering
-    const filteredAlerts = Array.isArray(alerts) ? alerts.filter(alert => {
+    const filteredAlerts = alerts.filter(alert => {
         if (!alert || !alert.timestamp) return false;
         const alertTime = new Date(alert.timestamp).getTime();
         return alertTime >= startTime && alertTime <= endTime;
-    }) : [];
+    });
 
     const driverUsers = users.filter((user) => user.role === "driver");
     const adminUsers = users.filter((user) => user.role === "admin");
@@ -142,31 +133,25 @@ export function AdminMasterDashboard() {
         return lastUpdate && new Date(lastUpdate).getTime() > fiveMinutesAgo;
     }).length;
 
-    const yawnAlerts = filteredAlerts.filter((alert) => alert.alert_type === "yawn_detected").length;
-    const drowsinessAlerts = filteredAlerts.filter((alert) => alert.alert_type === "drowsiness_detected").length;
-    const criticalAlerts = filteredAlerts.filter((alert) => alert.alert_type === "critical_drowsiness").length;
-
-    setStats({
+    return {
       totalDevices: devicesWithUsers.size,
       activeDevices: activeDevicesCount,
       totalUsers: driverUsers.length,
       adminUsers: adminUsers.length,
-      totalYawns: yawnAlerts,
-      totalDrowsiness: drowsinessAlerts,
-      totalAlerts: criticalAlerts,
-    });
-  }, [users, alerts, devices, dateRange, loading]);
+      totalYawns: filteredAlerts.filter((a) => a.alert_type === "yawn_detected").length,
+      totalDrowsiness: filteredAlerts.filter((a) => a.alert_type === "drowsiness_detected").length,
+      totalAlerts: filteredAlerts.filter((a) => a.alert_type === "critical_drowsiness").length,
+    };
+  }, [users, alerts, devices, dateRange]);
 
-  useEffect(() => {
-    if (!users) return;
-    setFilteredUsers(
-      users.filter(
-        (user) =>
-          (user.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-          (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
-      )
-    );
-  }, [searchTerm, users]);
+  const [searchTerm, setSearchTerm] = useState("")
+  const filteredUsers = useMemo(() => 
+    users.filter(user =>
+        (user.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+        (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+    ), [users, searchTerm]);
+  
+  const [userToDelete, setUserToDelete] = useState<string | null>(null)
 
   const handleDateChange = useCallback((startDate: string, endDate: string) => {
     setDateRange({ startDate, endDate });
@@ -192,7 +177,7 @@ export function AdminMasterDashboard() {
     }
   }, [users, toast]);
 
-  const hourlyActivity = () => {
+  const hourlyActivity = useMemo(() => {
     if (!Array.isArray(alerts)) return [];
     const hourlyData = Array(24).fill(0).map((_, i) => ({ hour: i, yawns: 0, drowsiness: 0, alerts: 0 }))
     const filteredAlerts = alerts.filter(alert => {
@@ -206,9 +191,9 @@ export function AdminMasterDashboard() {
       else if (alert.alert_type === "critical_drowsiness") hourlyData[hour].alerts++
     })
     return hourlyData
-  }
+  }, [alerts, dateRange]);
 
-  const riskDistribution = () => {
+  const riskDistribution = useMemo(() => {
     const { totalYawns, totalDrowsiness, totalAlerts } = stats
     const total = totalYawns + totalDrowsiness + totalAlerts
     if (total === 0) return []
@@ -217,7 +202,7 @@ export function AdminMasterDashboard() {
       { name: "ง่วง", value: totalDrowsiness, color: "#F97316" },
       { name: "วิกฤต", value: totalAlerts, color: "#EF4444" },
     ].filter((item) => item.value > 0)
-  }
+  }, [stats]);
 
   const handleExportSummary = () => {
     const reportDate = new Date().toLocaleDateString("th-TH", { year: 'numeric', month: 'long', day: 'numeric' });
