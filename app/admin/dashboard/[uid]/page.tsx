@@ -12,7 +12,7 @@ import { LoadingScreen } from "@/components/loading-screen"
 import { DateTimeFilter } from "@/components/date-time-filter"
 import ChartsSection from "@/components/charts-section"
 import { SafetyScoreTooltip } from "@/components/safety-score-tooltip"
-import { ExportData } from "@/components/export-data" //  <-- (1) แก้ไขบรรทัดนี้
+import { ExportData } from "@/components/export-data"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
