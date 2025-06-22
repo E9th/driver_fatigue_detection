@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { AlertCircle, LogIn } from "lucide-react"
+import { LoadingScreen } from "@/components/loading-screen"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -19,22 +20,24 @@ export default function LoginPage() {
   
   const router = useRouter()
   const { toast } = useToast()
-  const { userProfile, loading: authLoading } = useAuthState()
+  const { user, userProfile, loading: authLoading } = useAuthState()
 
-  // --- FIX: Add useEffect to handle redirection after login ---
+  // --- FIX: This useEffect now handles both redirection for already logged-in users and after a new login ---
   useEffect(() => {
-    // If the user profile is loaded, it means login was successful.
-    if (userProfile) {
-      toast({ title: "เข้าสู่ระบบสำเร็จ" });
-      // Redirect based on the user's role.
-      if (userProfile.role === 'admin') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/dashboard');
+    // Wait until the initial authentication check is complete
+    if (!authLoading) {
+      if (userProfile) { // If user is logged in and profile is loaded
+        toast({ title: "คุณเข้าสู่ระบบอยู่แล้ว", description: "กำลังนำทางไปยังแดชบอร์ด..." });
+        
+        if (userProfile.role === 'admin') {
+          router.replace('/admin/dashboard'); // Use replace to avoid history stack issues
+        } else {
+          router.replace('/dashboard');
+        }
       }
+      // If auth is done and there's no user, stay on the login page.
     }
-  }, [userProfile, router, toast]);
-  // -----------------------------------------------------------
+  }, [user, userProfile, authLoading, router, toast]);
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -44,21 +47,20 @@ export default function LoginPage() {
     const { success, error: signInError } = await signIn(email, password)
 
     if (success) {
-      // The useEffect hook above will handle the redirection.
-      // We no longer need to manually redirect here.
+      // The useEffect hook above will now handle the redirection once the userProfile is loaded.
+      // We just need to wait.
+      // We set loading to false because the auth state change will trigger the redirect.
+       setIsLoading(false);
     } else {
       setError(signInError || "อีเมลหรือรหัสผ่านไม่ถูกต้อง")
       setIsLoading(false)
     }
   }
 
-  // Show a loading indicator while auth state is being determined
+  // Show a loading screen if the initial auth check is in progress.
+  // This prevents the login form from flashing before redirection.
   if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <p>กำลังตรวจสอบสถานะ...</p>
-      </div>
-    );
+    return <LoadingScreen message="กำลังตรวจสอบสถานะการล็อคอิน..." />;
   }
 
   return (
