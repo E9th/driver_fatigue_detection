@@ -10,14 +10,12 @@ import {
 } from "recharts"
 import type { DailyStats, HistoricalData, AlertData } from "@/lib/types"
 
-// Interface ที่รับ Props (ตอนนี้ data จะไม่ถูกใช้งานโดยตรงในนี้ แต่ยังคงโครงสร้างไว้)
 interface ChartsSectionProps {
   data?: (HistoricalData | AlertData)[]
   stats?: DailyStats | null
 }
 
 const ChartsSection: React.FC<ChartsSectionProps> = ({ data = [], stats = null }) => {
-  // หากไม่มีข้อมูล stats ให้แสดงข้อความ Loading
   if (!stats) {
     return (
       <div className="flex items-center justify-center h-64 text-gray-500">
@@ -26,7 +24,6 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data = [], stats = null }
     )
   }
 
-  // เตรียมข้อมูลสำหรับ Pie Charts จาก stats (ซึ่งทำงานปกติ)
   const { totalYawns, totalDrowsiness, totalAlerts } = stats
 
   const eventTypeData = [
@@ -54,7 +51,6 @@ const ChartsSection: React.FC<ChartsSectionProps> = ({ data = [], stats = null }
     )
   }
   
-  // โค้ดที่แสดงผลเฉพาะกราฟวงกลม 2 อัน
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="p-4 border rounded-lg">
