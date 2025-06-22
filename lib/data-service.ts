@@ -1,40 +1,48 @@
-// lib/data-service.ts
+"use client"
 
-import { HistoricalData, DailyStats, Report, SafetyEvent } from "./types";
+import type { HistoricalData, DailyStats, Report, SafetyEvent, SafetyData } from "./types";
 import { get, ref } from "firebase/database";
-import { database as db } from "@/lib/firebase"; // FIX: Correctly import 'database' as 'db'
-import { analyzeSafetyData } from "@/lib/data-analyzer"; // FIX: Use correct path
+import { database as db } from "@/lib/firebase"; 
+import { analyzeSafetyData } from "@/lib/data-analyzer";
 
 /**
  * Service for handling data operations.
+ * Centralizes data fetching, processing, and report generation.
  */
 export const dataService = {
-  async getFilteredSafetyData(deviceId: string, startDateISO: string, endDateISO: string) {
+  /**
+   * Fetches and processes safety data for a given device within a date range.
+   */
+  async getFilteredSafetyData(deviceId: string, startDateISO: string, endDateISO: string): Promise<SafetyData> {
     if (!deviceId || deviceId === 'null' || deviceId === 'undefined') {
         throw new Error("Invalid Device ID provided.");
     }
     
+    // Construct refs to the correct paths
     const historyRef = ref(db, `history/${deviceId}`);
-    const historySnapshot = await get(historyRef);
-    const allHistoryData = historySnapshot.exists() ? historySnapshot.val() : {};
+    const alertsRef = ref(db, `alerts/${deviceId}`);
 
+    const [historySnapshot, alertsSnapshot] = await Promise.all([
+      get(historyRef),
+      get(alertsRef)
+    ]);
+
+    const allHistoryData = historySnapshot.exists() ? historySnapshot.val() : {};
+    const allAlertsData = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
+    
+    const filterByDate = (item: any) => {
+        if (!item || !item.timestamp) return false;
+        const itemDate = new Date(item.timestamp);
+        return itemDate >= new Date(startDateISO) && itemDate <= new Date(endDateISO);
+    };
+    
     const filteredHistory = Object.entries(allHistoryData)
         .map(([id, data]) => ({ id, ...(data as Omit<HistoricalData, 'id'>) }))
-        .filter(item => {
-            const itemDate = new Date(item.timestamp);
-            return itemDate >= new Date(startDateISO) && itemDate <= new Date(endDateISO);
-        });
-
-    const alertsRef = ref(db, `alerts/${deviceId}`);
-    const alertsSnapshot = await get(alertsRef);
-    const allAlertsData = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
+        .filter(filterByDate);
 
     const filteredAlerts = Object.entries(allAlertsData)
       .map(([id, data]) => ({ id, ...(data as Omit<SafetyEvent, 'id'>) }))
-      .filter(item => {
-          const itemDate = new Date(item.timestamp);
-          return itemDate >= new Date(startDateISO) && itemDate <= new Date(endDateISO);
-      });
+      .filter(filterByDate);
 
     const events: SafetyEvent[] = [...filteredAlerts, ...filteredHistory]
       .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
@@ -46,9 +54,13 @@ export const dataService = {
         ear: (event as any).ear
       }));
     
+    // This function call is now valid because analyzeSafetyData is correctly imported.
     return analyzeSafetyData(events, deviceId, startDateISO, endDateISO);
   },
 
+  /**
+   * Generates a report with recommendations based on safety data.
+   */
   generateReport(data: HistoricalData[], stats: DailyStats): Report {
     const recommendations: string[] = [];
     const score = this.calculateSafetyScore(stats);
@@ -72,6 +84,9 @@ export const dataService = {
     return { recommendations };
   },
 
+  /**
+   * Calculates a safety score based on daily stats.
+   */
   calculateSafetyScore(stats: DailyStats): number {
     let score = 100;
     score -= (stats.criticalEvents * 5);
@@ -82,4 +97,8 @@ export const dataService = {
     }
     return Math.max(0, Math.min(score, 100));
   },
+  
+  // --- THE FIX: Re-exporting analyzeSafetyData so other modules can use it via dataService ---
+  analyzeSafetyData,
+  // -----------------------------------------------------------------------------------------
 };
