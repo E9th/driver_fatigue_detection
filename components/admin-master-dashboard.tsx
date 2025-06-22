@@ -1,4 +1,4 @@
-"use client" // FIX: Moved "use client" to the very first line of the file.
+"use client"
 
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
@@ -93,7 +93,7 @@ export function AdminMasterDashboard() {
       try {
         const usersList = await getAllUsers();
         setUsers(usersList);
-        
+
         const [alertsSnapshot, devicesSnapshot] = await Promise.all([
           get(ref(database, "alerts")),
           get(ref(database, "devices")),
@@ -114,7 +114,7 @@ export function AdminMasterDashboard() {
       }
     };
     loadAllData();
-  }, []);
+  }, [toast]); // Using [toast] as per your original code
 
   useEffect(() => {
     if (loading) return;
@@ -286,20 +286,16 @@ export function AdminMasterDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>ตัวกรองและเครื่องมือ</CardTitle>
-                <Button onClick={handleExportSummary} variant="outline" size="sm">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export Summary (PDF)
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
-            </CardContent>
-          </Card>
+          <div className="p-4 border rounded-lg bg-white dark:bg-gray-800">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-semibold">ตัวกรองและเครื่องมือ</h3>
+              <Button onClick={handleExportSummary} variant="outline" size="sm">
+                <Download className="mr-2 h-4 w-4" />
+                Export Summary (PDF)
+              </Button>
+            </div>
+            <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
+          </div>
           
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div></CardContent></Card>
