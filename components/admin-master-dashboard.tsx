@@ -88,11 +88,9 @@ export function AdminMasterDashboard() {
           get(ref(database, "devices")),
         ]);
 
-        // --- THE DEFINITIVE FIX: Using your original, correct data fetching logic ---
         const alertsVal = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
         const alertsList: AlertData[] = Object.values(alertsVal || {});
         setAlerts(alertsList);
-        // --------------------------------------------------------------------------
         
         const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {};
         setDevices(devicesData);
@@ -108,19 +106,17 @@ export function AdminMasterDashboard() {
   }, [toast]);
 
   const stats = useMemo(() => {
-    // Defensive guard to ensure stats are only calculated when data is ready and correct.
-    if (loading || !Array.isArray(alerts) || !Array.isArray(users)) {
+    if (loading) {
         return { totalDevices: 0, activeDevices: 0, totalUsers: 0, adminUsers: 0, totalYawns: 0, totalDrowsiness: 0, totalAlerts: 0 };
     }
       
     const startTime = new Date(dateRange.startDate).getTime();
     const endTime = new Date(dateRange.endDate).getTime();
     
-    // Defensive filter to ensure we only process valid alert objects
     const filteredAlerts = alerts.filter(alert => {
-        return alert && typeof alert === 'object' && typeof alert.timestamp === 'string' &&
-               new Date(alert.timestamp).getTime() >= startTime && 
-               new Date(alert.timestamp).getTime() <= endTime;
+        if (!alert || typeof alert !== 'object' || !alert.timestamp) return false;
+        const alertTime = new Date(alert.timestamp).getTime();
+        return alertTime >= startTime && alertTime <= endTime;
     });
 
     const driverUsers = users.filter((user) => user.role === "driver");
@@ -181,13 +177,11 @@ export function AdminMasterDashboard() {
   const hourlyActivity = useMemo(() => {
     const hourlyData = Array(24).fill(0).map((_, i) => ({ hour: i, yawns: 0, drowsiness: 0, alerts: 0 }))
     if (!Array.isArray(alerts)) return hourlyData;
-
     const filteredAlerts = alerts.filter(alert => {
         if (!alert || typeof alert !== 'object' || !alert.timestamp) return false;
         const alertTime = new Date(alert.timestamp).getTime()
         return alertTime >= new Date(dateRange.startDate).getTime() && alertTime <= new Date(dateRange.endDate).getTime()
     })
-
     filteredAlerts.forEach((alert) => {
       const hour = new Date(alert.timestamp).getHours()
       if (alert.alert_type === "yawn_detected") hourlyData[hour].yawns++
@@ -304,8 +298,11 @@ export function AdminMasterDashboard() {
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">แจ้งเตือนด่วน</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{stats.totalAlerts}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card><CardHeader><CardTitle>กิจกรรมตามช่วงเวลา</CardTitle></CardHeader><CardContent className="h-[350px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={hourlyActivity()}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="hour" tickFormatter={(hour) => `${hour}:00`} /><YAxis /><Tooltip /><Legend /><Bar dataKey="yawns" fill="#F59E0B" name="การหาว" /><Bar dataKey="drowsiness" fill="#F97316" name="ความง่วง" /><Bar dataKey="alerts" fill="#EF4444" name="แจ้งเตือนด่วน" /></BarChart></ResponsiveContainer></CardContent></Card>
-            <Card><CardHeader><CardTitle>การกระจายระดับความเสี่ยง</CardTitle></CardHeader><CardContent className="h-[350px]">{riskDistribution().length > 0 ? (<ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={riskDistribution()} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{riskDistribution().map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value, name) => [`${value} เหตุการณ์`, name]} /><Legend /></PieChart></ResponsiveContainer>) : (<div className="flex items-center justify-center h-full"><p className="text-gray-500">ไม่มีข้อมูลในช่วงเวลาที่เลือก</p></div>)}</CardContent></Card>
+            {/* FIX: Removed () from hourlyActivity */}
+            <Card><CardHeader><CardTitle>กิจกรรมตามช่วงเวลา</CardTitle></CardHeader><CardContent className="h-[350px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={hourlyActivity}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="hour" tickFormatter={(hour) => `${hour}:00`} /><YAxis /><Tooltip /><Legend /><Bar dataKey="yawns" fill="#F59E0B" name="การหาว" /><Bar dataKey="drowsiness" fill="#F97316" name="ความง่วง" /><Bar dataKey="alerts" fill="#EF4444" name="แจ้งเตือนด่วน" /></BarChart></ResponsiveContainer></CardContent></Card>
+            
+            {/* FIX: Removed () from riskDistribution */}
+            <Card><CardHeader><CardTitle>การกระจายระดับความเสี่ยง</CardTitle></CardHeader><CardContent className="h-[350px]">{riskDistribution.length > 0 ? (<ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={riskDistribution} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{riskDistribution.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value, name) => [`${value} เหตุการณ์`, name]} /><Legend /></PieChart></ResponsiveContainer>) : (<div className="flex items-center justify-center h-full"><p className="text-gray-500">ไม่มีข้อมูลในช่วงเวลาที่เลือก</p></div>)}</CardContent></Card>
           </div>
         </TabsContent>
 
