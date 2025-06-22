@@ -54,7 +54,7 @@ interface AlertData {
 interface DeviceData {
   current_data?: {
       timestamp: string;
-  };
+  }
 }
 
 export function AdminMasterDashboard() {
@@ -88,11 +88,11 @@ export function AdminMasterDashboard() {
           get(ref(database, "devices")),
         ]);
 
-        // --- THE DEFINITIVE FIX for alerts data fetching ---
+        // --- THE DEFINITIVE FIX: Using your original, correct data fetching logic ---
         const alertsVal = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
         const alertsList: AlertData[] = Object.values(alertsVal);
         setAlerts(alertsList);
-        // ----------------------------------------------------
+        // --------------------------------------------------------------------------
         
         const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {};
         setDevices(devicesData);
@@ -108,7 +108,7 @@ export function AdminMasterDashboard() {
   }, [toast]);
 
   const stats = useMemo(() => {
-    if (!Array.isArray(alerts) || !Array.isArray(users)) {
+    if (loading || !Array.isArray(alerts) || !Array.isArray(users)) {
         return { totalDevices: 0, activeDevices: 0, totalUsers: 0, adminUsers: 0, totalYawns: 0, totalDrowsiness: 0, totalAlerts: 0 };
     }
       
@@ -141,7 +141,7 @@ export function AdminMasterDashboard() {
       totalDrowsiness: filteredAlerts.filter((a) => a.alert_type === "drowsiness_detected").length,
       totalAlerts: filteredAlerts.filter((a) => a.alert_type === "critical_drowsiness").length,
     };
-  }, [users, alerts, devices, dateRange]);
+  }, [loading, users, alerts, devices, dateRange]);
   
   const [searchTerm, setSearchTerm] = useState("")
   const filteredUsers = useMemo(() => 
@@ -273,16 +273,20 @@ export function AdminMasterDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <div className="p-4 border rounded-lg bg-white dark:bg-gray-800">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-lg font-semibold">ตัวกรองและเครื่องมือ</h3>
-              <Button onClick={handleExportSummary} variant="outline" size="sm">
-                <Download className="mr-2 h-4 w-4" />
-                Export Summary (PDF)
-              </Button>
-            </div>
-            <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
-          </div>
+          <Card>
+            <CardHeader>
+              <div className="flex justify-between items-center">
+                <CardTitle>ตัวกรองและเครื่องมือ</CardTitle>
+                <Button onClick={handleExportSummary} variant="outline" size="sm">
+                  <Download className="mr-2 h-4 w-4" />
+                  Export Summary (PDF)
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
+            </CardContent>
+          </Card>
           
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div></CardContent></Card>
