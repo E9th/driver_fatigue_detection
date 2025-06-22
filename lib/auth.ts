@@ -1,174 +1,172 @@
 "use client"
 
-/**
- * Authentication Service
- * Handles user authentication, registration, and profile management
- */
-
-import { useState, useEffect } from "react"
-import { onAuthStateChanged } from "firebase/auth"
-import { ref, get } from "firebase/database"
+import { useState, useEffect, useCallback } from 'react';
 import {
-  database,
-  auth,
-  signIn as firebaseSignIn,
-  registerUser as firebaseRegisterUser,
+  getAuth,
+  onAuthStateChanged,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
   signOut as firebaseSignOut,
-} from "./firebase"
-import { DEVICE_UTILS, APP_CONFIG } from "./config"
-import type { RegisterData, UserProfile, AuthResponse } from "./types"
+  updateProfile as firebaseUpdateProfile,
+  reauthenticateWithCredential,
+  EmailAuthProvider,
+  updatePassword as firebaseUpdatePassword,
+  type User
+} from 'firebase/auth';
+import { getDatabase, ref, set, get, child } from 'firebase/database';
+import { app, database } from './firebase'; // Ensure 'database' is exported from firebase.ts
+import type { UserProfile } from './types';
 
-/**
- * Custom hook for authentication state management
- */
-export const useAuthState = () => {
-  const [user, setUser] = useState<any>(null)
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+const auth = getAuth(app);
 
-  useEffect(() => {
-    if (!auth) {
-      console.log("🔧 Auth not available, using mock auth state")
-      setIsLoading(false)
-      return
-    }
+// Custom Hook to manage auth state and user profile
+export function useAuthState() {
+  const [user, setUser] = useState<User | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
 
-    console.log("🔥 Auth: Setting up auth state listener")
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("🔥 Auth state changed:", firebaseUser?.uid || "no user")
-
-      setUser(firebaseUser)
-
-      if (firebaseUser) {
-        try {
-          const profile = await getUserProfile(firebaseUser.uid)
-          setUserProfile(profile)
-          console.log("✅ User profile loaded:", profile)
-        } catch (error) {
-          console.error("❌ Error loading user profile:", error)
-          setError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้")
-        }
-      } else {
-        setUserProfile(null)
-      }
-
-      setIsLoading(false)
-    })
-
-    return unsubscribe
-  }, [])
-
-  const isAdmin = userProfile?.role === "admin"
-
-  return { user, userProfile, isAdmin, isLoading, error }
-}
-
-/**
- * User registration with device assignment
- */
-export const registerUser = async (userData: RegisterData): Promise<AuthResponse> => {
-  try {
-    const result = await firebaseRegisterUser(userData)
-    if (result) {
-      return result
-    } else {
-      return { success: false, error: "การลงทะเบียนล้มเหลว กรุณาลองใหม่อีกครั้ง" }
-    }
-  } catch (error: any) {
-    console.error("❌ Firebase: Registration error:", error)
-    return { success: false, error: getAuthErrorMessage(error.code) }
-  }
-}
-
-/**
- * User login authentication
- */
-export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
-  try {
-    const result = await firebaseSignIn(email, password)
-    if (result) {
-      return result
-    } else {
-      return { success: false, error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" }
-    }
-  } catch (error: any) {
-    console.error("❌ Firebase: Login error:", error)
-    return { success: false, error: getAuthErrorMessage(error.code) }
-  }
-}
-
-/**
- * User logout
- */
-export const signOut = async (): Promise<{ success: boolean; error?: string }> => {
-  try {
-    const result = await firebaseSignOut()
-    if (result) {
-      return result
-    } else {
-      return { success: false, error: "การออกจากระบบล้มเหลว" }
-    }
-  } catch (error: any) {
-    console.error("❌ Firebase: Sign out error:", error.message)
-    return { success: false, error: error.message }
-  }
-}
-
-/**
- * Get user profile by UID
- */
-export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
-  try {
-    if (!database) {
-      console.warn("🔧 Firebase not available")
-      return null
-    }
-
-    const userRef = ref(database, `users/${uid}`)
-    const snapshot = await get(userRef)
-
+  const fetchUserProfile = useCallback(async (uid: string) => {
+    const dbRef = ref(getDatabase());
+    const snapshot = await get(child(dbRef, `users/${uid}`));
     if (snapshot.exists()) {
-      const userData = snapshot.val()
-      return {
-        uid,
-        ...userData,
-      }
+      return snapshot.val() as UserProfile;
     }
-    return null
+    return null;
+  }, []);
+
+  const refreshUserProfile = useCallback(async () => {
+    if (user) {
+      const profile = await fetchUserProfile(user.uid);
+      setUserProfile(profile);
+    }
+  }, [user, fetchUserProfile]);
+  
+  // --- FIX: This useEffect now has an empty dependency array `[]` ---
+  // This ensures the onAuthStateChanged listener is set up only ONCE when the hook is first used.
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      setLoading(true);
+      if (currentUser) {
+        setUser(currentUser);
+        const profile = await fetchUserProfile(currentUser.uid);
+        setUserProfile(profile);
+      } else {
+        setUser(null);
+        setUserProfile(null);
+      }
+      setLoading(false);
+    });
+
+    // Cleanup subscription on unmount
+    return () => unsubscribe();
+  }, [fetchUserProfile]); // fetchUserProfile is memoized with useCallback
+
+  return { user, userProfile, loading, refreshUserProfile };
+}
+
+// Sign-in function
+export async function signIn(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    return { success: true };
+  } catch (error: any) {
+    console.error("Sign-in error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Sign-up function
+export async function signUp(email: string, password: string, fullName: string, license: string, phone: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    const user = userCredential.user;
+    
+    // Set display name in Auth
+    await firebaseUpdateProfile(user, { displayName: fullName });
+    
+    // Create user profile in Realtime Database
+    const userProfileData: UserProfile = {
+      uid: user.uid,
+      email: user.email!,
+      fullName,
+      role: 'driver', // Default role
+      registeredAt: new Date().toISOString(),
+      deviceId: 'null', // Default deviceId
+      license,
+      phone,
+    };
+    await set(ref(database, 'users/' + user.uid), userProfileData);
+    
+    return { success: true };
+  } catch (error: any) {
+    console.error("Sign-up error:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+// Sign-out function
+export async function signOut(): Promise<void> {
+  await firebaseSignOut(auth);
+}
+
+// ... (The rest of your functions: updateUserProfile, reauthenticate, updateUserPassword)
+export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<boolean> {
+  try {
+    const userRef = ref(database, `users/${uid}`);
+    const snapshot = await get(userRef);
+    if (snapshot.exists()) {
+      const currentData = snapshot.val();
+      await set(userRef, { ...currentData, ...data });
+      // Also update auth profile if fullName changes
+      if (data.fullName && auth.currentUser && auth.currentUser.uid === uid) {
+        await firebaseUpdateProfile(auth.currentUser, { displayName: data.fullName });
+      }
+      return true;
+    }
+    return false;
   } catch (error) {
-    console.error("🔥 Firebase: Error getting user profile:", error)
-    return null
+    console.error("Error updating profile:", error);
+    return false;
   }
 }
 
-/**
- * Device ID utility functions
- */
-export const normalizeDeviceId = (deviceId: string): string => {
-  if (!deviceId) return ""
-  return DEVICE_UTILS.normalize ? DEVICE_UTILS.normalize(deviceId) : deviceId
+export async function reauthenticate(currentPassword: string): Promise<boolean> {
+    const user = auth.currentUser;
+    if (!user || !user.email) return false;
+
+    const credential = EmailAuthProvider.credential(user.email, currentPassword);
+    try {
+        await reauthenticateWithCredential(user, credential);
+        return true;
+    } catch (error) {
+        console.error("Re-authentication failed:", error);
+        return false;
+    }
 }
 
-export const getDeviceDisplayId = (deviceId: string | null): string => {
-  if (!deviceId) return "N/A"
-  return DEVICE_UTILS.getDisplayId ? DEVICE_UTILS.getDisplayId(deviceId) : deviceId
+export async function updateUserPassword(newPassword: string): Promise<boolean> {
+    const user = auth.currentUser;
+    if (!user) return false;
+    try {
+        await firebaseUpdatePassword(user, newPassword);
+        return true;
+    } catch (error) {
+        console.error("Error updating password:", error);
+        return false;
+    }
 }
 
-/**
- * Convert Firebase auth error codes to Thai messages
- */
-const getAuthErrorMessage = (errorCode: string): string => {
-  const errorMessages: { [key: string]: string } = {
-    "auth/email-already-in-use": "อีเมลนี้ถูกใช้งานแล้ว",
-    "auth/weak-password": "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร",
-    "auth/invalid-email": "รูปแบบอีเมลไม่ถูกต้อง",
-    "auth/user-not-found": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
-    "auth/wrong-password": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
-    "auth/network-request-failed": "เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบอินเทอร์เน็ต",
-    "auth/too-many-requests": "มีการพยายามเข้าสู่ระบบมากเกินไป กรุณารอสักครู่",
-  }
-  return errorMessages[errorCode] || "เกิดข้อผิดพลาดในการดำเนินการ กรุณาลองใหม่อีกครั้ง"
+export async function getUserProfile(uid: string): Promise<UserProfile | null> {
+    const dbRef = ref(getDatabase());
+    try {
+        const snapshot = await get(child(dbRef, `users/${uid}`));
+        if (snapshot.exists()) {
+            return snapshot.val() as UserProfile;
+        } else {
+            return null;
+        }
+    } catch (error) {
+        console.error("Error getting user profile:", error);
+        return null;
+    }
 }
-
-console.log("🔥 Auth service initialized with error recovery")
