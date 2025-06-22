@@ -1,8 +1,8 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { DateTimeFilter } from "@/components/date-time-filter"
 import { Button } from "@/components/ui/button"
@@ -33,35 +33,32 @@ import {
 import {
   AlertTriangle, Eye, Users, Activity, Clock, BarChart3, Search, User, Settings, LogOut, Download,
 } from "lucide-react"
-import { deleteUser } from "@/lib/admin-utils"
+import { LoadingScreen } from "@/components/loading-screen"
+import { database } from "@/lib/firebase"
+import { getAllUsers, deleteUser } from "@/lib/admin-utils"
 import { signOut } from "@/lib/auth"
+import { ref, get } from "firebase/database"
 import { useToast } from "@/hooks/use-toast"
 import type { UserProfile } from "@/lib/types"
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table"
 
-// Define types locally for clarity
 interface AlertData {
-  alert_type: string;
-  device_id: string;
-  severity: string;
-  timestamp: string;
+  alert_type: string
+  device_id: string
+  severity: string
+  timestamp: string
 }
 
 interface DeviceData {
   current_data?: {
-    timestamp: string;
-  };
+      timestamp: string;
+  }
 }
 
-interface AdminMasterDashboardProps {
-  initialUsers: UserProfile[];
-  initialAlerts: AlertData[];
-  initialDevices: { [key: string]: DeviceData };
-}
-
-export function AdminMasterDashboard({ initialUsers, initialAlerts, initialDevices }: AdminMasterDashboardProps) {
+export function AdminMasterDashboard() {
+  const [loading, setLoading] = useState(true)
   const [dateRange, setDateRange] = useState(() => {
     const endDate = new Date()
     const startDate = new Date()
@@ -71,34 +68,68 @@ export function AdminMasterDashboard({ initialUsers, initialAlerts, initialDevic
       endDate: endDate.toISOString(),
     }
   })
-  
-  // States are now initialized directly from props
-  const [users, setUsers] = useState<UserProfile[]>(initialUsers)
-  const [alerts] = useState<AlertData[]>(initialAlerts)
-  const [devices] = useState<{ [key: string]: DeviceData }>(initialDevices)
-
+  const [users, setUsers] = useState<UserProfile[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [userToDelete, setUserToDelete] = useState<string | null>(null)
-  
+  const [alerts, setAlerts] = useState<AlertData[]>([])
+  const [devices, setDevices] = useState<{ [key: string]: DeviceData }>({});
+  const [stats, setStats] = useState({
+    totalDevices: 0,
+    activeDevices: 0,
+    totalUsers: 0,
+    adminUsers: 0,
+    totalYawns: 0,
+    totalDrowsiness: 0,
+    totalAlerts: 0,
+  })
+
   const { toast } = useToast()
   const router = useRouter()
 
-  // Memoize filtered users for performance
-  const filteredUsers = useMemo(() => 
-    users.filter(user =>
-      (user.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
-    ), [users, searchTerm]);
+  useEffect(() => {
+    const loadAllData = async () => {
+      setLoading(true)
+      try {
+        const usersList = await getAllUsers();
+        setUsers(usersList);
 
-  // Memoize statistics calculation
-  const stats = useMemo(() => {
+        const [alertsSnapshot, devicesSnapshot] = await Promise.all([
+          get(ref(database, "alerts")),
+          get(ref(database, "devices")),
+        ]);
+
+        // --- FIX: Reverted to your original, working data fetching logic for alerts ---
+        const alertsVal = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
+        // This line is now identical to your original working code
+        const alertsList: AlertData[] = Object.values(alertsVal).flatMap(deviceAlerts => Object.values(deviceAlerts as object));
+        setAlerts(alertsList);
+        
+        const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {};
+        setDevices(devicesData);
+
+      } catch (error) {
+        console.error("❌ Error loading initial admin data:", error);
+        toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถโหลดข้อมูลระบบได้", variant: "destructive" });
+      } finally {
+        setLoading(false);
+      }
+    };
+    loadAllData();
+  }, []); // Using [] ensures this effect runs only once on mount, preventing loops.
+
+  useEffect(() => {
+    if (loading) return;
+
     const startTime = new Date(dateRange.startDate).getTime();
     const endTime = new Date(dateRange.endDate).getTime();
     
-    const filteredAlerts = alerts.filter(alert => {
+    // Ensure alerts is an array before filtering
+    const filteredAlerts = Array.isArray(alerts) ? alerts.filter(alert => {
+        if (!alert || !alert.timestamp) return false;
         const alertTime = new Date(alert.timestamp).getTime();
         return alertTime >= startTime && alertTime <= endTime;
-    });
+    }) : [];
 
     const driverUsers = users.filter((user) => user.role === "driver");
     const adminUsers = users.filter((user) => user.role === "admin");
@@ -111,17 +142,31 @@ export function AdminMasterDashboard({ initialUsers, initialAlerts, initialDevic
         return lastUpdate && new Date(lastUpdate).getTime() > fiveMinutesAgo;
     }).length;
 
-    return {
+    const yawnAlerts = filteredAlerts.filter((alert) => alert.alert_type === "yawn_detected").length;
+    const drowsinessAlerts = filteredAlerts.filter((alert) => alert.alert_type === "drowsiness_detected").length;
+    const criticalAlerts = filteredAlerts.filter((alert) => alert.alert_type === "critical_drowsiness").length;
+
+    setStats({
       totalDevices: devicesWithUsers.size,
       activeDevices: activeDevicesCount,
       totalUsers: driverUsers.length,
       adminUsers: adminUsers.length,
-      totalYawns: filteredAlerts.filter(a => a.alert_type === "yawn_detected").length,
-      totalDrowsiness: filteredAlerts.filter(a => a.alert_type === "drowsiness_detected").length,
-      totalAlerts: filteredAlerts.filter(a => a.alert_type === "critical_drowsiness").length,
-    };
-  }, [users, alerts, devices, dateRange]);
+      totalYawns: yawnAlerts,
+      totalDrowsiness: drowsinessAlerts,
+      totalAlerts: criticalAlerts,
+    });
+  }, [users, alerts, devices, dateRange, loading]);
 
+  useEffect(() => {
+    if (!users) return;
+    setFilteredUsers(
+      users.filter(
+        (user) =>
+          (user.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }, [searchTerm, users]);
 
   const handleDateChange = useCallback((startDate: string, endDate: string) => {
     setDateRange({ startDate, endDate });
@@ -146,7 +191,34 @@ export function AdminMasterDashboard({ initialUsers, initialAlerts, initialDevic
       toast({ title: "เกิดข้อผิดพลาด", description: result.error, variant: "destructive" });
     }
   }, [users, toast]);
-  
+
+  const hourlyActivity = () => {
+    if (!Array.isArray(alerts)) return [];
+    const hourlyData = Array(24).fill(0).map((_, i) => ({ hour: i, yawns: 0, drowsiness: 0, alerts: 0 }))
+    const filteredAlerts = alerts.filter(alert => {
+        const alertTime = new Date(alert.timestamp).getTime()
+        return alertTime >= new Date(dateRange.startDate).getTime() && alertTime <= new Date(dateRange.endDate).getTime()
+    })
+    filteredAlerts.forEach((alert) => {
+      const hour = new Date(alert.timestamp).getHours()
+      if (alert.alert_type === "yawn_detected") hourlyData[hour].yawns++
+      else if (alert.alert_type === "drowsiness_detected") hourlyData[hour].drowsiness++
+      else if (alert.alert_type === "critical_drowsiness") hourlyData[hour].alerts++
+    })
+    return hourlyData
+  }
+
+  const riskDistribution = () => {
+    const { totalYawns, totalDrowsiness, totalAlerts } = stats
+    const total = totalYawns + totalDrowsiness + totalAlerts
+    if (total === 0) return []
+    return [
+      { name: "หาว", value: totalYawns, color: "#F59E0B" },
+      { name: "ง่วง", value: totalDrowsiness, color: "#F97316" },
+      { name: "วิกฤต", value: totalAlerts, color: "#EF4444" },
+    ].filter((item) => item.value > 0)
+  }
+
   const handleExportSummary = () => {
     const reportDate = new Date().toLocaleDateString("th-TH", { year: 'numeric', month: 'long', day: 'numeric' });
     const timeRange = `${new Date(dateRange.startDate).toLocaleDateString("th-TH")} - ${new Date(dateRange.endDate).toLocaleDateString("th-TH")}`;
@@ -192,32 +264,9 @@ export function AdminMasterDashboard({ initialUsers, initialAlerts, initialDevic
     }
   };
 
-  const hourlyActivity = useMemo(() => {
-    const hourlyData = Array(24).fill(0).map((_, i) => ({ hour: i, yawns: 0, drowsiness: 0, alerts: 0 }))
-    const filteredAlerts = alerts.filter(alert => {
-        const alertTime = new Date(alert.timestamp).getTime()
-        return alertTime >= new Date(dateRange.startDate).getTime() && alertTime <= new Date(dateRange.endDate).getTime()
-    })
-    filteredAlerts.forEach((alert) => {
-      const hour = new Date(alert.timestamp).getHours()
-      if (alert.alert_type === "yawn_detected") hourlyData[hour].yawns++
-      else if (alert.alert_type === "drowsiness_detected") hourlyData[hour].drowsiness++
-      else if (alert.alert_type === "critical_drowsiness") hourlyData[hour].alerts++
-    })
-    return hourlyData
-  }, [alerts, dateRange]);
-
-  const riskDistribution = useMemo(() => {
-    const { totalYawns, totalDrowsiness, totalAlerts } = stats
-    const total = totalYawns + totalDrowsiness + totalAlerts
-    if (total === 0) return []
-    return [
-      { name: "หาว", value: totalYawns, color: "#F59E0B" },
-      { name: "ง่วง", value: totalDrowsiness, color: "#F97316" },
-      { name: "วิกฤต", value: totalAlerts, color: "#EF4444" },
-    ].filter((item) => item.value > 0)
-  }, [stats]);
-
+  if (loading) {
+    return <LoadingScreen message="กำลังโหลดข้อมูลระบบ..." />
+  }
 
   return (
     <div className="space-y-6">
