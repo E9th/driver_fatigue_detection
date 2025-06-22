@@ -8,7 +8,8 @@
 import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+// FIX: Added CardDescription to the import list
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,7 +31,7 @@ import { LoadingScreen } from "@/components/loading-screen"
 import { dataService } from "@/lib/data-service"
 import { useAuthState, signOut } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
-import type { HistoricalData, DailyStats, SafetyData } from "@/lib/types"
+import type { DailyStats, SafetyData } from "@/lib/types"
 import Link from "next/link"
 
 // Helper function to determine overall safety status
@@ -88,11 +89,9 @@ export default function DriverDashboardPage() {
   const [loading, setLoading] = useState(true)
   const [safetyData, setSafetyData] = useState<SafetyData | null>(null)
 
-  // This is the core logic fix: using a modern async/await pattern
-  // to fetch data once, instead of the old subscription model.
   const loadData = useCallback(async () => {
     if (authLoading) return;
-    if (!userProfile?.deviceId) {
+    if (!userProfile?.deviceId || userProfile.deviceId === "null") {
         setLoading(false);
         return;
     }
@@ -142,7 +141,7 @@ export default function DriverDashboardPage() {
     return <LoadingScreen message="กำลังโหลดข้อมูลแดชบอร์ด..." />
   }
 
-  if (!userProfile?.deviceId) {
+  if (!userProfile?.deviceId || userProfile.deviceId === "null") {
       return (
           <div className="flex items-center justify-center h-screen">
               <Card className="w-96 text-center p-8">
@@ -159,7 +158,6 @@ export default function DriverDashboardPage() {
   }
 
   const getEventDescription = (details: string) => {
-    // This now uses the 'details' field from the new data structure
     switch (details) {
       case "yawn_detected":
         return "ตรวจพบการหาว"
@@ -298,9 +296,9 @@ export default function DriverDashboardPage() {
                   <BarChart3 className="h-8 w-8 text-blue-600" />
                 </div>
                 <CardTitle>ดูรายงานและสถิติเชิงลึก</CardTitle>
-                <p className="text-muted-foreground text-sm mt-2">
+                <CardDescription>
                   วิเคราะห์พฤติกรรมการขับขี่ของคุณย้อนหลัง เพื่อปรับปรุงความปลอดภัยให้ดียิ่งขึ้น
-                </p>
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <Button asChild>
