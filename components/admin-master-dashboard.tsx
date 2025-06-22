@@ -79,11 +79,11 @@ export function AdminMasterDashboard() {
                   <TableCell>{user.email}</TableCell>
                   <TableCell>{user.deviceId || "N/A"}</TableCell>
                   <TableCell>
-                    {/* --- จุดแก้ไข --- */}
-                    {/* เปลี่ยนลิงก์จาก /admin/dashboard/ ไปเป็น /admin/profile/ */}
-                    <Link href={`/admin/profile/${user.uid}`}>
+                    {/* --- แก้ไขกลับคืน --- */}
+                    {/* เปลี่ยนลิงก์กลับไปที่ /admin/dashboard/ */}
+                    <Link href={`/admin/dashboard/${user.uid}`}>
                       <Button variant="outline" size="sm">
-                        ดูโปรไฟล์
+                        ดูแดชบอร์ด
                       </Button>
                     </Link>
                   </TableCell>
