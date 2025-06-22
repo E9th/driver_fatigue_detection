@@ -54,7 +54,7 @@ interface AlertData {
 interface DeviceData {
   current_data?: {
       timestamp: string;
-  }
+  };
 }
 
 export function AdminMasterDashboard() {
@@ -88,11 +88,11 @@ export function AdminMasterDashboard() {
           get(ref(database, "devices")),
         ]);
 
-        // --- THE DEFINITIVE FIX: Using your original, correct data fetching logic ---
+        // --- THE DEFINITIVE FIX: Reverted to your original logic with added safety check ---
         const alertsVal = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
-        const alertsList: AlertData[] = Object.values(alertsVal);
+        const alertsList: AlertData[] = Object.values(alertsVal || {}).filter(v => v && typeof v === 'object');
         setAlerts(alertsList);
-        // --------------------------------------------------------------------------
+        // ---------------------------------------------------------------------------------
         
         const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {};
         setDevices(devicesData);
@@ -108,7 +108,7 @@ export function AdminMasterDashboard() {
   }, [toast]);
 
   const stats = useMemo(() => {
-    if (loading || !Array.isArray(alerts) || !Array.isArray(users)) {
+    if (loading) {
         return { totalDevices: 0, activeDevices: 0, totalUsers: 0, adminUsers: 0, totalYawns: 0, totalDrowsiness: 0, totalAlerts: 0 };
     }
       
@@ -116,7 +116,7 @@ export function AdminMasterDashboard() {
     const endTime = new Date(dateRange.endDate).getTime();
     
     const filteredAlerts = alerts.filter(alert => {
-        if (!alert || typeof alert !== 'object' || !alert.timestamp) return false;
+        if (!alert || !alert.timestamp) return false;
         const alertTime = new Date(alert.timestamp).getTime();
         return alertTime >= startTime && alertTime <= endTime;
     });
@@ -180,7 +180,7 @@ export function AdminMasterDashboard() {
     const hourlyData = Array(24).fill(0).map((_, i) => ({ hour: i, yawns: 0, drowsiness: 0, alerts: 0 }))
     if (!Array.isArray(alerts)) return hourlyData;
     const filteredAlerts = alerts.filter(alert => {
-        if (!alert || typeof alert !== 'object' || !alert.timestamp) return false;
+        if (!alert || !alert.timestamp) return false;
         const alertTime = new Date(alert.timestamp).getTime()
         return alertTime >= new Date(dateRange.startDate).getTime() && alertTime <= new Date(dateRange.endDate).getTime()
     })
