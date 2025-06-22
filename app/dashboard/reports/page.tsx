@@ -8,7 +8,7 @@ import type { SafetyData } from "@/lib/types"
 import { LoadingScreen } from "@/components/loading-screen"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
-import { SafetyDashboard } from "@/components/safety-dashboard" 
+import SafetyDashboard from "@/components/safety-dashboard" // FIX: Changed to a default import
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
@@ -23,7 +23,7 @@ export default function ReportsPage() {
   const [dateRange, setDateRange] = useState(() => {
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setMonth(endDate.getMonth() - 1)
+    startDate.setMonth(endDate.getMonth() - 1) // Default to last 30 days for reports
     return {
       start: startDate.toISOString(),
       end: endDate.toISOString(),
@@ -41,9 +41,6 @@ export default function ReportsPage() {
     setError(null)
 
     try {
-      console.log(">>> Calling getFilteredSafetyData from Reports Page");
-      console.log(">>> dataService keys:", Object.keys(dataService)); // Debugging log as you suggested
-      
       const data = await dataService.getFilteredSafetyData(
         userProfile.deviceId,
         dateRange.start,
