@@ -9,59 +9,58 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { AlertCircle, LogIn } from "lucide-react"
+import { AlertCircle } from "lucide-react"
 import { LoadingScreen } from "@/components/loading-screen"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
   const router = useRouter()
   const { toast } = useToast()
-  const { user, userProfile, loading: authLoading } = useAuthState()
+  const { userProfile, loading: authLoading } = useAuthState()
 
-  // --- FIX: This useEffect now handles both redirection for already logged-in users and after a new login ---
+  // --- FIX: This useEffect now has a stable dependency array and handles redirection correctly ---
   useEffect(() => {
-    // Wait until the initial authentication check is complete
-    if (!authLoading) {
-      if (userProfile) { // If user is logged in and profile is loaded
-        toast({ title: "คุณเข้าสู่ระบบอยู่แล้ว", description: "กำลังนำทางไปยังแดชบอร์ด..." });
-        
-        if (userProfile.role === 'admin') {
-          router.replace('/admin/dashboard'); // Use replace to avoid history stack issues
-        } else {
-          router.replace('/dashboard');
-        }
+    // Only act when authentication status is fully resolved
+    if (!authLoading && userProfile) {
+      if (userProfile.role === 'admin') {
+        router.replace('/admin/dashboard');
+      } else {
+        router.replace('/dashboard');
       }
-      // If auth is done and there's no user, stay on the login page.
     }
-  }, [user, userProfile, authLoading, router, toast]);
+  }, [authLoading, userProfile, router]); // `router` is stable from next/navigation
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
-    setIsLoading(true)
+    setIsSubmitting(true)
     setError(null)
 
     const { success, error: signInError } = await signIn(email, password)
 
     if (success) {
-      // The useEffect hook above will now handle the redirection once the userProfile is loaded.
-      // We just need to wait.
-      // We set loading to false because the auth state change will trigger the redirect.
-       setIsLoading(false);
+      toast({ title: "เข้าสู่ระบบสำเร็จ", description: "กำลังนำทางไปยังแดชบอร์ด..." });
+      // The useEffect above will handle redirection automatically.
     } else {
       setError(signInError || "อีเมลหรือรหัสผ่านไม่ถูกต้อง")
-      setIsLoading(false)
+      setIsSubmitting(false)
     }
   }
 
-  // Show a loading screen if the initial auth check is in progress.
-  // This prevents the login form from flashing before redirection.
+  // --- FIX: Add guards to prevent rendering the form unnecessarily ---
+  // Guard 1: Show a loading screen while checking auth state.
   if (authLoading) {
-    return <LoadingScreen message="กำลังตรวจสอบสถานะการล็อคอิน..." />;
+    return <LoadingScreen message="กำลังตรวจสอบสถานะ..." />;
   }
+
+  // Guard 2: If user is already logged in, show a loading screen while redirecting.
+  if (userProfile) {
+    return <LoadingScreen message="กำลังนำทาง..." />;
+  }
+  // -----------------------------------------------------------
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100 dark:bg-gray-900 px-4">
@@ -104,8 +103,8 @@ export default function LoginPage() {
                 {error}
               </div>
             )}
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
+            <Button type="submit" className="w-full" disabled={isSubmitting}>
+              {isSubmitting ? "กำลังเข้าสู่ระบบ..." : "เข้าสู่ระบบ"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
