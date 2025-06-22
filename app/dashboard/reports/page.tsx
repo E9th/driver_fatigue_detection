@@ -7,8 +7,8 @@ import type { SafetyData } from "@/lib/types"
 
 import { LoadingScreen } from "@/components/loading-screen"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertTriangle, HardHat } from "lucide-react"
-import { SafetyDashboard } from "@/components/safety-dashboard" 
+import { AlertTriangle } from "lucide-react"
+import SafetyDashboard from "@/components/safety-dashboard" // FIX: Changed to a default import
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
@@ -24,7 +24,7 @@ export default function ReportsPage() {
   const [dateRange, setDateRange] = useState(() => {
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setMonth(endDate.getMonth() - 1)
+    startDate.setMonth(endDate.getMonth() - 1) // Default to last 30 days for reports
     return {
       start: startDate.toISOString(),
       end: endDate.toISOString(),
@@ -32,11 +32,14 @@ export default function ReportsPage() {
   })
 
   const loadReportData = useCallback(async () => {
-    // This check now happens inside useEffect, after authLoading is false
-    if (!userProfile?.deviceId || userProfile.deviceId === "null") return;
+    if (!userProfile?.deviceId || userProfile.deviceId === "null") {
+      // This case is handled by the guards below, so we can just return.
+      return;
+    }
 
     setLoading(true)
     setError(null)
+
     try {
       const data = await dataService.getFilteredSafetyData(
         userProfile.deviceId,
@@ -45,6 +48,7 @@ export default function ReportsPage() {
       )
       setSafetyData(data)
     } catch (err: any) {
+      console.error("Failed to load report data:", err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -54,8 +58,14 @@ export default function ReportsPage() {
   useEffect(() => {
     if (!authLoading) {
       if (userProfile) {
-        loadReportData()
+        // Only load data if there's a device ID
+        if (userProfile.deviceId && userProfile.deviceId !== 'null') {
+          loadReportData()
+        } else {
+          setLoading(false); // No device ID, stop loading.
+        }
       } else {
+        // If auth is resolved and there's no user, redirect to login
         router.push('/login');
       }
     }
@@ -65,7 +75,7 @@ export default function ReportsPage() {
     setDateRange({ start, end })
   }
 
-  // Guard 1: Show loading screen while auth state is being resolved
+  // Guard 1: Show a loading screen while auth state is being resolved
   if (authLoading) {
     return <LoadingScreen message="กำลังตรวจสอบสิทธิ์..." />
   }
@@ -75,18 +85,21 @@ export default function ReportsPage() {
     return (
       <div className="container mx-auto flex items-center justify-center min-h-[60vh]">
         <Alert variant="default" className="max-w-md">
-          <HardHat className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" />
           <AlertTitle>ยังไม่ได้ผูกอุปกรณ์</AlertTitle>
           <AlertDescription>
-            คุณยังไม่ได้ผูก Device ID กับบัญชีของคุณ ทำให้ไม่สามารถดูรายงานได้ กรุณาติดต่อผู้ดูแลระบบเพื่อดำเนินการ
-             <Button onClick={() => router.push('/dashboard')} variant="link" className="pl-1">กลับไปหน้าแดชบอร์ด</Button>
+            คุณยังไม่ได้ผูก Device ID กับบัญชีของคุณ ทำให้ไม่สามารถดูรายงานได้ กรุณา
+            <Button onClick={() => router.push('/profile')} variant="link" className="px-1">
+              ไปที่หน้าโปรไฟล์
+            </Button>
+            เพื่อตั้งค่า
           </AlertDescription>
         </Alert>
       </div>
     )
   }
   
-  // Guard 3: Handle any other generic error
+  // Guard 3: Handle any other generic error during data fetching
   if (error) {
     return (
       <div className="container mx-auto py-8">
