@@ -7,11 +7,12 @@ import type { SafetyData } from "@/lib/types"
 
 import { LoadingScreen } from "@/components/loading-screen"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
-import { AlertTriangle } from "lucide-react"
-import SafetyDashboard from "@/components/safety-dashboard" // FIX: Changed to a default import
+import { AlertTriangle, HardHat } from "lucide-react"
+import { SafetyDashboard } from "@/components/safety-dashboard" 
 import { Button } from "@/components/ui/button"
 import { useRouter } from "next/navigation"
 import { ArrowLeft } from "lucide-react"
+import Link from "next/link"
 
 export default function ReportsPage() {
   const { userProfile, loading: authLoading } = useAuthState()
@@ -23,7 +24,7 @@ export default function ReportsPage() {
   const [dateRange, setDateRange] = useState(() => {
     const endDate = new Date()
     const startDate = new Date()
-    startDate.setMonth(endDate.getMonth() - 1) // Default to last 30 days for reports
+    startDate.setMonth(endDate.getMonth() - 1)
     return {
       start: startDate.toISOString(),
       end: endDate.toISOString(),
@@ -31,15 +32,11 @@ export default function ReportsPage() {
   })
 
   const loadReportData = useCallback(async () => {
-    if (!userProfile?.deviceId || userProfile.deviceId === "null") {
-      setError("ไม่พบ Device ID ที่ผูกกับบัญชีของคุณ")
-      setLoading(false)
-      return
-    }
+    // This check now happens inside useEffect, after authLoading is false
+    if (!userProfile?.deviceId || userProfile.deviceId === "null") return;
 
     setLoading(true)
     setError(null)
-
     try {
       const data = await dataService.getFilteredSafetyData(
         userProfile.deviceId,
@@ -48,7 +45,6 @@ export default function ReportsPage() {
       )
       setSafetyData(data)
     } catch (err: any) {
-      console.error("Failed to load report data:", err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -56,12 +52,12 @@ export default function ReportsPage() {
   }, [userProfile, dateRange])
 
   useEffect(() => {
-    if (!authLoading && userProfile) {
-      loadReportData()
-    } else if (!authLoading && !userProfile) {
-      setLoading(false)
-      setError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้ กรุณาล็อคอินอีกครั้ง")
-      router.push('/login');
+    if (!authLoading) {
+      if (userProfile) {
+        loadReportData()
+      } else {
+        router.push('/login');
+      }
     }
   }, [authLoading, userProfile, loadReportData, router])
 
@@ -69,10 +65,28 @@ export default function ReportsPage() {
     setDateRange({ start, end })
   }
 
+  // Guard 1: Show loading screen while auth state is being resolved
   if (authLoading) {
     return <LoadingScreen message="กำลังตรวจสอบสิทธิ์..." />
   }
+
+  // Guard 2: Handle case where user is logged in but has no deviceId
+  if (userProfile && (!userProfile.deviceId || userProfile.deviceId === 'null')) {
+    return (
+      <div className="container mx-auto flex items-center justify-center min-h-[60vh]">
+        <Alert variant="default" className="max-w-md">
+          <HardHat className="h-4 w-4" />
+          <AlertTitle>ยังไม่ได้ผูกอุปกรณ์</AlertTitle>
+          <AlertDescription>
+            คุณยังไม่ได้ผูก Device ID กับบัญชีของคุณ ทำให้ไม่สามารถดูรายงานได้ กรุณาติดต่อผู้ดูแลระบบเพื่อดำเนินการ
+             <Button onClick={() => router.push('/dashboard')} variant="link" className="pl-1">กลับไปหน้าแดชบอร์ด</Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
   
+  // Guard 3: Handle any other generic error
   if (error) {
     return (
       <div className="container mx-auto py-8">
@@ -85,10 +99,12 @@ export default function ReportsPage() {
     )
   }
 
-  if (loading || !safetyData || !userProfile) {
+  // Guard 4: Show loading screen while fetching report data
+  if (loading || !safetyData) {
     return <LoadingScreen message="กำลังโหลดข้อมูลรายงาน..." />
   }
-
+  
+  // Render the dashboard if everything is successful
   return (
     <div className="p-4 sm:p-6 lg:p-8 space-y-4">
        <Button
