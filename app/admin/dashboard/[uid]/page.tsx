@@ -60,7 +60,6 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
   const loadData = useCallback(async () => {
     setLoading(true)
     setError(null)
-    console.log(`🔄 Loading data for UID: ${uid} in range:`, dateRange);
     try {
       const profile = await getUserProfile(uid)
       if (!profile) throw new Error("ไม่พบข้อมูลผู้ใช้")
@@ -70,10 +69,8 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
 
       const data = await getFilteredSafetyData(profile.deviceId, dateRange.start, dateRange.end)
       setSafetyData(data)
-      console.log("✅ Safety data loaded for admin view:", data);
 
     } catch (err: any) {
-      console.error("❌ Admin: Error loading user dashboard:", err)
       setError(err.message)
     } finally {
       setLoading(false)
@@ -140,9 +137,8 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
           <div className="flex items-center gap-2">
             {userProfile?.deviceId && (
               <ExportData
-                // @ts-ignore
-                data={events} // Pass the events array
-                stats={stats}   // Pass the stats object
+                data={events || []}
+                stats={stats || null}
                 deviceId={userProfile.deviceId}
                 dateRange={dateRange}
               />
@@ -178,7 +174,7 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
                         averageEAR={stats.averageEAR}
                     />
                 </div>
-              </Content>
+              </CardContent> {/* <-- แก้ไขจุดนี้ให้ถูกต้อง */}
           </Card>
           <Card className="lg:col-span-2">
             <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><Activity className="h-5 w-5 text-indigo-600"/>สรุปเหตุการณ์</CardTitle></CardHeader>
