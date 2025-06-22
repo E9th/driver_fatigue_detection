@@ -8,13 +8,17 @@ import type { SafetyData } from "@/lib/types"
 import { LoadingScreen } from "@/components/loading-screen"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { AlertTriangle } from "lucide-react"
-import { SafetyDashboard } from "@/components/safety-dashboard" // Re-using the detailed dashboard component
+import { SafetyDashboard } from "@/components/safety-dashboard" 
+import { Button } from "@/components/ui/button"
+import { useRouter } from "next/navigation"
+import { ArrowLeft } from "lucide-react"
 
 export default function ReportsPage() {
   const { userProfile, loading: authLoading } = useAuthState()
   const [safetyData, setSafetyData] = useState<SafetyData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const router = useRouter()
 
   const [dateRange, setDateRange] = useState(() => {
     const endDate = new Date()
@@ -80,14 +84,19 @@ export default function ReportsPage() {
     )
   }
 
-  // Use a conditional loading screen while fetching data
-  if (loading || !safetyData) {
+  if (loading || !safetyData || !userProfile) {
     return <LoadingScreen message="กำลังโหลดข้อมูลรายงาน..." />
   }
 
-  // Reuse the SafetyDashboard component to display the detailed report
   return (
-    <div className="p-4 sm:p-6 lg:p-8">
+    <div className="p-4 sm:p-6 lg:p-8 space-y-4">
+       <Button
+          variant="outline"
+          onClick={() => router.push('/dashboard')}
+        >
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          กลับไปที่แดชบอร์ด
+        </Button>
       <SafetyDashboard
         safetyData={safetyData}
         userProfile={userProfile}
