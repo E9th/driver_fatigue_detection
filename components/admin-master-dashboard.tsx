@@ -28,7 +28,7 @@ export function AdminMasterDashboard() {
               uid: key,
               ...usersData[key],
             }))
-            .filter((user) => user.role !== "admin") // ไม่แสดงผู้ใช้ที่เป็น admin
+            .filter((user) => user.role !== "admin")
           setUsers(usersList)
         }
       } catch (error) {
@@ -40,11 +40,16 @@ export function AdminMasterDashboard() {
     fetchUsers()
   }, [])
 
-  const filteredUsers = users.filter(
-    (user) =>
-      user.fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  // --- จุดแก้ไข ---
+  // เพิ่มการตรวจสอบข้อมูลก่อน filter เพื่อป้องกัน error
+  const filteredUsers = users.filter((user) => {
+    const fullName = user.fullName || ""
+    const email = user.email || ""
+    return (
+      fullName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  })
 
   if (isLoading) {
     return <LoadingScreen />
@@ -75,12 +80,10 @@ export function AdminMasterDashboard() {
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
                 <TableRow key={user.uid}>
-                  <TableCell className="font-medium">{user.fullName}</TableCell>
-                  <TableCell>{user.email}</TableCell>
+                  <TableCell className="font-medium">{user.fullName || "N/A"}</TableCell>
+                  <TableCell>{user.email || "N/A"}</TableCell>
                   <TableCell>{user.deviceId || "N/A"}</TableCell>
                   <TableCell>
-                    {/* --- แก้ไขกลับคืน --- */}
-                    {/* เปลี่ยนลิงก์กลับไปที่ /admin/dashboard/ */}
                     <Link href={`/admin/dashboard/${user.uid}`}>
                       <Button variant="outline" size="sm">
                         ดูแดชบอร์ด
