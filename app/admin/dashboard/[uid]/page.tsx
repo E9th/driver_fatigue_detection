@@ -186,15 +186,6 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
           </Card>
         </div>
         
-        <Suspense fallback={<LoadingScreen message="กำลังโหลดกราฟ..." />}>
-          <Card>
-            <CardHeader><CardTitle className="flex items-center gap-2 text-lg"><BarChart3 className="h-5 w-5 text-green-600"/>กราฟวิเคราะห์</CardTitle></CardHeader>
-            <CardContent>
-              <ChartsSection stats={stats} />
-            </CardContent>
-          </Card>
-        </Suspense>
-
         <Card>
           <CardHeader><CardTitle>ประวัติเหตุการณ์ความปลอดภัย</CardTitle></CardHeader>
           <CardContent>
