@@ -1,69 +1,132 @@
-"use client"
+/**
+ * Data Service
+ * Handles data processing, caching, and analytics.
+ * Added more detailed logging for debugging.
+ */
 
-import type { HistoricalData, DailyStats, Report, SafetyEvent, SafetyData } from "./types";
-import { get, ref } from "firebase/database";
-import { database as db } from "@/lib/firebase"; 
-import { analyzeSafetyData } from "@/lib/analyzer"; // FIX: Import from the new, isolated file.
+import { ref, onValue, get, query, limitToLast, orderByChild, equalTo, startAt, endAt } from "firebase/database";
+import { database } from "./firebase";
+import type { HistoricalData, DailyStats, ReportData, CacheItem, SafetyData } from "./types"; // Added SafetyData
 
-export const dataService = {
-  async getFilteredSafetyData(deviceId: string, startDateISO: string, endDateISO: string): Promise<SafetyData> {
-    if (!deviceId || deviceId === 'null' || deviceId === 'undefined') {
-        throw new Error("Invalid Device ID provided.");
-    }
+const CACHE_DURATION = 5 * 60 * 1000;
+const HISTORICAL_DATA_LIMIT = 500;
+
+class DataService {
+  private cache = new Map<string, CacheItem<{ data: HistoricalData[]; stats: DailyStats }>>();
+  
+  private getCacheKey(deviceId: string, startDate: string, endDate: string): string {
+    return `${deviceId}_${startDate}_${endDate}`;
+  }
+
+  private calculateStats(historicalData: HistoricalData[], filteredAlerts: any[]): DailyStats {
+    const totalYawns = filteredAlerts.filter(a => a.alert_type === 'yawn_detected').length;
+    const totalDrowsiness = filteredAlerts.filter(a => a.alert_type === 'drowsiness_detected').length;
+    const totalAlerts = filteredAlerts.filter(a => a.alert_type === 'critical_drowsiness').length;
+
+    const validHistory = historicalData.filter(item => item && item.timestamp);
+    const validEARData = validHistory.filter(item => (item.ear ?? item.ear_value ?? 0) > 0);
+    const averageEAR =
+      validEARData.length > 0
+        ? validEARData.reduce((sum, item) => sum + (item.ear || item.ear_value || 0), 0) / validEARData.length
+        : 0;
     
-    const historyRef = ref(db, `history/${deviceId}`);
-    const alertsRef = ref(db, `alerts/${deviceId}`);
-
-    const [historySnapshot, alertsSnapshot] = await Promise.all([
-      get(historyRef),
-      get(alertsRef)
-    ]);
-
-    const allHistoryData = historySnapshot.exists() ? historySnapshot.val() : {};
-    const allAlertsData = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
-    
-    const filterByDate = (item: any) => {
-        if (!item || !item.timestamp) return false;
-        const itemDate = new Date(item.timestamp);
-        return itemDate >= new Date(startDateISO) && itemDate <= new Date(endDateISO);
+    const stats: DailyStats = {
+      totalYawns,
+      totalDrowsiness,
+      totalAlerts,
+      totalSessions: 0, // Simplified, can be re-implemented if needed
+      averageEAR: Number(averageEAR.toFixed(3)),
+      averageMouthDistance: 0, // Simplified
+      statusDistribution: {}, // Simplified
     };
     
-    const filteredHistory = Object.values(allHistoryData).filter(filterByDate);
-    const filteredAlerts = Object.values(allAlertsData).filter(filterByDate);
+    console.log("📊 Stats Calculated:", stats); // ADDED LOG
+    return stats;
+  }
 
-    const events: SafetyEvent[] = [...(filteredAlerts as SafetyEvent[]), ...(filteredHistory as HistoricalData[])]
-      .sort((a, b) => new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime())
-      .map((event, index) => ({
-        id: (event as any).id || `${event.timestamp}-${index}`,
-        timestamp: event.timestamp,
-        details: (event as any).status || (event as any).details || 'ไม่ระบุ',
-        severity: event.severity || 1,
-        ear: (event as any).ear
-      }));
-    
-    // This call will now work correctly.
-    return analyzeSafetyData(events, deviceId, startDateISO, endDateISO);
-  },
-
-  generateReport(stats: DailyStats): Report {
-    const recommendations: string[] = [];
-    const score = dataService.calculateSafetyScore(stats);
-
-    if (score < 60) recommendations.push("คะแนนความปลอดภัยของคุณค่อนข้างต่ำ ควรเพิ่มความระมัดระวัง");
-    if (stats.criticalEvents > 5) recommendations.push("ตรวจพบเหตุการณ์วิกฤตหลายครั้ง โปรดตรวจสอบสภาพร่างกายและยานพาหนะ");
-    if (stats.fatigueEvents > 10) recommendations.push("มีความเสี่ยงเรื่องความง่วงสูง ควรหยุดพักทุกๆ 1-2 ชั่วโมง");
-    if (stats.yawnEvents > 20) recommendations.push("สังเกตพบการหาวบ่อยครั้ง ควรนอนหลับให้เพียงพอ");
-    if (recommendations.length === 0) recommendations.push("ยอดเยี่ยม! การขับขี่ของคุณปลอดภัยดี");
-
-    return { recommendations };
-  },
-
-  calculateSafetyScore(stats: DailyStats): number {
+  public calculateSafetyScore(stats: DailyStats): number {
     let score = 100;
-    score -= (stats.criticalEvents * 5);
-    score -= (stats.fatigueEvents * 2);
-    score -= (stats.yawnEvents * 0.5);
-    if (stats.averageEAR > 0.3) score += 5;
-    return Math.round(Math.max(0, Math.min(score, 100)));
-  },
-};
+    score -= Math.min((stats.totalYawns || 0) * 2, 30);
+    score -= Math.min((stats.totalDrowsiness || 0) * 5, 40);
+    score -= Math.min((stats.totalAlerts || 0) * 10, 50);
+    if ((stats.averageEAR || 0) > 0 && stats.averageEAR < 0.25) score -= 20;
+    else if ((stats.averageEAR || 0) > 0 && stats.averageEAR < 0.3) score -= 10;
+    return Math.max(0, Math.round(score));
+  }
+  
+  public generateReport(data: HistoricalData[], stats: DailyStats): ReportData {
+      // Dummy implementation, can be expanded
+      return {
+          stats: stats,
+          trends: { yawnTrend: 'stable', drowsinessTrend: 'stable', alertnessTrend: 'stable' },
+          recommendations: ['ขับขี่อย่างปลอดภัยและหยุดพักเมื่อจำเป็น']
+      };
+  }
+
+  subscribeToHistoricalDataWithCache(
+    deviceId: string,
+    startDate: string,
+    endDate: string,
+    callback: (data: HistoricalData[], stats: DailyStats) => void,
+  ): () => void {
+    const cacheKey = this.getCacheKey(deviceId, startDate, endDate);
+    const cached = this.cache.get(cacheKey);
+
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      console.log("📦 DataService: Using cached data for", cacheKey);
+      setTimeout(() => callback(cached.data.data, cached.data.stats), 0);
+      return () => {};
+    }
+    
+    console.log("🔥 DataService: Fetching new data for", cacheKey);
+    
+    const fetchData = async () => {
+        try {
+            if (!database) throw new Error("Firebase DB not available");
+
+            const historyQuery = query(ref(database, `devices/${deviceId}/history`), orderByChild('timestamp'), startAt(startDate), endAt(endDate));
+            const alertsQuery = query(ref(database, 'alerts'), orderByChild('device_id'), equalTo(deviceId));
+
+            const [historySnapshot, alertsSnapshot] = await Promise.all([
+                get(historyQuery),
+                get(alertsQuery)
+            ]);
+            
+            const historicalData: HistoricalData[] = [];
+            if(historySnapshot.exists()){
+                Object.entries(historySnapshot.val()).forEach(([key, value]) => {
+                    historicalData.push({ id: key, ...(value as any) });
+                });
+            }
+
+            const allAlerts = alertsSnapshot.exists() ? Object.values(alertsSnapshot.val()) : [];
+            const start = new Date(startDate).getTime();
+            const end = new Date(endDate).getTime();
+            const filteredAlerts = allAlerts.filter((alert: any) => {
+                const alertTime = new Date(alert.timestamp).getTime();
+                return alertTime >= start && alertTime <= end;
+            });
+            
+            const stats = this.calculateStats(historicalData, filteredAlerts);
+            this.cache.set(cacheKey, { data: { data: historicalData, stats }, timestamp: Date.now(), key: cacheKey });
+            callback(historicalData, stats);
+
+        } catch (error) {
+            console.error("❌ DataService: Error fetching data:", error);
+            callback([], this.calculateStats([], []));
+        }
+    };
+    
+    fetchData();
+
+    return () => {};
+  }
+
+  clearCache() {
+    this.cache.clear();
+    console.log("🗑️ Cache cleared.");
+  }
+}
+
+export const dataService = new DataService();
+console.log("🔥 Data service initialized with CORRECTED query logic.");

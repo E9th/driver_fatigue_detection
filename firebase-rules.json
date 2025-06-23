@@ -1,37 +1,56 @@
 {
   "rules": {
+    // --- กฎสำหรับ Path หลัก (Root) ---
+    // โดยพื้นฐานจะไม่อนุญาตให้อ่านเขียน แต่จะให้สิทธิ์ Admin อ่านได้ทั้งหมด
+    ".read": "auth != null && root.child('users/' + auth.uid + '/role').val() === 'admin'",
+    ".write": "auth != null", // อนุญาตให้ user ที่ login แล้วเขียนได้ (แต่จะถูกจำกัดสิทธิ์ใน path ย่อยๆ)
+
+    // --- กฎสำหรับข้อมูลผู้ใช้ ---
     "users": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'",
-      "$uid": {
-        ".read": "auth != null && auth.uid == $uid",
-        ".write": "auth != null && auth.uid == $uid"
-      }
+      // Admin อ่านได้ทั้งหมด (สืบทอดจากกฎ Root)
+      "$userId": {
+        // ผู้ใช้จะอ่าน/เขียนข้อมูลของตัวเองได้ หรือ Admin สามารถอ่าน/เขียนข้อมูลของผู้ใช้ทุกคนได้
+        ".read": "auth.uid === $userId || root.child('users/' + auth.uid + '/role').val() === 'admin'",
+        ".write": "auth.uid === $userId || root.child('users/' + auth.uid + '/role').val() === 'admin'",
+        ".validate": "newData.hasChildren(['uid', 'email', 'fullName', 'role', 'registeredAt'])"
+      },
+      ".indexOn": ["deviceId", "email"]
     },
+
+    // --- กฎสำหรับข้อมูลอุปกรณ์ ---
     "devices": {
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'",
+      // Admin อ่านได้ทั้งหมด (สืบทอดจากกฎ Root)
       "$deviceId": {
-        ".write": "auth != null && root.child('users').child(auth.uid).child('deviceId').val() == $deviceId"
+        // ผู้ใช้ทั่วไปจะอ่านข้อมูลได้เฉพาะอุปกรณ์ของตัวเองเท่านั้น
+        ".read": "root.child('users/' + auth.uid + '/deviceId').val() === $deviceId",
+        // การเขียนจะทำได้โดยผู้ใช้ที่เป็นเจ้าของอุปกรณ์ หรือ Admin
+        ".write": "root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/deviceId').val() === $deviceId",
+        "history": {
+            ".indexOn": ["timestamp"]
+        }
       }
     },
+    
+    // --- กฎสำหรับข้อมูลการแจ้งเตือน ---
     "alerts": {
-      // Admins can read everything
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'",
-      "$deviceId": {
-        // A driver can read their own device's alerts
-        ".read": "auth != null && root.child('users').child(auth.uid).child('deviceId').val() == $deviceId",
-        // Device writes its own alerts
-        ".write": "auth != null && root.child('users').child(auth.uid).child('deviceId').val() == $deviceId"
-      }
+      // อนุญาตให้ผู้ใช้ที่ Login แล้วสามารถ Query อ่านข้อมูลได้
+      // แต่ต้องเป็นการ Query ที่ระบุ device_id ของตัวเองเท่านั้น
+      ".read": "auth != null && query.orderByChild === 'device_id' && query.equalTo === root.child('users/' + auth.uid + '/deviceId').val()",
+      
+      "$alertId": {
+        // ผู้ใช้ทั่วไปจะอ่านได้เฉพาะ alert ของอุปกรณ์ตัวเอง (สำหรับการเข้าถึงโดยตรง)
+        ".read": "data.child('device_id').val() === root.child('users/' + auth.uid + '/deviceId').val()",
+        // การเขียนจะทำได้โดยผู้ใช้ที่เป็นเจ้าของอุปกรณ์ หรือ Admin
+        ".write": "root.child('users/' + auth.uid + '/role').val() === 'admin' || newData.child('device_id').val() === root.child('users/' + auth.uid + '/deviceId').val()",
+        ".validate": "newData.hasChildren(['device_id', 'alert_type', 'timestamp', 'severity'])"
+      },
+       ".indexOn": ["device_id"]
     },
-    "history": {
-      // Admins can read everything
-      ".read": "auth != null && root.child('users').child(auth.uid).child('role').val() == 'admin'",
-      "$deviceId": {
-         // A driver can read their own device's history
-        ".read": "auth != null && root.child('users').child(auth.uid).child('deviceId').val() == $deviceId",
-        // Device writes its own history
-        ".write": "auth != null && root.child('users').child(auth.uid).child('deviceId').val() == $deviceId"
-      }
+
+    // --- กฎสำหรับข้อมูลสาธารณะ ---
+    "publicStats": {
+      ".read": true, // อนุญาตให้ทุกคนอ่านได้
+      ".write": false // ไม่อนุญาตให้ใครเขียนได้จากฝั่ง client
     }
   }
 }

@@ -1,149 +1,174 @@
 "use client"
 
-import { useState, useEffect, useCallback } from 'react';
+/**
+ * Authentication Service
+ * Handles user authentication, registration, and profile management
+ */
+
+import { useState, useEffect } from "react"
+import { onAuthStateChanged } from "firebase/auth"
+import { ref, get } from "firebase/database"
 import {
-  getAuth,
-  onAuthStateChanged,
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword,
+  database,
+  auth,
+  signIn as firebaseSignIn,
+  registerUser as firebaseRegisterUser,
   signOut as firebaseSignOut,
-  updateProfile as firebaseUpdateProfile,
-  reauthenticateWithCredential,
-  EmailAuthProvider,
-  updatePassword as firebaseUpdatePassword,
-  type User
-} from 'firebase/auth';
-import { getDatabase, ref, set, get, child } from 'firebase/database';
-import { app, database } from './firebase';
-import type { UserProfile } from './types';
+} from "./firebase"
+import { DEVICE_UTILS, APP_CONFIG } from "./config"
+import type { RegisterData, UserProfile, AuthResponse } from "./types"
 
-const auth = getAuth(app);
+/**
+ * Custom hook for authentication state management
+ */
+export const useAuthState = () => {
+  const [user, setUser] = useState<any>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-export function useAuthState() {
-  const [user, setUser] = useState<User | null>(null);
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  const fetchUserProfile = useCallback(async (uid: string) => {
-    const dbRef = ref(getDatabase());
-    const snapshot = await get(child(dbRef, `users/${uid}`));
-    if (snapshot.exists()) {
-      return snapshot.val() as UserProfile;
-    }
-    return null;
-  }, []);
-
-  const refreshUserProfile = useCallback(async () => {
-    if (user) {
-      const profile = await fetchUserProfile(user.uid);
-      setUserProfile(profile);
-    }
-  }, [user, fetchUserProfile]);
-  
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-      // Always start loading when auth state might change
-      setLoading(true); 
-      if (currentUser) {
-        setUser(currentUser);
-        // Ensure profile is fetched before setting loading to false
-        const profile = await fetchUserProfile(currentUser.uid); 
-        setUserProfile(profile);
-      } else {
-        setUser(null);
-        setUserProfile(null);
-      }
-      // Only set loading to false after all async operations are complete
-      setLoading(false); 
-    });
-
-    return () => unsubscribe();
-  }, [fetchUserProfile]); 
-
-  return { user, userProfile, loading, refreshUserProfile };
-}
-
-// ... (The rest of your functions: signIn, signUp, signOut, etc. remain unchanged)
-export async function signIn(email: string, password: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    await signInWithEmailAndPassword(auth, email, password);
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-export async function signUp(email: string, password: string, fullName: string, license: string, phone: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-    const user = userCredential.user;
-    await firebaseUpdateProfile(user, { displayName: fullName });
-    const userProfileData: UserProfile = {
-      uid: user.uid, email: user.email!, fullName, role: 'driver', 
-      registeredAt: new Date().toISOString(), deviceId: 'null', license, phone,
-    };
-    await set(ref(database, 'users/' + user.uid), userProfileData);
-    return { success: true };
-  } catch (error: any) {
-    return { success: false, error: error.message };
-  }
-}
-
-export async function signOut(): Promise<void> {
-  await firebaseSignOut(auth);
-}
-
-export async function updateUserProfile(uid: string, data: Partial<UserProfile>): Promise<boolean> {
-  try {
-    const userRef = ref(database, `users/${uid}`);
-    const snapshot = await get(userRef);
-    if (snapshot.exists()) {
-      const currentData = snapshot.val();
-      await set(userRef, { ...currentData, ...data });
-      if (data.fullName && auth.currentUser && auth.currentUser.uid === uid) {
-        await firebaseUpdateProfile(auth.currentUser, { displayName: data.fullName });
-      }
-      return true;
+    if (!auth) {
+      console.log("🔧 Auth not available, using mock auth state")
+      setIsLoading(false)
+      return
     }
-    return false;
-  } catch (error) {
-    return false;
-  }
-}
 
-export async function reauthenticate(currentPassword: string): Promise<boolean> {
-    const user = auth.currentUser;
-    if (!user || !user.email) return false;
-    const credential = EmailAuthProvider.credential(user.email, currentPassword);
-    try {
-        await reauthenticateWithCredential(user, credential);
-        return true;
-    } catch (error) {
-        return false;
-    }
-}
+    console.log("🔥 Auth: Setting up auth state listener")
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      console.log("🔥 Auth state changed:", firebaseUser?.uid || "no user")
 
-export async function updateUserPassword(newPassword: string): Promise<boolean> {
-    const user = auth.currentUser;
-    if (!user) return false;
-    try {
-        await firebaseUpdatePassword(user, newPassword);
-        return true;
-    } catch (error) {
-        return false;
-    }
-}
+      setUser(firebaseUser)
 
-export async function getUserProfile(uid: string): Promise<UserProfile | null> {
-    const dbRef = ref(getDatabase());
-    try {
-        const snapshot = await get(child(dbRef, `users/${uid}`));
-        if (snapshot.exists()) {
-            return snapshot.val() as UserProfile;
-        } else {
-            return null;
+      if (firebaseUser) {
+        try {
+          const profile = await getUserProfile(firebaseUser.uid)
+          setUserProfile(profile)
+          console.log("✅ User profile loaded:", profile)
+        } catch (error) {
+          console.error("❌ Error loading user profile:", error)
+          setError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้")
         }
-    } catch (error) {
-        return null;
-    }
+      } else {
+        setUserProfile(null)
+      }
+
+      setIsLoading(false)
+    })
+
+    return unsubscribe
+  }, [])
+
+  const isAdmin = userProfile?.role === "admin"
+
+  return { user, userProfile, isAdmin, isLoading, error }
 }
+
+/**
+ * User registration with device assignment
+ */
+export const registerUser = async (userData: RegisterData): Promise<AuthResponse> => {
+  try {
+    const result = await firebaseRegisterUser(userData)
+    if (result) {
+      return result
+    } else {
+      return { success: false, error: "การลงทะเบียนล้มเหลว กรุณาลองใหม่อีกครั้ง" }
+    }
+  } catch (error: any) {
+    console.error("❌ Firebase: Registration error:", error)
+    return { success: false, error: getAuthErrorMessage(error.code) }
+  }
+}
+
+/**
+ * User login authentication
+ */
+export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
+  try {
+    const result = await firebaseSignIn(email, password)
+    if (result) {
+      return result
+    } else {
+      return { success: false, error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" }
+    }
+  } catch (error: any) {
+    console.error("❌ Firebase: Login error:", error)
+    return { success: false, error: getAuthErrorMessage(error.code) }
+  }
+}
+
+/**
+ * User logout
+ */
+export const signOut = async (): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const result = await firebaseSignOut()
+    if (result) {
+      return result
+    } else {
+      return { success: false, error: "การออกจากระบบล้มเหลว" }
+    }
+  } catch (error: any) {
+    console.error("❌ Firebase: Sign out error:", error.message)
+    return { success: false, error: error.message }
+  }
+}
+
+/**
+ * Get user profile by UID
+ */
+export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
+  try {
+    if (!database) {
+      console.warn("🔧 Firebase not available")
+      return null
+    }
+
+    const userRef = ref(database, `users/${uid}`)
+    const snapshot = await get(userRef)
+
+    if (snapshot.exists()) {
+      const userData = snapshot.val()
+      return {
+        uid,
+        ...userData,
+      }
+    }
+    return null
+  } catch (error) {
+    console.error("🔥 Firebase: Error getting user profile:", error)
+    return null
+  }
+}
+
+/**
+ * Device ID utility functions
+ */
+export const normalizeDeviceId = (deviceId: string): string => {
+  if (!deviceId) return ""
+  return DEVICE_UTILS.normalize ? DEVICE_UTILS.normalize(deviceId) : deviceId
+}
+
+export const getDeviceDisplayId = (deviceId: string | null): string => {
+  if (!deviceId) return "N/A"
+  return DEVICE_UTILS.getDisplayId ? DEVICE_UTILS.getDisplayId(deviceId) : deviceId
+}
+
+/**
+ * Convert Firebase auth error codes to Thai messages
+ */
+const getAuthErrorMessage = (errorCode: string): string => {
+  const errorMessages: { [key: string]: string } = {
+    "auth/email-already-in-use": "อีเมลนี้ถูกใช้งานแล้ว",
+    "auth/weak-password": "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร",
+    "auth/invalid-email": "รูปแบบอีเมลไม่ถูกต้อง",
+    "auth/user-not-found": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+    "auth/wrong-password": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
+    "auth/network-request-failed": "เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบอินเทอร์เน็ต",
+    "auth/too-many-requests": "มีการพยายามเข้าสู่ระบบมากเกินไป กรุณารอสักครู่",
+  }
+  return errorMessages[errorCode] || "เกิดข้อผิดพลาดในการดำเนินการ กรุณาลองใหม่อีกครั้ง"
+}
+
+console.log("🔥 Auth service initialized with error recovery")

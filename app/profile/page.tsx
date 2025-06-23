@@ -1,156 +1,225 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { useAuthState, updateUserProfile, reauthenticate, updateUserPassword } from "@/lib/auth"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { useToast } from "@/hooks/use-toast"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { Separator } from "@/components/ui/separator"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { User, Mail, Phone, CreditCard, Smartphone, Calendar, Shield, ArrowLeft, AlertCircle } from "lucide-react"
+import { getUserProfile, useAuthState, type UserProfile, getDeviceDisplayId } from "@/lib/auth"
+import { useRouter } from "next/navigation"
 import { LoadingScreen } from "@/components/loading-screen"
-import { ArrowLeft, User, Lock, Mail, Phone, Car } from "lucide-react"
-import type { UserProfile } from "@/lib/types"
+import Image from "next/image"
 
 export default function ProfilePage() {
-  const { user, userProfile, loading, refreshUserProfile } = useAuthState()
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
   const router = useRouter()
-  const { toast } = useToast()
 
-  const [fullName, setFullName] = useState("")
-  const [phone, setPhone] = useState("")
-  const [license, setLicense] = useState("")
-  const [currentPassword, setCurrentPassword] = useState("")
-  const [newPassword, setNewPassword] = useState("")
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [isPasswordUpdating, setIsPasswordUpdating] = useState(false)
+  const { user, isLoading: authLoading, error: authError } = useAuthState()
 
   useEffect(() => {
-    if (userProfile) {
-      setFullName(userProfile.fullName || "")
-      setPhone(userProfile.phone || "")
-      setLicense(userProfile.license || "")
-    }
-  }, [userProfile])
-
-  const handleUpdateProfile = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!user) return
-
-    setIsUpdating(true)
-    const updatedData: Partial<UserProfile> = { fullName, phone, license }
-
-    const success = await updateUserProfile(user.uid, updatedData)
-    if (success) {
-      toast({ title: "อัปเดตข้อมูลส่วนตัวสำเร็จ" })
-      await refreshUserProfile()
-    } else {
-      toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถอัปเดตข้อมูลได้", variant: "destructive" })
-    }
-    setIsUpdating(false)
-  }
-
-  const handleUpdatePassword = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    if (!user) return
-
-    setIsPasswordUpdating(true)
-    const success = await reauthenticate(currentPassword)
-    if (!success) {
-      toast({ title: "รหัสผ่านปัจจุบันไม่ถูกต้อง", variant: "destructive" })
-      setIsPasswordUpdating(false)
-      return
+    async function fetchProfile() {
+      if (user) {
+        console.log("👤 Fetching profile for user:", user.uid)
+        try {
+          const profile = await getUserProfile(user.uid)
+          console.log("👤 Profile loaded:", profile)
+          setUserProfile(profile)
+        } catch (error) {
+          console.error("❌ Error fetching profile:", error)
+          setError("ไม่สามารถโหลดข้อมูลโปรไฟล์ได้")
+        } finally {
+          setIsLoading(false)
+        }
+      } else if (!authLoading && !user) {
+        console.log("🚪 No user, redirecting to login")
+        router.push("/login")
+      }
     }
 
-    const passwordUpdated = await updateUserPassword(newPassword)
-    if (passwordUpdated) {
-      toast({ title: "อัปเดตรหัสผ่านสำเร็จ" })
-      setCurrentPassword("")
-      setNewPassword("")
-    } else {
-      toast({ title: "เกิดข้อผิดพลาด", description: "ไม่สามารถอัปเดตรหัสผ่านได้", variant: "destructive" })
-    }
-    setIsPasswordUpdating(false)
-  }
+    fetchProfile()
+  }, [user, authLoading, router])
 
-  // --- FIX: This function now correctly routes based on user role ---
   const handleBackToDashboard = () => {
-    if (userProfile?.role === 'admin') {
-      router.push('/admin/dashboard');
-    } else {
-      router.push('/dashboard');
-    }
-  };
-  // -----------------------------------------------------------------
+    console.log("🔙 Navigating back to dashboard")
+    router.push("/dashboard")
+  }
 
-  if (loading || !user || !userProfile) {
+  if (isLoading || authLoading) {
     return <LoadingScreen message="กำลังโหลดข้อมูลโปรไฟล์..." />
   }
 
+  if (authError || error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Alert className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            {authError || error}
+            <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => router.push("/dashboard")}>
+              กลับไปแดชบอร์ด
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
+  if (!userProfile) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 flex items-center justify-center p-4">
+        <Alert className="max-w-md">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            ไม่พบข้อมูลโปรไฟล์
+            <Button variant="outline" size="sm" className="mt-2 w-full" onClick={() => router.push("/dashboard")}>
+              กลับไปแดชบอร์ด
+            </Button>
+          </AlertDescription>
+        </Alert>
+      </div>
+    )
+  }
+
   return (
-    <div className="container mx-auto max-w-4xl py-8">
-      <div className="mb-6">
-        <Button
-          variant="outline"
-          onClick={handleBackToDashboard} // Use the new handler function
-        >
-          <ArrowLeft className="mr-2 h-4 w-4" />
-          กลับไปที่แดชบอร์ด
-        </Button>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+      {/* Header */}
+      <div className="bg-white dark:bg-gray-800 shadow-sm border-b">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center justify-between py-6">
+            <div className="flex items-center space-x-4">
+              <Image src="/logo.png" alt="Logo" width={40} height={40} className="h-10 w-10" />
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">โปรไฟล์ผู้ใช้</h1>
+                <p className="text-sm text-gray-500 dark:text-gray-400">ข้อมูลส่วนตัวของคุณ</p>
+              </div>
+            </div>
+            <Button variant="outline" onClick={handleBackToDashboard} className="flex items-center gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              กลับไปแดชบอร์ด
+            </Button>
+          </div>
+        </div>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-2">
-        {/* Profile Information Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center"><User className="mr-2"/>ข้อมูลส่วนตัว</CardTitle>
-            <CardDescription>อัปเดตข้อมูลส่วนตัวของคุณที่นี่</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpdateProfile} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">อีเมล</Label>
-                <Input id="email" type="email" value={user.email || ""} disabled />
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid gap-6 md:grid-cols-2">
+          {/* ข้อมูลส่วนตัว */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <User className="h-5 w-5 text-blue-600" />
+                ข้อมูลส่วนตัว
+              </CardTitle>
+              <CardDescription>ข้อมูลพื้นฐานของผู้ใช้งาน</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-500">ชื่อ-นามสกุล:</span>
+                <span className="text-sm font-semibold">{userProfile.fullName}</span>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="fullName">ชื่อ-นามสกุล</Label>
-                <Input id="fullName" value={fullName} onChange={(e) => setFullName(e.target.value)} />
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  <Mail className="h-4 w-4" />
+                  อีเมล:
+                </span>
+                <span className="text-sm">{userProfile.email}</span>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="phone">เบอร์โทรศัพท์</Label>
-                <Input id="phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  <Phone className="h-4 w-4" />
+                  เบอร์โทรศัพท์:
+                </span>
+                <span className="text-sm">{userProfile.phone}</span>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="license">ใบขับขี่</Label>
-                <Input id="license" value={license} onChange={(e) => setLicense(e.target.value)} />
-              </div>
-              <Button type="submit" className="w-full" disabled={isUpdating}>
-                {isUpdating ? "กำลังบันทึก..." : "บันทึกการเปลี่ยนแปลง"}
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
+              {userProfile.license && (
+                <>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                      <CreditCard className="h-4 w-4" />
+                      ใบขับขี่:
+                    </span>
+                    <span className="text-sm font-mono">{userProfile.license}</span>
+                  </div>
+                </>
+              )}
+            </CardContent>
+          </Card>
 
-        {/* Change Password Card */}
-        <Card>
+          {/* ข้อมูลระบบ */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Shield className="h-5 w-5 text-green-600" />
+                ข้อมูลระบบ
+              </CardTitle>
+              <CardDescription>ข้อมูลการใช้งานระบบ</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-500">สถานะผู้ใช้:</span>
+                <Badge variant={userProfile.role === "admin" ? "default" : "secondary"}>
+                  {userProfile.role === "admin" ? "ผู้ดูแลระบบ" : "ผู้ขับขี่"}
+                </Badge>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  <Smartphone className="h-4 w-4" />
+                  รหัสอุปกรณ์:
+                </span>
+                <span className="text-sm font-mono bg-gray-100 dark:bg-gray-700 px-2 py-1 rounded">
+                  {getDeviceDisplayId(userProfile.deviceId)}
+                </span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-500 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" />
+                  วันที่ลงทะเบียน:
+                </span>
+                <span className="text-sm">
+                  {new Date(userProfile.registeredAt).toLocaleDateString("th-TH", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                  })}
+                </span>
+              </div>
+              <Separator />
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-gray-500">User ID:</span>
+                <span className="text-xs font-mono text-gray-400 break-all">{userProfile.uid}</span>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* ข้อมูลเพิ่มเติม */}
+        <Card className="mt-6">
           <CardHeader>
-            <CardTitle className="flex items-center"><Lock className="mr-2"/>เปลี่ยนรหัสผ่าน</CardTitle>
-            <CardDescription>เพื่อความปลอดภัย ควรเปลี่ยนรหัสผ่านอย่างสม่ำเสมอ</CardDescription>
+            <CardTitle>ข้อมูลเพิ่มเติม</CardTitle>
+            <CardDescription>ข้อมูลอื่นๆ ที่เกี่ยวข้องกับบัญชีของคุณ</CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleUpdatePassword} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="current-password">รหัสผ่านปัจจุบัน</Label>
-                <Input id="current-password" type="password" value={currentPassword} onChange={(e) => setCurrentPassword(e.target.value)} />
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                <h3 className="font-medium text-blue-900 dark:text-blue-100 mb-2">สถานะการเชื่อมต่อ</h3>
+                <p className="text-sm text-blue-700 dark:text-blue-300">อุปกรณ์ของคุณพร้อมใช้งานและสามารถเชื่อมต่อกับระบบได้</p>
               </div>
-              <div className="space-y-2">
-                <Label htmlFor="new-password">รหัสผ่านใหม่</Label>
-                <Input id="new-password" type="password" value={newPassword} onChange={(e) => setNewPassword(e.target.value)} />
+              <div className="p-4 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                <h3 className="font-medium text-green-900 dark:text-green-100 mb-2">ความปลอดภัย</h3>
+                <p className="text-sm text-green-700 dark:text-green-300">ข้อมูลของคุณได้รับการปกป้องด้วยระบบความปลอดภัยขั้นสูง</p>
               </div>
-              <Button type="submit" className="w-full" variant="secondary" disabled={isPasswordUpdating}>
-                {isPasswordUpdating ? "กำลังอัปเดต..." : "อัปเดตรหัสผ่าน"}
-              </Button>
-            </form>
+            </div>
           </CardContent>
         </Card>
       </div>

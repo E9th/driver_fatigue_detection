@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, useMemo } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -31,10 +31,10 @@ import {
   BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
 } from "recharts"
 import {
-  AlertTriangle, Eye, Users, Activity, Clock, BarChart3, Search, User, Settings, LogOut, Download,
+  AlertTriangle, Eye, Users, Activity, Clock, BarChart3, Search, User, LayoutDashboard, UserX, TrendingUp, Settings, LogOut,
 } from "lucide-react"
 import { LoadingScreen } from "@/components/loading-screen"
-import { database } from "@/lib/firebase"
+import { database } from "@/lib/firebase" 
 import { getAllUsers, deleteUser } from "@/lib/admin-utils"
 import { signOut } from "@/lib/auth"
 import { ref, get } from "firebase/database"
@@ -45,16 +45,16 @@ import {
 } from "@/components/ui/table"
 
 interface AlertData {
-  alert_type: string;
-  device_id: string;
-  severity: string;
-  timestamp: string;
+  alert_type: string
+  device_id: string
+  severity: string
+  timestamp: string
 }
 
 interface DeviceData {
   current_data?: {
       timestamp: string;
-  };
+  }
 }
 
 export function AdminMasterDashboard() {
@@ -68,10 +68,21 @@ export function AdminMasterDashboard() {
       endDate: endDate.toISOString(),
     }
   })
-  
   const [users, setUsers] = useState<UserProfile[]>([])
+  const [filteredUsers, setFilteredUsers] = useState<UserProfile[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [userToDelete, setUserToDelete] = useState<string | null>(null)
   const [alerts, setAlerts] = useState<AlertData[]>([])
   const [devices, setDevices] = useState<{ [key: string]: DeviceData }>({});
+  const [stats, setStats] = useState({
+    totalDevices: 0,
+    activeDevices: 0,
+    totalUsers: 0,
+    adminUsers: 0,
+    totalYawns: 0,
+    totalDrowsiness: 0,
+    totalAlerts: 0,
+  })
 
   const { toast } = useToast()
   const router = useRouter()
@@ -80,16 +91,20 @@ export function AdminMasterDashboard() {
     const loadAllData = async () => {
       setLoading(true)
       try {
-        const usersList = await getAllUsers();
-        setUsers(usersList);
+        if (!database) throw new Error("Firebase DB not available")
         
+        const usersList = await getAllUsers();
+        if (usersList) {
+            setUsers(usersList);
+            setFilteredUsers(usersList);
+        }
+
         const [alertsSnapshot, devicesSnapshot] = await Promise.all([
           get(ref(database, "alerts")),
           get(ref(database, "devices")),
         ]);
 
-        const alertsVal = alertsSnapshot.exists() ? alertsSnapshot.val() : {};
-        const alertsList: AlertData[] = Object.values(alertsVal || {});
+        const alertsList: AlertData[] = alertsSnapshot.exists() ? Object.values(alertsSnapshot.val()) : [];
         setAlerts(alertsList);
         
         const devicesData = devicesSnapshot.exists() ? devicesSnapshot.val() : {};
@@ -105,16 +120,13 @@ export function AdminMasterDashboard() {
     loadAllData();
   }, [toast]);
 
-  const stats = useMemo(() => {
-    if (loading) {
-        return { totalDevices: 0, activeDevices: 0, totalUsers: 0, adminUsers: 0, totalYawns: 0, totalDrowsiness: 0, totalAlerts: 0 };
-    }
-      
+  useEffect(() => {
+    if (loading) return;
+
     const startTime = new Date(dateRange.startDate).getTime();
     const endTime = new Date(dateRange.endDate).getTime();
     
     const filteredAlerts = alerts.filter(alert => {
-        if (!alert || typeof alert !== 'object' || !alert.timestamp) return false;
         const alertTime = new Date(alert.timestamp).getTime();
         return alertTime >= startTime && alertTime <= endTime;
     });
@@ -125,30 +137,35 @@ export function AdminMasterDashboard() {
 
     const now = Date.now();
     const fiveMinutesAgo = now - 5 * 60 * 1000;
-    const activeDevicesCount = Object.keys(devices).filter((deviceId) => {
-        const lastUpdate = devices[deviceId]?.current_data?.timestamp;
-        return lastUpdate && new Date(lastUpdate).getTime() > fiveMinutesAgo;
+    const activeDevicesCount = Object.values(devices).filter((device) => {
+      const lastUpdate = device?.current_data?.timestamp;
+      return lastUpdate && new Date(lastUpdate).getTime() > fiveMinutesAgo;
     }).length;
 
-    return {
+    const yawnAlerts = filteredAlerts.filter((alert) => alert.alert_type === "yawn_detected").length;
+    const drowsinessAlerts = filteredAlerts.filter((alert) => alert.alert_type === "drowsiness_detected").length;
+    const criticalAlerts = filteredAlerts.filter((alert) => alert.alert_type === "critical_drowsiness").length;
+
+    setStats({
       totalDevices: devicesWithUsers.size,
       activeDevices: activeDevicesCount,
       totalUsers: driverUsers.length,
       adminUsers: adminUsers.length,
-      totalYawns: filteredAlerts.filter((a) => a.alert_type === "yawn_detected").length,
-      totalDrowsiness: filteredAlerts.filter((a) => a.alert_type === "drowsiness_detected").length,
-      totalAlerts: filteredAlerts.filter((a) => a.alert_type === "critical_drowsiness").length,
-    };
-  }, [loading, users, alerts, devices, dateRange]);
-  
-  const [searchTerm, setSearchTerm] = useState("")
-  const filteredUsers = useMemo(() => 
-    users.filter(user =>
-        (user.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
-    ), [users, searchTerm]);
-  
-  const [userToDelete, setUserToDelete] = useState<string | null>(null)
+      totalYawns: yawnAlerts,
+      totalDrowsiness: drowsinessAlerts,
+      totalAlerts: criticalAlerts,
+    });
+  }, [users, alerts, devices, dateRange, loading]);
+
+  useEffect(() => {
+    setFilteredUsers(
+      users.filter(
+        (user) =>
+          (user.fullName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
+          (user.email || "").toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    );
+  }, [searchTerm, users]);
 
   const handleDateChange = useCallback((startDate: string, endDate: string) => {
     setDateRange({ startDate, endDate });
@@ -169,16 +186,14 @@ export function AdminMasterDashboard() {
     if (result.success) {
       toast({ title: "ลบผู้ใช้สำเร็จ" });
     } else {
-      setUsers(originalUsers);
+      setUsers(originalUsers); // Revert on failure
       toast({ title: "เกิดข้อผิดพลาด", description: result.error, variant: "destructive" });
     }
   }, [users, toast]);
 
-  const hourlyActivity = useMemo(() => {
+  const hourlyActivity = () => {
     const hourlyData = Array(24).fill(0).map((_, i) => ({ hour: i, yawns: 0, drowsiness: 0, alerts: 0 }))
-    if (!Array.isArray(alerts)) return hourlyData;
     const filteredAlerts = alerts.filter(alert => {
-        if (!alert || typeof alert !== 'object' || !alert.timestamp) return false;
         const alertTime = new Date(alert.timestamp).getTime()
         return alertTime >= new Date(dateRange.startDate).getTime() && alertTime <= new Date(dateRange.endDate).getTime()
     })
@@ -189,9 +204,9 @@ export function AdminMasterDashboard() {
       else if (alert.alert_type === "critical_drowsiness") hourlyData[hour].alerts++
     })
     return hourlyData
-  }, [alerts, dateRange]);
+  }
 
-  const riskDistribution = useMemo(() => {
+  const riskDistribution = () => {
     const { totalYawns, totalDrowsiness, totalAlerts } = stats
     const total = totalYawns + totalDrowsiness + totalAlerts
     if (total === 0) return []
@@ -200,97 +215,7 @@ export function AdminMasterDashboard() {
       { name: "ง่วง", value: totalDrowsiness, color: "#F97316" },
       { name: "วิกฤต", value: totalAlerts, color: "#EF4444" },
     ].filter((item) => item.value > 0)
-  }, [stats]);
-
-  const handleExportSummary = () => {
-    const reportDate = new Date().toLocaleDateString("th-TH", { year: 'numeric', month: 'long', day: 'numeric' });
-    const timeRange = `${new Date(dateRange.startDate).toLocaleDateString("th-TH")} - ${new Date(dateRange.endDate).toLocaleDateString("th-TH")}`;
-    
-    // --- UPDATED PDF TEMPLATE ---
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html lang="th">
-      <head>
-          <meta charset="UTF-8">
-          <title>รายงานสรุปภาพรวมระบบ</title>
-          <style>
-              @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@400;700&display=swap');
-              body { font-family: 'Sarabun', sans-serif; margin: 25px; color: #333; background-color: #f9fafb; }
-              .container { max-width: 800px; margin: auto; background-color: #ffffff; padding: 30px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-              .header { text-align: center; margin-bottom: 25px; }
-              .header h1 { margin: 0; color: #111827; font-size: 24px; }
-              .header p { margin: 5px 0; color: #6b7280; font-size: 14px; }
-              .section-title { font-size: 20px; font-weight: 700; color: #111827; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px; margin-bottom: 20px; margin-top: 30px;}
-              .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-              .card { border: 1px solid #e5e7eb; padding: 20px; border-radius: 8px; text-align: center; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-              .card.risk-yellow { border-left: 5px solid #f59e0b; }
-              .card.risk-orange { border-left: 5px solid #f97316; }
-              .card.risk-red { border-left: 5px solid #ef4444; }
-              .card-icon { margin-bottom: 12px; }
-              .card .value { font-size: 2.2em; font-weight: 700; color: #1d4ed8; line-height: 1.1; }
-              .card .value .unit { font-size: 0.5em; font-weight: 400; color: #6b7280; margin-left: 4px; }
-              .card .label { font-size: 0.9em; color: #6b7280; margin-top: 5px; }
-              .footer { text-align: center; margin-top: 40px; font-size: 12px; color: #9ca3af; }
-          </style>
-      </head>
-      <body>
-          <div class="container">
-              <div class="header">
-                  <h1>รายงานสรุปภาพรวมระบบ</h1>
-                  <p>ข้อมูล ณ วันที่: ${reportDate}</p>
-                  <p>ช่วงเวลาที่แสดงผล: ${timeRange}</p>
-              </div>
-
-              <h2 class="section-title">สถิติโดยรวม</h2>
-              <div class="grid">
-                  <div class="card">
-                      <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg></div>
-                      <div class="value">${stats.totalDevices} <span class="unit">เครื่อง</span></div><div class="label">อุปกรณ์ทั้งหมด</div>
-                  </div>
-                  <div class="card">
-                      <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg></div>
-                      <div class="value">${stats.activeDevices} <span class="unit">เครื่อง</span></div><div class="label">อุปกรณ์ที่ใช้งาน</div>
-                  </div>
-                  <div class="card">
-                      <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
-                      <div class="value">${stats.totalUsers} <span class="unit">คน</span></div><div class="label">ผู้ขับขี่ทั้งหมด</div>
-                  </div>
-                  <div class="card">
-                      <div class="card-icon"><svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg></div>
-                      <div class="value">${stats.adminUsers} <span class="unit">คน</span></div><div class="label">ผู้ดูแลระบบ</div>
-                  </div>
-              </div>
-
-              <h2 class="section-title">สถิติเหตุการณ์</h2>
-              <div class="grid" style="grid-template-columns: 1fr 1fr 1fr;">
-                  <div class="card risk-yellow">
-                      <div class="value" style="color:#d97706;">${stats.totalYawns} <span class="unit">ครั้ง</span></div>
-                      <div class="label">การหาว</div>
-                  </div>
-                  <div class="card risk-orange">
-                      <div class="value" style="color:#ea580c;">${stats.totalDrowsiness} <span class="unit">ครั้ง</span></div>
-                      <div class="label">ความง่วง</div>
-                  </div>
-                  <div class="card risk-red">
-                      <div class="value" style="color:#dc2626;">${stats.totalAlerts} <span class="unit">ครั้ง</span></div>
-                      <div class="label">แจ้งเตือนด่วน</div>
-                  </div>
-              </div>
-
-              <div class="footer">
-                  รายงานนี้สร้างโดยระบบ Driver Fatigue Detection
-              </div>
-          </div>
-      </body>
-      </html>`;
-
-    const printWindow = window.open("", "_blank");
-    if (printWindow) {
-      printWindow.document.write(htmlContent);
-      printWindow.document.close();
-      setTimeout(() => printWindow.print(), 500);
-    }
-  };
+  }
 
   if (loading) {
     return <LoadingScreen message="กำลังโหลดข้อมูลระบบ..." />
@@ -301,7 +226,9 @@ export function AdminMasterDashboard() {
        <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">แดชบอร์ดผู้ดูแลระบบ</h1>
         <DropdownMenu>
-          <DropdownMenuTrigger asChild><Button variant="outline" size="icon"><Settings className="h-4 w-4" /></Button></DropdownMenuTrigger>
+          <DropdownMenuTrigger asChild>
+            <Button variant="outline" size="icon"><Settings className="h-4 w-4" /></Button>
+          </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>บัญชีของฉัน</DropdownMenuLabel>
             <DropdownMenuSeparator />
@@ -318,21 +245,9 @@ export function AdminMasterDashboard() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <div className="flex justify-between items-center">
-                <CardTitle>ตัวกรองและเครื่องมือ</CardTitle>
-                <Button onClick={handleExportSummary} variant="outline" size="sm">
-                  <Download className="mr-2 h-4 w-4" />
-                  Export Summary (PDF)
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
-            </CardContent>
-          </Card>
-          
+          <div className="p-4 border rounded-lg bg-white dark:bg-gray-800">
+             <DateTimeFilter onFilterChange={handleDateChange} initialStartDate={dateRange.startDate} initialEndDate={dateRange.endDate} />
+          </div>
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ทั้งหมด</CardTitle><Users className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.totalDevices}</div></CardContent></Card>
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">อุปกรณ์ที่ใช้งาน</CardTitle><Activity className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.activeDevices}</div></CardContent></Card>
@@ -340,13 +255,13 @@ export function AdminMasterDashboard() {
             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ผู้ดูแลระบบ</CardTitle><Clock className="h-4 w-4 text-muted-foreground" /></CardHeader><CardContent><div className="text-2xl font-bold">{stats.adminUsers}</div></CardContent></Card>
           </div>
           <div className="grid gap-4 md:grid-cols-3">
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">การหาว</CardTitle><Eye className="h-4 w-4 text-yellow-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-yellow-600">{stats.totalYawns}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ความง่วง</CardTitle><BarChart3 className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{stats.totalDrowsiness}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
-            <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">แจ้งเตือนด่วน</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{stats.totalAlerts}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
+             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">การหาว</CardTitle><Eye className="h-4 w-4 text-yellow-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-yellow-600">{stats.totalYawns}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
+             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">ความง่วง</CardTitle><BarChart3 className="h-4 w-4 text-orange-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-orange-600">{stats.totalDrowsiness}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
+             <Card><CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">แจ้งเตือนด่วน</CardTitle><AlertTriangle className="h-4 w-4 text-red-500" /></CardHeader><CardContent><div className="text-2xl font-bold text-red-600">{stats.totalAlerts}</div><p className="text-xs text-muted-foreground">ในช่วงเวลาที่เลือก</p></CardContent></Card>
           </div>
           <div className="grid gap-6 lg:grid-cols-2">
-            <Card><CardHeader><CardTitle>กิจกรรมตามช่วงเวลา</CardTitle></CardHeader><CardContent className="h-[350px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={hourlyActivity}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="hour" tickFormatter={(hour) => `${hour}:00`} /><YAxis /><Tooltip /><Legend /><Bar dataKey="yawns" fill="#F59E0B" name="การหาว" /><Bar dataKey="drowsiness" fill="#F97316" name="ความง่วง" /><Bar dataKey="alerts" fill="#EF4444" name="แจ้งเตือนด่วน" /></BarChart></ResponsiveContainer></CardContent></Card>
-            <Card><CardHeader><CardTitle>การกระจายระดับความเสี่ยง</CardTitle></CardHeader><CardContent className="h-[350px]">{riskDistribution.length > 0 ? (<ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={riskDistribution} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{riskDistribution.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value, name) => [`${value} เหตุการณ์`, name]} /><Legend /></PieChart></ResponsiveContainer>) : (<div className="flex items-center justify-center h-full"><p className="text-gray-500">ไม่มีข้อมูลในช่วงเวลาที่เลือก</p></div>)}</CardContent></Card>
+            <Card><CardHeader><CardTitle>กิจกรรมตามช่วงเวลา</CardTitle></CardHeader><CardContent className="h-[350px]"><ResponsiveContainer width="100%" height="100%"><BarChart data={hourlyActivity()}><CartesianGrid strokeDasharray="3 3" /><XAxis dataKey="hour" tickFormatter={(hour) => `${hour}:00`} /><YAxis /><Tooltip /><Legend /><Bar dataKey="yawns" fill="#F59E0B" name="การหาว" /><Bar dataKey="drowsiness" fill="#F97316" name="ความง่วง" /><Bar dataKey="alerts" fill="#EF4444" name="แจ้งเตือนด่วน" /></BarChart></ResponsiveContainer></CardContent></Card>
+            <Card><CardHeader><CardTitle>การกระจายระดับความเสี่ยง</CardTitle></CardHeader><CardContent className="h-[350px]">{riskDistribution().length > 0 ? (<ResponsiveContainer width="100%" height="100%"><PieChart><Pie data={riskDistribution()} cx="50%" cy="50%" labelLine={false} outerRadius={100} fill="#8884d8" dataKey="value" label={({ name, value }) => `${name}: ${value}`}>{riskDistribution().map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}</Pie><Tooltip formatter={(value: number, name: string) => [`${value} เหตุการณ์`, name]} /><Legend /></PieChart></ResponsiveContainer>) : (<div className="flex items-center justify-center h-full"><p className="text-gray-500">ไม่มีข้อมูลในช่วงเวลาที่เลือก</p></div>)}</CardContent></Card>
           </div>
         </TabsContent>
 
@@ -354,27 +269,26 @@ export function AdminMasterDashboard() {
           <Card>
             <CardHeader><div className="flex justify-between items-center"><CardTitle>จัดการผู้ใช้งาน</CardTitle><div className="relative w-64"><Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500" /><Input placeholder="ค้นหา..." className="pl-8" value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} /></div></div></CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader><TableRow><TableHead>ชื่อ</TableHead><TableHead>อีเมล</TableHead><TableHead>Device ID</TableHead><TableHead>สถานะ</TableHead><TableHead className="text-right">จัดการ</TableHead></TableRow></TableHeader>
-                <TableBody>
-                  {filteredUsers.map((user) => {
-                    const deviceId = user.deviceId || "";
-                    const isActive = deviceId && devices[deviceId] && devices[deviceId].current_data && Date.now() - new Date(devices[deviceId].current_data!.timestamp).getTime() < 5 * 60 * 1000;
-                    return (
-                      <TableRow key={user.uid}>
-                        <TableCell>{user.fullName}</TableCell>
-                        <TableCell>{user.email}</TableCell>
-                        <TableCell>{user.deviceId || 'N/A'}</TableCell>
-                        <TableCell><Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{user.role}</Badge>{isActive && <Badge className="ml-2 bg-green-100 text-green-800">ออนไลน์</Badge>}</TableCell>
-                        <TableCell className="text-right">
-                          <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/dashboard/${user.uid}`)}>แดชบอร์ด</Button>
-                          {user.role !== 'admin' && <AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="ml-2" onClick={() => setUserToDelete(user.uid)}>ลบ</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>ยืนยันการลบ</AlertDialogTitle><AlertDialogDescription>คุณต้องการลบผู้ใช้ {user.fullName} หรือไม่?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>ยกเลิก</AlertDialogCancel><AlertDialogAction onClick={() => userToDelete && handleDeleteUser(userToDelete)}>ยืนยัน</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
-                        </TableCell>
-                      </TableRow>
-                    )
-                  })}
-                </TableBody>
-              </Table>
+                <Table>
+                    <TableHeader><TableRow><TableHead>ชื่อ</TableHead><TableHead>อีเมล</TableHead><TableHead>Device ID</TableHead><TableHead>สถานะ</TableHead><TableHead className="text-right">จัดการ</TableHead></TableRow></TableHeader>
+                    <TableBody>
+                        {filteredUsers.map((user) => {
+                            const isActive = devices[user.deviceId] && devices[user.deviceId].current_data && Date.now() - new Date(devices[user.deviceId].current_data!.timestamp).getTime() < 5 * 60 * 1000;
+                            return (
+                                <TableRow key={user.uid}>
+                                    <TableCell>{user.fullName}</TableCell>
+                                    <TableCell>{user.email}</TableCell>
+                                    <TableCell>{user.deviceId || 'N/A'}</TableCell>
+                                    <TableCell><Badge variant={user.role === 'admin' ? 'default' : 'secondary'}>{user.role}</Badge>{isActive && <Badge className="ml-2 bg-green-100 text-green-800">ออนไลน์</Badge>}</TableCell>
+                                    <TableCell className="text-right">
+                                        <Button variant="ghost" size="sm" onClick={() => router.push(`/admin/dashboard/${user.uid}`)}>แดชบอร์ด</Button>
+                                        {user.role !== 'admin' && <AlertDialog><AlertDialogTrigger asChild><Button variant="destructive" size="sm" className="ml-2" onClick={() => setUserToDelete(user.uid)}>ลบ</Button></AlertDialogTrigger><AlertDialogContent><AlertDialogHeader><AlertDialogTitle>ยืนยันการลบ</AlertDialogTitle><AlertDialogDescription>คุณต้องการลบผู้ใช้ {user.fullName} หรือไม่?</AlertDialogDescription></AlertDialogHeader><AlertDialogFooter><AlertDialogCancel>ยกเลิก</AlertDialogCancel><AlertDialogAction onClick={() => handleDeleteUser(user.uid)}>ยืนยัน</AlertDialogAction></AlertDialogFooter></AlertDialogContent></AlertDialog>}
+                                    </TableCell>
+                                </TableRow>
+                            )
+                        })}
+                    </TableBody>
+                </Table>
             </CardContent>
           </Card>
         </TabsContent>
