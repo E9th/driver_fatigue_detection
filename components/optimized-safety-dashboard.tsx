@@ -230,7 +230,7 @@ function OptimizedUsageHistory({
   }, [deviceId, startDate, endDate])
 
   if (loading) {
-    return <LoadingScreen message="กำลังโหลดประวัติการใช้งาน..." />
+    return <LoadingScreen message="กำล���งโหลดประวัติการใช้งาน..." />
   }
 
   return <UsageHistory deviceId={deviceId} startDate={startDate} endDate={endDate} />

@@ -62,7 +62,7 @@ export default function PrivacyPage() {
           </p>
 
           <h2 className="text-xl font-semibold mt-6 mb-3">7. ติดต่อเรา</h2>
-          <p className="mb-4">หากคุณมีคำถามเกี่ยวกับนโยบายความเป็นส่วนตัวนี้ โปรดติดต่อเราที่ privacy@driverfatigue.co.th</p>
+          <p className="mb-4">หากคุณมีคำถามเกี่ยวกับนโยบายความเป็นส่วนตัวนี้ ���ปรดติดต่อเราที่ privacy@driverfatigue.co.th</p>
         </div>
 
         <div className="mt-8 text-center">

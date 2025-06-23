@@ -2,6 +2,7 @@
 
 import { AdminGuard } from "@/components/admin-guard"
 import { AdminMasterDashboard } from "@/components/admin-master-dashboard"
+import { AdminExportData } from "@/components/admin-export-data"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -10,14 +11,45 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { Settings, User, LogOut } from "lucide-react"
+import { User, LogOut, Settings } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { signOut } from "@/lib/auth"
 import { useToast } from "@/hooks/use-toast"
+import { useState, useRef } from "react"
+import type { SystemStats } from "@/lib/types"
 
 export default function AdminDashboardPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const [systemStats, setSystemStats] = useState<SystemStats | null>(null)
+  const [dateRange, setDateRange] = useState(() => {
+    const endDate = new Date()
+    const startDate = new Date()
+    startDate.setDate(endDate.getDate() - 6)
+    return {
+      start: startDate.toISOString(),
+      end: endDate.toISOString(),
+    }
+  })
+
+  // Ref to get data from AdminMasterDashboard
+  const dashboardRef = useRef<any>(null)
+
+  // Function to get current dashboard data for export
+  const getCurrentDashboardData = (): SystemStats | null => {
+    if (dashboardRef.current && dashboardRef.current.getCurrentStats) {
+      const currentStats = dashboardRef.current.getCurrentStats()
+      console.log("📊 Getting current dashboard stats:", currentStats)
+      return currentStats
+    }
+    console.log("📊 Fallback to systemStats:", systemStats)
+    return systemStats
+  }
+
+  const handleStatsUpdate = (stats: SystemStats) => {
+    console.log("📊 Stats updated:", stats)
+    setSystemStats(stats)
+  }
 
   const handleLogout = async () => {
     try {
@@ -58,12 +90,15 @@ export default function AdminDashboardPage() {
               </div>
 
               <div className="flex items-center space-x-4">
+                {/* Export Data - ใช้ข้อมูลจาก dashboard จริง */}
+                <AdminExportData type="system" systemStats={getCurrentDashboardData()} dateRange={dateRange} />
+
                 {/* Settings Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button variant="ghost" size="sm" className="text-gray-700">
                       <Settings className="h-4 w-4 mr-1" />
-                      ตั้งค่า
+                      เมนู
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
@@ -84,7 +119,7 @@ export default function AdminDashboardPage() {
         </header>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
-          <AdminMasterDashboard />
+          <AdminMasterDashboard ref={dashboardRef} onStatsUpdate={handleStatsUpdate} />
         </div>
       </div>
     </AdminGuard>
