@@ -29,7 +29,7 @@ interface UserWithDevice extends UserProfile {
   device?: DeviceInfo;
 }
 
-const AdminMasterDashboard = () => {
+export const AdminMasterDashboard = () => { 
   const [usersWithDevices, setUsersWithDevices] = useState<UserWithDevice[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -161,5 +161,3 @@ const AdminMasterDashboard = () => {
     </div>
   );
 };
-
-export default AdminMasterDashboard;
