@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
-import { getUsedDeviceIds } from "@/lib/firebase"
+import { getUsedDeviceIds } from "@/lib/admin-utils"
 
 interface DeviceIdSelectorProps {
   value?: string
