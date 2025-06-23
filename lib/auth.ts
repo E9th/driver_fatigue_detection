@@ -1,13 +1,13 @@
-"use client";
+"use client"
 
 /**
  * Authentication Service
  * Handles user authentication, registration, and profile management
  */
 
-import { useState, useEffect, useContext, createContext, ReactNode } from "react";
-import { getAuth, onAuthStateChanged, User, signOut as firebaseSignOut } from "firebase/auth";
-import { ref, get } from "firebase/database";
+import { useState, useEffect, useContext, createContext, ReactNode } from "react"
+import { getAuth, onAuthStateChanged, User, signOut as firebaseSignOut } from "firebase/auth"
+import { ref, get } from "firebase/database"
 import {
   database,
   auth,
