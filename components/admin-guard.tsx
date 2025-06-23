@@ -1,11 +1,11 @@
 // components/admin-guard.tsx
 
-"use client";
+"use client"
 
-import { useAuth } from "@/lib/auth"; // สมมติว่า path นี้ถูกต้อง
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
-import { LoadingScreen } from "./loading-screen";
+import { useAuth } from "@/lib/auth"
+import { useRouter } from "next/navigation"
+import { useEffect } from "react"
+import { LoadingScreen } from "./loading-screen"
 
 
 interface AdminGuardProps {
