@@ -8,7 +8,7 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { AdminGuard } from "@/components/admin-guard"
-import { getAllUsers, deleteUser } from "@/lib/admin-utils"
+import { getAllUsers, deleteUser } from "@/lib/auth"
 import { LoadingScreen } from "@/components/loading-screen"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
