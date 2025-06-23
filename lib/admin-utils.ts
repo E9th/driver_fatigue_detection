@@ -129,3 +129,27 @@ export const getAvailableDevices = async (): Promise<string[]> => {
     return []
   }
 }
+
+/**
+ * Get all used device IDs (Admin function)
+ */
+export const getUsedDeviceIds = async (): Promise<string[]> => {
+  try {
+    if (!database) {
+      throw new Error("Firebase DB not available");
+    }
+    const usersRef = ref(database, "users");
+    const snapshot = await get(usersRef);
+    if (snapshot.exists()) {
+      const usersData = snapshot.val();
+      const usedIds = Object.values(usersData)
+        .map((user: any) => user.deviceId)
+        .filter(Boolean); // กรองเอาค่าที่เป็น null หรือ undefined ออก
+      return usedIds as string[];
+    }
+    return [];
+  } catch (error) {
+    console.error("❌ Error in getUsedDeviceIds:", error);
+    throw error;
+  }
+};
