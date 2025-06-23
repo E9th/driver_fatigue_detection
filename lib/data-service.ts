@@ -11,6 +11,18 @@ import type { HistoricalData, DailyStats, ReportData, CacheItem, SafetyData } fr
 const CACHE_DURATION = 5 * 60 * 1000;
 const HISTORICAL_DATA_LIMIT = 500;
 
+export async function getUsedDeviceIds(): Promise<string[]> {
+    const usersRef = ref(database, 'users');
+    const snapshot = await get(usersRef);
+    if (snapshot.exists()) {
+        const users = snapshot.val();
+        return Object.values(users).map((user: any) => user.deviceId).filter(Boolean);
+    }
+    return [];
+}
+
+// ... ฟังก์ชันอื่นๆ ...
+
 class DataService {
   private cache = new Map<string, CacheItem<{ data: HistoricalData[]; stats: DailyStats }>>();
   
