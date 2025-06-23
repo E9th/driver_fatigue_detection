@@ -1,11 +1,15 @@
+// app/layout.tsx
+
 import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
-// Removed unused components to clean up the code
-import Image from "next/image"
+// --- ส่วนที่ต้องเพิ่มเข้ามา ---
+import { AuthProvider } from "@/lib/auth.tsx" //
+import { Toaster } from "@/components/ui/toast" //
+// -------------------------
 
 export const metadata: Metadata = {
-  title: "Driver Fatigue Detection", // Updated title
+  title: "Driver Fatigue Detection",
   description: "ระบบตรวจจับความเหนื่อยล้าของผู้ขับขี่ด้วย AI",
   generator: "v0.dev",
 }
@@ -18,8 +22,11 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        {/* The redundant Dialog component has been removed from here */}
-        {children}
+        {/* ห่อหุ้ม children ด้วย AuthProvider */}
+        <AuthProvider>
+          {children}
+          <Toaster />
+        </AuthProvider>
       </body>
     </html>
   )
