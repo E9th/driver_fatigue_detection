@@ -1,149 +1,115 @@
 "use client"
+/**
+ * ============================================================================
+ * FIREBASE CONFIGURATION - การตั้งค่าและเชื่อมต่อ Firebase
+ * ============================================================================
+ *
+ * ไฟล์นี้เป็นหัวใจของการเชื่อมต่อกับ Firebase Services
+ * จัดการการตั้งค่า Firebase App, Authentication, และ Realtime Database
+ *
+ * FIREBASE SERVICES ที่ใช้:
+ * - Firebase Authentication: สำหรับระบบล็อกอิน/ลงทะเบียน
+ * - Firebase Realtime Database: สำหรับเก็บข้อมูลผู้ใช้และข้อมูลเซ็นเซอร์
+ *
+ * ENVIRONMENT VARIABLES ที่ต้องการ:
+ * - NEXT_PUBLIC_FIREBASE_API_KEY
+ * - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
+ * - NEXT_PUBLIC_FIREBASE_DATABASE_URL
+ * - NEXT_PUBLIC_FIREBASE_PROJECT_ID
+ * - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
+ * - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
+ * - NEXT_PUBLIC_FIREBASE_APP_ID
+ *
+ * USED BY:
+ * - lib/auth.ts: สำหรับ Authentication
+ * - lib/validation.ts: สำหรับตรวจสอบข้อมูล
+ * - lib/data-service.ts: สำหรับดึงข้อมูลเซ็นเซอร์
+ * - components/**: สำหรับ components ต่างๆ ที่ต้องใช้ Firebase
+ */
 
-import { initializeApp, getApps } from "firebase/app"
-import { 
-  getDatabase, ref, onValue, off, query, 
-  limitToLast, get, set, orderByChild, equalTo, startAt, endAt 
-} from "firebase/database"
-import {
-  getAuth,
-  signInWithEmailAndPassword,
-  createUserWithEmailAndPassword,
-  signOut as firebaseSignOut,
-} from "firebase/auth"
-import { firebaseConfig } from "./config" 
-import type { DeviceData, HistoricalData, SafetyData, UserProfile, RegisterData, AuthResponse } from "./types"
+import { initializeApp, getApps, type FirebaseApp } from "firebase/app"
+import { getAuth, type Auth } from "firebase/auth"
+import { getDatabase, type Database } from "firebase/database"
+import { firebaseConfig } from "./config"
 
-let app: any = null
-let database: any = null
-let auth: any = null
+/**
+ * Firebase Configuration Object
+ * ดึงค่าจาก Environment Variables เพื่อความปลอดภัย
+ */
 
-try {
-    const existingApps = getApps()
-    if (existingApps.length === 0) {
-      app = initializeApp(firebaseConfig)
-    } else {
-      app = existingApps[0]
-    }
-    database = getDatabase(app)
-    auth = getAuth(app)
-    console.log("✅ Firebase: Initialized successfully")
-} catch(error) {
-    console.error("❌ Firebase initialization error", error);
+/**
+ * Firebase App Instance
+ * ใช้ Singleton Pattern เพื่อป้องกันการสร้าง Firebase App ซ้ำ
+ *
+ * SINGLETON PATTERN:
+ * - ตรวจสอบว่ามี Firebase App อยู่แล้วหรือไม่
+ * - ถ้ามีแล้วใช้ตัวเดิม ถ้าไม่มีสร้างใหม่
+ */
+let app: FirebaseApp
+if (getApps().length === 0) {
+  app = initializeApp(firebaseConfig)
+  console.log("✅ Firebase: Initialized successfully")
+} else {
+  app = getApps()[0]
+  console.log("✅ Firebase: Using existing instance")
 }
 
-export { app, database, auth }
+/**
+ * Firebase Authentication Instance
+ * สำหรับจัดการระบบล็อกอิน/ลงทะเบียน
+ *
+ * FEATURES:
+ * - Email/Password Authentication
+ * - User Session Management
+ * - Authentication State Persistence
+ */
+export const auth: Auth = getAuth(app)
 
-export const subscribeToCurrentData = (deviceId: string, callback: (data: DeviceData | null) => void): (() => void) => {
-    if (!database) return () => {};
-    const currentDataRef = ref(database, `devices/${deviceId}/current_data`);
-    const listener = onValue(currentDataRef, (snapshot) => {
-        callback(snapshot.val());
-    }, (error) => {
-        console.error(`Error subscribing to current data for ${deviceId}:`, error);
-        callback(null);
-    });
-    return () => off(currentDataRef, 'value', listener);
-};
+/**
+ * Firebase Realtime Database Instance
+ * สำหรับเก็บและดึงข้อมูลแบบ Real-time
+ *
+ * DATABASE STRUCTURE:
+ * /users/{uid}/
+ *   ├── email: string
+ *   ├── fullName: string
+ *   ├── phone: string
+ *   ├── license: string
+ *   ├── deviceId: string
+ *   ├── role: 'user' | 'admin'
+ *   └── createdAt: timestamp
+ *
+ * /sensor_data/{deviceId}/{timestamp}/
+ *   ├── ear: number (0-1)
+ *   ├── mouth: number (0-1)
+ *   ├── timestamp: number
+ *   └── safety_score: number (0-100)
+ *
+ * /device_commands/{deviceId}/
+ *   ├── command: string
+ *   ├── timestamp: number
+ *   └── status: 'pending' | 'executed'
+ */
+export const database: Database = getDatabase(app)
 
-export const getFilteredSafetyData = async (
-  deviceId: string,
-  startDate: string | Date,
-  endDate: string | Date
-): Promise<SafetyData | null> => {
-    if (!database) {
-        console.error("Firebase DB not available for getFilteredSafetyData");
-        return null;
-    }
-    const start = new Date(startDate).getTime();
-    const end = new Date(endDate).getTime();
-    const startISO = new Date(startDate).toISOString();
-    const endISO = new Date(endDate).toISOString();
+/**
+ * Firebase App Export
+ * สำหรับใช้ในกรณีที่ต้องการ Firebase App Instance โดยตรง
+ */
+export default app
 
-    try {
-        console.log(`🔍 Querying alerts for device: ${deviceId}`);
-        const alertsQuery = query(ref(database, 'alerts'), orderByChild('device_id'), equalTo(deviceId));
-        
-        console.log(`🔍 Querying history for device: ${deviceId} between ${startISO} and ${endISO}`);
-        const historyQuery = query(ref(database, `devices/${deviceId}/history`), orderByChild('timestamp'), startAt(startISO), endAt(endISO));
-
-        const [alertsSnapshot, historySnapshot] = await Promise.all([
-            get(alertsQuery),
-            get(historyQuery)
-        ]);
-        
-        const allAlerts = alertsSnapshot.exists() ? Object.values(alertsSnapshot.val()) : [];
-        const deviceAlerts = allAlerts.filter((alert: any) => {
-            const alertTime = new Date(alert.timestamp).getTime();
-            return alertTime >= start && alertTime <= end;
-        });
-        console.log(`✅ Found ${deviceAlerts.length} alerts in date range.`);
-
-        const deviceHistory: HistoricalData[] = [];
-        if(historySnapshot.exists()){
-            Object.entries(historySnapshot.val()).forEach(([key, value]) => {
-                deviceHistory.push({ id: key, ...(value as any) });
-            });
-        }
-        console.log(`✅ Found ${deviceHistory.length} history records in date range.`);
-        
-        const yawnEvents = deviceAlerts.filter(a => a.alert_type === 'yawn_detected').length;
-        const fatigueEvents = deviceAlerts.filter(a => a.alert_type === 'drowsiness_detected').length;
-        const criticalEvents = deviceAlerts.filter(a => a.alert_type === 'critical_drowsiness').length;
-
-        const earValues = deviceHistory.map((h: any) => h.ear).filter(ear => ear > 0);
-        const averageEAR = earValues.length > 0 ? earValues.reduce((a, b) => a + b, 0) / earValues.length : 0;
-        
-        let safetyScore = 100;
-        safetyScore -= Math.min(yawnEvents * 2, 30);
-        safetyScore -= Math.min(fatigueEvents * 5, 40);
-        safetyScore -= Math.min(criticalEvents * 10, 50);
-        if (averageEAR > 0 && averageEAR < 0.25) safetyScore -= 20;
-        else if (averageEAR > 0 && averageEAR < 0.3) safetyScore -= 10;
-        
-        const events = deviceAlerts.map((a: any, index: number) => ({
-            id: a.timestamp + index,
-            timestamp: a.timestamp,
-            type: a.alert_type,
-            severity: a.severity === 'high' ? 3 : a.severity === 'medium' ? 2 : 1,
-            details: a.alert_type.replace(/_/g, ' ').replace('detected', '').trim()
-        })).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-        const result = {
-            deviceId,
-            events,
-            safetyScore: Math.max(0, Math.round(safetyScore)),
-            startDate: new Date(startDate).toISOString(),
-            endDate: new Date(endDate).toISOString(),
-            stats: { yawnEvents, fatigueEvents, criticalEvents, averageEAR }
-        };
-
-        console.log("📊 Final safety data:", result);
-        return result;
-
-    } catch (error) {
-        console.error("Error in getFilteredSafetyData:", error);
-        return null;
-    }
-};
-
-export const signIn = async (email: string, password: string) => {
-  if (!auth) throw new Error("Auth not initialized");
-  return await signInWithEmailAndPassword(auth, email, password)
-    .then(userCredential => ({ success: true, user: userCredential.user }))
-    .catch(error => ({ success: false, error: error.message }));
-};
-
-export const registerUser = async (userData: any) => {
-  if (!auth || !database) throw new Error("Firebase not initialized");
-  const userCredential = await createUserWithEmailAndPassword(auth, userData.email, userData.password);
-  const userProfile = { uid: userCredential.user.uid, ...userData };
-  delete userProfile.password;
-  await set(ref(database, `users/${userCredential.user.uid}`), userProfile);
-  return { success: true, user: userCredential.user };
-};
-
-export const signOut = async () => {
-  if (!auth) throw new Error("Auth not initialized");
-  return await firebaseSignOut(auth);
-};
+/**
+ * ERROR HANDLING NOTES:
+ *
+ * 1. Permission Denied:
+ *    - ตรวจสอบ Firebase Security Rules
+ *    - ตรวจสอบ Authentication State
+ *
+ * 2. Network Error:
+ *    - ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต
+ *    - ตรวจสอบ Firebase Project Status
+ *
+ * 3. Configuration Error:
+ *    - ตรวจสอบ Environment Variables
+ *    - ตรวจสอบ Firebase Project Settings
+ */

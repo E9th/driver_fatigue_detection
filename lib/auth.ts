@@ -1,174 +1,357 @@
 "use client"
 
 /**
- * Authentication Service
- * Handles user authentication, registration, and profile management
+ * ============================================================================
+ * AUTHENTICATION LIBRARY - ระบบจัดการการยืนยันตัวตน
+ * ============================================================================
+ *
+ * ไฟล์นี้จัดการระบบ Authentication ทั้งหมด
+ * รวมถึงการลงทะเบียน, ล็อกอิน, ล็อกเอาต์, และการจัดการข้อมูลผู้ใช้
+ *
+ * DEPENDENCIES:
+ * - lib/firebase.ts: Firebase configuration และ instances
+ * - firebase/auth: Firebase Authentication methods
+ * - firebase/database: Firebase Realtime Database methods
+ *
+ * USED BY:
+ * - app/register/page.tsx: สำหรับลงทะเบียนผู้ใช้ใหม่
+ * - app/login/page.tsx: สำหรับล็อกอินผู้ใช้
+ * - components/**: สำหรับตรวจสอบสถานะการล็อกอิน
  */
 
-import { useState, useEffect } from "react"
-import { onAuthStateChanged } from "firebase/auth"
-import { ref, get } from "firebase/database"
 import {
-  database,
-  auth,
-  signIn as firebaseSignIn,
-  registerUser as firebaseRegisterUser,
-  signOut as firebaseSignOut,
-} from "./firebase"
-import { DEVICE_UTILS, APP_CONFIG } from "./config"
-import type { RegisterData, UserProfile, AuthResponse } from "./types"
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged,
+  type User,
+  type UserCredential,
+} from "firebase/auth"
+import { ref, set, get } from "firebase/database"
+import { auth, database } from "./firebase"
 
 /**
- * Custom hook for authentication state management
+ * Interface สำหรับข้อมูลการลงทะเบียนผู้ใช้
+ *
+ * VALIDATION RULES:
+ * - fullName: ต้องไม่ว่าง
+ * - email: ต้องเป็นรูปแบบอีเมลที่ถูกต้องและไม่ซ้ำ
+ * - password: ต้องมีอย่างน้อย 6 ตัวอักษร
+ * - phone: ต้องไม่ว่าง
+ * - license: ต้องไม่ว่าง
+ * - deviceId: ต้องเลือกและไม่ซ้ำกับผู้ใช้อื่น
  */
-export const useAuthState = () => {
-  const [user, setUser] = useState<any>(null)
-  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+export interface RegisterData {
+  fullName: string
+  email: string
+  password: string
+  phone: string
+  license: string
+  deviceId: string
+}
+
+/**
+ * Interface สำหรับข้อมูลการล็อกอิน
+ */
+export interface LoginData {
+  email: string
+  password: string
+}
+
+/**
+ * Interface สำหรับผลลัพธ์การดำเนินการ
+ *
+ * SUCCESS RESPONSE:
+ * - success: true
+ * - user: User object จาก Firebase
+ * - error: undefined
+ *
+ * ERROR RESPONSE:
+ * - success: false
+ * - user: undefined
+ * - error: ข้อความแสดงข้อผิดพลาด
+ */
+export interface AuthResult {
+  success: boolean
+  user?: User
+  error?: string
+}
+
+// ============================================================================
+// useAuthState - Custom React hook for subscribing to Firebase auth updates
+// ============================================================================
+
+import { useState, useEffect } from "react"
+
+/**
+ * Track Firebase authentication status in React components.
+ *
+ * STATE RETURNED:
+ * - user:            Firebase User object | null
+ * - isLoading:       true จนกว่า auth state ถูกกำหนด
+ * - error:           string | null – ข้อความ error ถ้ามี
+ */
+export function useAuthState() {
+  const [user, setUser] = useState<User | null>(null)
+  const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    // If Firebase not initialised (e.g. dev without env vars) – skip
     if (!auth) {
-      console.log("🔧 Auth not available, using mock auth state")
+      console.warn("🔧 Firebase auth not available, using mock state")
       setIsLoading(false)
       return
     }
 
-    console.log("🔥 Auth: Setting up auth state listener")
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      console.log("🔥 Auth state changed:", firebaseUser?.uid || "no user")
+    // Subscribe to auth state changes
+    const unsubscribe = onAuthStateChanged(
+      auth,
+      (currentUser) => {
+        setUser(currentUser)
+        setIsLoading(false)
+      },
+      (err) => {
+        console.error("🔥 Auth: onAuthStateChanged error", err)
+        setError("เกิดข้อผิดพลาดในการตรวจสอบสถานะผู้ใช้")
+        setIsLoading(false)
+      },
+    )
 
-      setUser(firebaseUser)
-
-      if (firebaseUser) {
-        try {
-          const profile = await getUserProfile(firebaseUser.uid)
-          setUserProfile(profile)
-          console.log("✅ User profile loaded:", profile)
-        } catch (error) {
-          console.error("❌ Error loading user profile:", error)
-          setError("ไม่สามารถโหลดข้อมูลผู้ใช้ได้")
-        }
-      } else {
-        setUserProfile(null)
-      }
-
-      setIsLoading(false)
-    })
-
+    // Cleanup on unmount
     return unsubscribe
   }, [])
 
-  const isAdmin = userProfile?.role === "admin"
-
-  return { user, userProfile, isAdmin, isLoading, error }
+  return { user, isLoading, error }
 }
 
 /**
- * User registration with device assignment
+ * ลงทะเบียนผู้ใช้ใหม่
+ *
+ * PROCESS FLOW:
+ * 1. สร้าง Firebase Authentication Account
+ * 2. บันทึกข้อมูลเพิ่มเติมลง Realtime Database
+ * 3. ส่งคืนผลลัพธ์
+ *
+ * @param data - ข้อมูลการลงทะเบียน
+ * @returns Promise<AuthResult> - ผลลัพธ์การลงทะเบียน
+ *
+ * FIREBASE PATHS:
+ * - Authentication: สร้าง user account
+ * - Database: /users/{uid}/ - บันทึกข้อมูลเพิ่มเติม
+ *
+ * ERROR HANDLING:
+ * - auth/email-already-in-use: อีเมลถูกใช้แล้ว
+ * - auth/weak-password: รหัสผ่านไม่แข็งแรงพอ
+ * - auth/invalid-email: รูปแบบอีเมลไม่ถูกต้อง
  */
-export const registerUser = async (userData: RegisterData): Promise<AuthResponse> => {
+export async function registerUser(data: RegisterData): Promise<AuthResult> {
   try {
-    const result = await firebaseRegisterUser(userData)
-    if (result) {
-      return result
-    } else {
-      return { success: false, error: "การลงทะเบียนล้มเหลว กรุณาลองใหม่อีกครั้ง" }
+    console.log("🔐 Auth: Starting user registration for:", data.email)
+
+    // STEP 1: สร้าง Firebase Authentication Account
+    const userCredential: UserCredential = await createUserWithEmailAndPassword(auth, data.email, data.password)
+
+    const user = userCredential.user
+    console.log("🔐 Auth: Firebase user created with UID:", user.uid)
+
+    // STEP 2: เตรียมข้อมูลเพิ่มเติมสำหรับบันทึกลง Database
+    const userData = {
+      uid: user.uid,
+      email: data.email,
+      fullName: data.fullName,
+      phone: data.phone,
+      license: data.license,
+      deviceId: data.deviceId,
+      role: "user", // กำหนด role เริ่มต้นเป็น 'user'
+      createdAt: Date.now(),
+      lastLogin: Date.now(),
+    }
+
+    // STEP 3: บันทึกข้อมูลลง Realtime Database
+    const userRef = ref(database, `users/${user.uid}`)
+    await set(userRef, userData)
+
+    console.log("🔐 Auth: User data saved to database")
+    console.log("🔐 Auth: Registration completed successfully")
+
+    return {
+      success: true,
+      user: user,
     }
   } catch (error: any) {
-    console.error("❌ Firebase: Registration error:", error)
-    return { success: false, error: getAuthErrorMessage(error.code) }
+    console.error("🔥 Auth: Registration error:", error)
+
+    // แปลงข้อผิดพลาดเป็นภาษาไทย
+    let errorMessage = "เกิดข้อผิดพลาดในการสมัครสมาชิก"
+
+    switch (error.code) {
+      case "auth/email-already-in-use":
+        errorMessage = "อีเมลนี้ถูกใช้งานแล้ว"
+        break
+      case "auth/weak-password":
+        errorMessage = "รหัสผ่านไม่แข็งแรงพอ"
+        break
+      case "auth/invalid-email":
+        errorMessage = "รูปแบบอีเมลไม่ถูกต้อง"
+        break
+      case "auth/operation-not-allowed":
+        errorMessage = "การดำเนินการนี้ไม่ได้รับอนุญาต"
+        break
+    }
+
+    return {
+      success: false,
+      error: errorMessage,
+    }
   }
 }
 
 /**
- * User login authentication
+ * ล็อกอินผู้ใช้
+ *
+ * PROCESS FLOW:
+ * 1. ตรวจสอบ email และ password กับ Firebase Auth
+ * 2. อัปเดต lastLogin timestamp
+ * 3. ส่งคืนผลลัพธ์
+ *
+ * @param data - ข้อมูลการล็อกอิน
+ * @returns Promise<AuthResult> - ผลลัพธ์การล็อกอิน
+ *
+ * ERROR HANDLING:
+ * - auth/user-not-found: ไม่พบผู้ใช้
+ * - auth/wrong-password: รหัสผ่านไม่ถูกต้อง
+ * - auth/invalid-email: รูปแบบอีเมลไม่ถูกต้อง
  */
-export const loginUser = async (email: string, password: string): Promise<AuthResponse> => {
+export async function loginUser(data: LoginData): Promise<AuthResult> {
   try {
-    const result = await firebaseSignIn(email, password)
-    if (result) {
-      return result
-    } else {
-      return { success: false, error: "อีเมลหรือรหัสผ่านไม่ถูกต้อง" }
+    console.log("🔐 Auth: Starting user login for:", data.email)
+
+    // STEP 1: ตรวจสอบ credentials กับ Firebase Auth
+    const userCredential: UserCredential = await signInWithEmailAndPassword(auth, data.email, data.password)
+
+    const user = userCredential.user
+    console.log("🔐 Auth: User logged in with UID:", user.uid)
+
+    // STEP 2: อัปเดต lastLogin timestamp
+    const userRef = ref(database, `users/${user.uid}/lastLogin`)
+    await set(userRef, Date.now())
+
+    console.log("🔐 Auth: Login completed successfully")
+
+    return {
+      success: true,
+      user: user,
     }
   } catch (error: any) {
-    console.error("❌ Firebase: Login error:", error)
-    return { success: false, error: getAuthErrorMessage(error.code) }
+    console.error("🔥 Auth: Login error:", error)
+
+    // แปลงข้อผิดพลาดเป็นภาษาไทย
+    let errorMessage = "เกิดข้อผิดพลาดในการเข้าสู่ระบบ"
+
+    switch (error.code) {
+      case "auth/user-not-found":
+        errorMessage = "ไม่พบผู้ใช้งานนี้"
+        break
+      case "auth/wrong-password":
+        errorMessage = "รหัสผ่านไม่ถูกต้อง"
+        break
+      case "auth/invalid-email":
+        errorMessage = "รูปแบบอีเมลไม่ถูกต้อง"
+        break
+      case "auth/too-many-requests":
+        errorMessage = "มีการพยายามเข้าสู่ระบบมากเกินไป กรุณารอสักครู่"
+        break
+    }
+
+    return {
+      success: false,
+      error: errorMessage,
+    }
   }
 }
 
 /**
- * User logout
+ * ล็อกเอาต์ผู้ใช้
+ *
+ * PROCESS FLOW:
+ * 1. เรียก Firebase signOut()
+ * 2. ล้าง Authentication State
+ * 3. ส่งคืนผลลัพธ์
+ *
+ * @returns Promise<AuthResult> - ผลลัพธ์การล็อกเอาต์
  */
-export const signOut = async (): Promise<{ success: boolean; error?: string }> => {
+export async function logoutUser(): Promise<AuthResult> {
   try {
-    const result = await firebaseSignOut()
-    if (result) {
-      return result
-    } else {
-      return { success: false, error: "การออกจากระบบล้มเหลว" }
+    console.log("🔐 Auth: Starting user logout")
+
+    await signOut(auth)
+
+    console.log("🔐 Auth: Logout completed successfully")
+
+    return {
+      success: true,
     }
   } catch (error: any) {
-    console.error("❌ Firebase: Sign out error:", error.message)
-    return { success: false, error: error.message }
+    console.error("🔥 Auth: Logout error:", error)
+
+    return {
+      success: false,
+      error: "เกิดข้อผิดพลาดในการออกจากระบบ",
+    }
   }
 }
 
 /**
- * Get user profile by UID
+ * ดึงข้อมูลผู้ใช้จาก Database
+ *
+ * @param uid - User ID จาก Firebase Auth
+ * @returns Promise<any> - ข้อมูลผู้ใช้
+ *
+ * FIREBASE PATH: /users/{uid}/
+ *
+ * USED BY:
+ * - Dashboard components: แสดงข้อมูลผู้ใช้
+ * - Profile components: แก้ไขข้อมูลผู้ใช้
  */
-export const getUserProfile = async (uid: string): Promise<UserProfile | null> => {
+export async function getUserData(uid: string): Promise<any> {
   try {
-    if (!database) {
-      console.warn("🔧 Firebase not available")
-      return null
-    }
+    console.log("🔐 Auth: Getting user data for UID:", uid)
 
     const userRef = ref(database, `users/${uid}`)
     const snapshot = await get(userRef)
 
     if (snapshot.exists()) {
       const userData = snapshot.val()
-      return {
-        uid,
-        ...userData,
-      }
+      console.log("🔐 Auth: User data retrieved successfully")
+      return userData
+    } else {
+      console.log("🔐 Auth: No user data found")
+      return null
     }
-    return null
   } catch (error) {
-    console.error("🔥 Firebase: Error getting user profile:", error)
-    return null
+    console.error("🔥 Auth: Error getting user data:", error)
+    throw error
   }
 }
 
 /**
- * Device ID utility functions
+ * ตรวจสอบว่าผู้ใช้เป็น Admin หรือไม่
+ *
+ * @param uid - User ID จาก Firebase Auth
+ * @returns Promise<boolean> - true ถ้าเป็น Admin
+ *
+ * ADMIN DETECTION:
+ * - ตรวจสอบ role field ใน user data
+ * - role === 'admin' = Admin User
+ * - role === 'user' = Regular User
  */
-export const normalizeDeviceId = (deviceId: string): string => {
-  if (!deviceId) return ""
-  return DEVICE_UTILS.normalize ? DEVICE_UTILS.normalize(deviceId) : deviceId
-}
-
-export const getDeviceDisplayId = (deviceId: string | null): string => {
-  if (!deviceId) return "N/A"
-  return DEVICE_UTILS.getDisplayId ? DEVICE_UTILS.getDisplayId(deviceId) : deviceId
-}
-
-/**
- * Convert Firebase auth error codes to Thai messages
- */
-const getAuthErrorMessage = (errorCode: string): string => {
-  const errorMessages: { [key: string]: string } = {
-    "auth/email-already-in-use": "อีเมลนี้ถูกใช้งานแล้ว",
-    "auth/weak-password": "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร",
-    "auth/invalid-email": "รูปแบบอีเมลไม่ถูกต้อง",
-    "auth/user-not-found": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
-    "auth/wrong-password": "อีเมลหรือรหัสผ่านไม่ถูกต้อง",
-    "auth/network-request-failed": "เกิดข้อผิดพลาดในการเชื่อมต่อ กรุณาตรวจสอบอินเทอร์เน็ต",
-    "auth/too-many-requests": "มีการพยายามเข้าสู่ระบบมากเกินไป กรุณารอสักครู่",
+export async function isAdmin(uid: string): Promise<boolean> {
+  try {
+    const userData = await getUserData(uid)
+    return userData?.role === "admin"
+  } catch (error) {
+    console.error("🔥 Auth: Error checking admin status:", error)
+    return false
   }
-  return errorMessages[errorCode] || "เกิดข้อผิดพลาดในการดำเนินการ กรุณาลองใหม่อีกครั้ง"
 }
-
-console.log("🔥 Auth service initialized with error recovery")
