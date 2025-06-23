@@ -26,17 +26,17 @@
         // การเขียนจะทำได้โดยผู้ใช้ที่เป็นเจ้าของอุปกรณ์ หรือ Admin
         ".write": "root.child('users/' + auth.uid + '/role').val() === 'admin' || root.child('users/' + auth.uid + '/deviceId').val() === $deviceId",
         "history": {
-            ".indexOn": ["timestamp"]
+          ".indexOn": ["timestamp"]
         }
       }
     },
-    
+
     // --- กฎสำหรับข้อมูลการแจ้งเตือน ---
     "alerts": {
       // อนุญาตให้ผู้ใช้ที่ Login แล้วสามารถ Query อ่านข้อมูลได้
       // แต่ต้องเป็นการ Query ที่ระบุ device_id ของตัวเองเท่านั้น
       ".read": "auth != null && query.orderByChild === 'device_id' && query.equalTo === root.child('users/' + auth.uid + '/deviceId').val()",
-      
+
       "$alertId": {
         // ผู้ใช้ทั่วไปจะอ่านได้เฉพาะ alert ของอุปกรณ์ตัวเอง (สำหรับการเข้าถึงโดยตรง)
         ".read": "data.child('device_id').val() === root.child('users/' + auth.uid + '/deviceId').val()",
@@ -44,7 +44,7 @@
         ".write": "root.child('users/' + auth.uid + '/role').val() === 'admin' || newData.child('device_id').val() === root.child('users/' + auth.uid + '/deviceId').val()",
         ".validate": "newData.hasChildren(['device_id', 'alert_type', 'timestamp', 'severity'])"
       },
-       ".indexOn": ["device_id"]
+      ".indexOn": ["device_id", "timestamp"]
     },
 
     // --- กฎสำหรับข้อมูลสาธารณะ ---

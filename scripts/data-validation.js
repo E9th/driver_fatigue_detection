@@ -130,7 +130,7 @@ function compareData(alertsData, historyData) {
   console.log(`\n=== เปรียบเทียบข้อมูลจาก alerts และ history ===`)
   console.log(`จำนวนการหาวจาก alerts: ${alertsData.yawnCount}`)
   console.log(`จำนวนการหาวจาก history: ${latestEntry.yawn_events}`)
-  console.log(`ความแตกต่าง: ${latestEntry.yawn_events - alertsData.yawnCount}`)
+  console.log(`ความ���ตกต่าง: ${latestEntry.yawn_events - alertsData.yawnCount}`)
 
   console.log(`จำนวนความง่วงจาก alerts: ${alertsData.drowsinessCount}`)
   console.log(`จำนวนความง่วงจาก history: ${latestEntry.drowsiness_events}`)
