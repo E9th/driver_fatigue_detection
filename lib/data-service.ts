@@ -4,9 +4,9 @@
  * Added more detailed logging for debugging.
  */
 
-import { ref, onValue, get, query, limitToLast, orderByChild, equalTo, startAt, endAt } from "firebase/database";
-import { database } from "./firebase";
-import type { HistoricalData, DailyStats, ReportData, CacheItem, SafetyData } from "./types"; // Added SafetyData
+import { ref, onValue, get, query, limitToLast, orderByChild, equalTo, startAt, endAt } from "firebase/database"
+import { database } from "./firebase"
+import type { HistoricalData, DailyStats, ReportData, CacheItem, SafetyData } from "./types"
 
 const CACHE_DURATION = 5 * 60 * 1000;
 const HISTORICAL_DATA_LIMIT = 500;
