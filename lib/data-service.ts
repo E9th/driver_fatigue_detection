@@ -4,24 +4,12 @@
  * Added more detailed logging for debugging.
  */
 
-import { ref, onValue, get, query, limitToLast, orderByChild, equalTo, startAt, endAt } from "firebase/database"
-import { database } from "./firebase"
-import type { HistoricalData, DailyStats, ReportData, CacheItem, SafetyData } from "./types"
+import { ref, onValue, get, query, limitToLast, orderByChild, equalTo, startAt, endAt } from "firebase/database";
+import { database } from "./firebase";
+import type { HistoricalData, DailyStats, ReportData, CacheItem, SafetyData } from "./types"; // Added SafetyData
 
 const CACHE_DURATION = 5 * 60 * 1000;
 const HISTORICAL_DATA_LIMIT = 500;
-
-export async function getUsedDeviceIds(): Promise<string[]> {
-    const usersRef = ref(database, 'users');
-    const snapshot = await get(usersRef);
-    if (snapshot.exists()) {
-        const users = snapshot.val();
-        return Object.values(users).map((user: any) => user.deviceId).filter(Boolean);
-    }
-    return [];
-}
-
-// ... ฟังก์ชันอื่นๆ ...
 
 class DataService {
   private cache = new Map<string, CacheItem<{ data: HistoricalData[]; stats: DailyStats }>>();

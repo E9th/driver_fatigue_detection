@@ -1,45 +1,69 @@
-// components/admin-guard.tsx
+/**
+ * Admin Guard Component
+ * Protects admin routes by checking user role
+ */
 
 "use client"
 
-import { useAuth } from "@/lib/auth"
-import { useRouter } from "next/navigation"
-import { useEffect } from "react"
-import { LoadingScreen } from "./loading-screen"
+import type React from "react"
 
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useAuthState } from "@/lib/auth"
 
 interface AdminGuardProps {
-  children: React.ReactNode;
+  children: React.ReactNode
 }
 
+/**
+ * Admin Guard component that protects admin-only routes
+ * Redirects non-admin users and shows loading/error states
+ */
 export function AdminGuard({ children }: AdminGuardProps) {
-  const { user, loading, isAdmin } = useAuth();
-  const router = useRouter();
+  const { user, userProfile, isLoading } = useAuthState()
+  const router = useRouter()
+  const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
-    if (!loading && !user) {
-      // ถ้าโหลดเสร็จแล้ว แต่ไม่มี user ให้ redirect ไปหน้า login
-      console.warn("🔒 AdminGuard: No user found, redirecting to login.");
-      router.replace("/login");
-    } else if (!loading && user && !isAdmin) {
-      // ถ้าโหลดเสร็จ, มี user แต่ไม่ใช่ admin ให้ redirect ไปหน้า dashboard ปกติ
-      console.warn("🚫 AdminGuard: User is not an admin, redirecting to dashboard.");
-      router.replace("/dashboard");
+    // Don't check while auth is still loading
+    if (isLoading) return
+
+    // If no user, redirect to login
+    if (!user) {
+      console.log("🔒 No user found, redirecting to login")
+      router.push("/login")
+      return
     }
-  }, [user, loading, isAdmin, router]);
 
-  if (loading || !user) {
-    // ขณะกำลังโหลด หรือยังไม่มีข้อมูล user ให้แสดงหน้า loading
-    return <LoadingScreen message="กำลังตรวจสอบสิทธิ์การเข้าถึง..." />;
+    // If user profile is not loaded yet, wait
+    if (!userProfile) {
+      console.log("⏳ Waiting for user profile...")
+      return
+    }
+
+    // Check if user is admin
+    if (userProfile.role !== "admin") {
+      console.log("🚫 User is not admin, redirecting to dashboard")
+      router.push("/dashboard")
+      return
+    }
+
+    // User is admin, allow access
+    console.log("✅ User is admin, allowing access")
+    setIsChecking(false)
+  }, [user, userProfile, isLoading, router])
+
+  // Show loading screen while checking authentication
+  if (isLoading || isChecking) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">กำลังตรวจสอบสิทธิ์...</p>
+        </div>
+      </div>
+    )
   }
 
-  if (isAdmin) {
-    // ถ้าเป็น admin, ให้ render children ที่รับเข้ามาได้เลย
-    // การ return children โดยตรงแบบนี้จะแก้ปัญหา React.Children.only
-    return <>{children}</>;
-  }
-
-  // เป็น fallback กรณีที่ยังไม่ redirect แต่ user ไม่ใช่ admin
-  // โดยปกติ useEffect จะทำงานก่อนมาถึงตรงนี้
-  return <LoadingScreen message="กำลังเปลี่ยนเส้นทาง..." />;
+  return <>{children}</>
 }
