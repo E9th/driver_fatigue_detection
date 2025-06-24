@@ -80,6 +80,37 @@ export async function checkDeviceExists(deviceId: string): Promise<boolean> {
 }
 
 /**
+ * ตรวจสอบว่าเลขใบขับขี่นี้ถูกใช้งานแล้วหรือไม่
+ *
+ * @param license - เลขใบขับขี่ที่ต้องการตรวจสอบ
+ * @returns Promise<boolean> - true ถ้าถูกใช้แล้ว, false ถ้าใช้ได้
+ *
+ * FIREBASE PATH: /users/{uid}/license
+ * QUERY: orderByChild('license').equalTo(license)
+ */
+export async function checkLicenseExists(license: string): Promise<boolean> {
+  try {
+    console.log("🔍 Validation: Checking license existence:", license);
+
+    // สร้าง query เพื่อค้นหาเลขใบขับขี่ใน users collection
+    const usersRef = ref(database, "users");
+    const licenseQuery = query(usersRef, orderByChild("license"), equalTo(license));
+
+    // ดึงข้อมูลจาก Firebase
+    const snapshot = await get(licenseQuery);
+
+    const exists = snapshot.exists();
+    console.log("🔍 Validation: License exists:", exists);
+
+    return exists;
+  } catch (error) {
+    console.error("🔥 Validation: Error checking license:", error);
+    // ในกรณีที่เกิดข้อผิดพลาด ให้โยน Error เพื่อให้ client จัดการต่อ
+    throw new Error("Permission denied or index not defined");
+  }
+}
+
+/**
  * ดึงรายการอุปกรณ์ที่ถูกใช้งานแล้วทั้งหมด
  *
  * @returns Promise<string[]> - อาร์เรย์ของ device ID ที่ถูกใช้แล้ว
