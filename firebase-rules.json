@@ -5,6 +5,8 @@
     "users": {
       ".read": true,
       ".write": "auth != null",
+      // เพิ่มบรรทัดนี้เพื่อเปิดใช้งานการ Query
+      ".indexOn": ["email", "deviceId"],
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
         ".write": "auth != null && auth.uid == $uid"
