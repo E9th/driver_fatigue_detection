@@ -163,8 +163,8 @@ export async function registerUser(data: RegisterData): Promise<AuthResult> {
       phone: data.phone,
       license: data.license,
       deviceId: data.deviceId,
-      role: "user", // กำหนด role เริ่มต้นเป็น 'user'
-      createdAt: Date.now(),
+      role: "driver",                        // <<< แก้ไข: เปลี่ยน "user" เป็น "driver"
+      registeredAt: new Date().toISOString(), // <<< แก้ไข: เปลี่ยน createdAt และรูปแบบข้อมูล
       lastLogin: Date.now(),
     }
 
