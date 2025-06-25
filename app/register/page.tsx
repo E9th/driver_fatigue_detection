@@ -171,7 +171,7 @@ export default function RegisterPage() {
       }
     }
   }, [formData.email])
-  
+
   /**
    * [โค้ดใหม่] ตรวจสอบเลขใบขับขี่ซ้ำแบบ Real-time
    */
@@ -180,7 +180,7 @@ export default function RegisterPage() {
       if (licenseCheckTimeout) {
         clearTimeout(licenseCheckTimeout);
       }
-  
+
       const timeout = setTimeout(async () => {
         console.log("🔧 RegisterPage: Checking license availability:", formData.license);
         try {
@@ -199,10 +199,10 @@ export default function RegisterPage() {
           // ไม่ต้องแสดง error หาก network มีปัญหา แต่จะไปดักอีกทีตอน submit
         }
       }, 1000); // รอ 1 วินาที
-  
+
       setLicenseCheckTimeout(timeout);
     }
-  
+
     return () => {
       if (licenseCheckTimeout) {
         clearTimeout(licenseCheckTimeout);
@@ -255,7 +255,7 @@ export default function RegisterPage() {
     } else if (!validEmailRegex.test(formData.email)) {
         newErrors.email = "รูปแบบอีเมลไม่ถูกต้อง";
     }
-    
+
     if (!formData.password) newErrors.password = "กรุณากรอกรหัสผ่าน"
     if (formData.password.length < 6) newErrors.password = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"
     if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "รหัสผ่านไม่ตรงกัน"
@@ -311,13 +311,12 @@ export default function RegisterPage() {
     return Object.keys(newErrors).length === 0
   }
 
-  /**
-   * [โค้ดแก้ไข] จัดการการส่งฟอร์ม
-   */
+  // ============================================================================
+  // START: ส่วนที่แก้ไขเพื่อแก้ปัญหาหน้า Loading ค้าง
+  // ============================================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     console.log("🔧 RegisterPage: Form submitted")
-
     setIsSubmitting(true)
 
     try {
@@ -325,46 +324,48 @@ export default function RegisterPage() {
       const isValid = await validateForm()
 
       if (!isValid) {
-        console.log("🔧 RegisterPage: Form validation failed:", errors)
-        // [โค้ดแก้ไข] ปลดล็อกปุ่มหาก validation ไม่ผ่าน
-        setIsSubmitting(false) 
+        console.log("🔧 RegisterPage: Form validation failed")
+        // ถ้าข้อมูลไม่ถูกต้อง ให้ปลดล็อกปุ่มและหยุดการทำงาน
+        setIsSubmitting(false)
         return
       }
 
       // STEP 2: ลงทะเบียนผู้ใช้
-      console.log("🔧 RegisterPage: Registering user with data:", formData)
       const result = await registerUser(formData)
 
-      console.log("🔧 RegisterPage: Registration result:", result)
-
       if (result.success) {
-        // แสดงข้อความสำเร็จ
+        // ถ้าสำเร็จ แสดงข้อความและเปลี่ยนหน้าไปเลย
         toast({
           title: "สมัครสมาชิกสำเร็จ",
-          description: "ยินดีต้อนรับเข้าสู่ระบบ Driver Fatigue Detection",
+          description: "กำลังนำท่านไปยังหน้าแดชบอร์ด...",
         })
-
-        // [โค้ดแก้ไข] Redirect ไปยัง dashboard ทันที
         router.push("/dashboard")
+        // ไม่ต้องตั้งค่า isSubmitting เป็น false อีก เพราะกำลังจะออกจากหน้านี้
       } else {
-        // แสดงข้อความผิดพลาด
+        // ถ้าการลงทะเบียนล้มเหลว (เช่น error จาก server)
         toast({
           title: "เกิดข้อผิดพลาด",
           description: result.error || "ไม่สามารถสมัครสมาชิกได้",
           variant: "destructive",
         })
+        setIsSubmitting(false) // ปลดล็อกปุ่มให้ลองใหม่
       }
     } catch (error) {
+      // ถ้าเกิด error ที่ไม่คาดคิด (เช่น network error)
       console.error("🔧 RegisterPage: Registration error:", error)
       toast({
         title: "เกิดข้อผิดพลาด",
         description: "ไม่สามารถสมัครสมาชิกได้ กรุณาลองใหม่อีกครั้ง",
         variant: "destructive",
       })
-    } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false) // ปลดล็อกปุ่มให้ลองใหม่
     }
+    // ไม่ใช้ finally block แล้ว เพราะเราจัดการ isSubmitting ในแต่ละกรณีแล้ว
   }
+  // ============================================================================
+  // END: ส่วนที่แก้ไขเพื่อแก้ปัญหาหน้า Loading ค้าง
+  // ============================================================================
+
 
   // ============================================================================
   // RENDER - การแสดงผล UI
