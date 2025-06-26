@@ -3,6 +3,14 @@ import { database } from "@/lib/firebaseAdmin"
 
 export async function GET(request: NextRequest) {
   try {
+    // Check if Firebase Admin is properly configured
+    if (!database) {
+      return NextResponse.json(
+        { error: "Firebase Admin not configured. Please set up environment variables." },
+        { status: 500 },
+      )
+    }
+
     const db = await database()
     const snapshot = await db.ref("users").get()
 
