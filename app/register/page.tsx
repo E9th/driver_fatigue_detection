@@ -176,39 +176,40 @@ export default function RegisterPage() {
    * [โค้ดใหม่] ตรวจสอบเลขใบขับขี่ซ้ำแบบ Real-time
    */
   useEffect(() => {
-    if (formData.license && formData.license.length > 5) { // เริ่มตรวจเมื่อความยาวพอสมควร
+    if (formData.license && formData.license.length > 5) {
+      // เริ่มตรวจเมื่อความยาวพอสมควร
       if (licenseCheckTimeout) {
-        clearTimeout(licenseCheckTimeout);
+        clearTimeout(licenseCheckTimeout)
       }
 
       const timeout = setTimeout(async () => {
-        console.log("🔧 RegisterPage: Checking license availability:", formData.license);
+        console.log("🔧 RegisterPage: Checking license availability:", formData.license)
         try {
-          const licenseExists = await checkLicenseExists(formData.license);
+          const licenseExists = await checkLicenseExists(formData.license)
           if (licenseExists) {
-            setErrors((prev) => ({ ...prev, license: "เลขใบขับขี่นี้ถูกใช้งานแล้ว" }));
+            setErrors((prev) => ({ ...prev, license: "เลขใบขับขี่นี้ถูกใช้งานแล้ว" }))
           } else {
             setErrors((prev) => {
-              const newErrors = { ...prev };
-              delete newErrors.license;
-              return newErrors;
-            });
+              const newErrors = { ...prev }
+              delete newErrors.license
+              return newErrors
+            })
           }
         } catch (error) {
-          console.error("🔧 RegisterPage: Error checking license:", error);
+          console.error("🔧 RegisterPage: Error checking license:", error)
           // ไม่ต้องแสดง error หาก network มีปัญหา แต่จะไปดักอีกทีตอน submit
         }
-      }, 1000); // รอ 1 วินาที
+      }, 1000) // รอ 1 วินาที
 
-      setLicenseCheckTimeout(timeout);
+      setLicenseCheckTimeout(timeout)
     }
 
     return () => {
       if (licenseCheckTimeout) {
-        clearTimeout(licenseCheckTimeout);
+        clearTimeout(licenseCheckTimeout)
       }
-    };
-  }, [formData.license]);
+    }
+  }, [formData.license])
 
   // ============================================================================
   // EVENT HANDLERS - ฟังก์ชันจัดการ Events
@@ -240,20 +241,20 @@ export default function RegisterPage() {
     const newErrors: Record<string, string> = {}
 
     // [โค้ดใหม่] Regex สำหรับตรวจสอบ
-    const validFullNameRegex = /^[a-zA-Zก-๙\s.'-]+$/;
-    const validEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
+    const validFullNameRegex = /^[a-zA-Zก-๙\s.'-]+$/
+    const validEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
     // ตรวจสอบข้อมูลพื้นฐาน และรูปแบบ
     if (!formData.fullName.trim()) {
-        newErrors.fullName = "กรุณากรอกชื่อ-นามสกุล";
+      newErrors.fullName = "กรุณากรอกชื่อ-นามสกุล"
     } else if (!validFullNameRegex.test(formData.fullName)) {
-        newErrors.fullName = "ชื่อ-นามสกุลมีอักขระที่ไม่ได้รับอนุญาต";
+      newErrors.fullName = "ชื่อ-นามสกุลมีอักขระที่ไม่ได้รับอนุญาต"
     }
 
     if (!formData.email.trim()) {
-        newErrors.email = "กรุณากรอกอีเมล";
+      newErrors.email = "กรุณากรอกอีเมล"
     } else if (!validEmailRegex.test(formData.email)) {
-        newErrors.email = "รูปแบบอีเมลไม่ถูกต้อง";
+      newErrors.email = "รูปแบบอีเมลไม่ถูกต้อง"
     }
 
     if (!formData.password) newErrors.password = "กรุณากรอกรหัสผ่าน"
@@ -278,14 +279,14 @@ export default function RegisterPage() {
 
     // [โค้ดใหม่] ตรวจสอบเลขใบขับขี่ซ้ำ (ถ้าผ่านการตรวจสอบพื้นฐาน)
     if (formData.license && !newErrors.license) {
-        try {
-          const licenseExists = await checkLicenseExists(formData.license);
-          if (licenseExists) {
-            newErrors.license = "เลขใบขับขี่นี้ถูกใช้งานแล้ว";
-          }
-        } catch (error) {
-          console.error("🔧 RegisterPage: Cannot check license during validation:", error);
+      try {
+        const licenseExists = await checkLicenseExists(formData.license)
+        if (licenseExists) {
+          newErrors.license = "เลขใบขับขี่นี้ถูกใช้งานแล้ว"
         }
+      } catch (error) {
+        console.error("🔧 RegisterPage: Cannot check license during validation:", error)
+      }
     }
 
     // ตรวจสอบอุปกรณ์ซ้ำ (ถ้าผ่านการตรวจสอบพื้นฐาน)
@@ -315,54 +316,60 @@ export default function RegisterPage() {
   // START: ส่วนที่แก้ไขเพื่อแก้ปัญหาหน้า Loading ค้าง
   // ============================================================================
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    console.log("🔧 RegisterPage: Form submitted");
-    setIsSubmitting(true);
+    e.preventDefault()
+    console.log("🔧 RegisterPage: Form submitted")
+    setIsSubmitting(true)
 
     try {
-      const isValid = await validateForm();
+      const isValid = await validateForm()
       if (!isValid) {
-        setIsSubmitting(false);
-        return;
+        setIsSubmitting(false)
+        return
       }
 
-      const result = await registerUser(formData);
+      const result = await registerUser(formData)
 
       if (result.success && result.user) {
         // 1. ดึง idToken จาก user ที่เพิ่งสมัคร
-        const idToken = await result.user.getIdToken();
+        const idToken = await result.user.getIdToken()
 
         // 2. ส่ง Token นี้ไปให้ Server ของเราเองเพื่อตรวจสอบอย่างปลอดภัย
-        const response = await fetch('/api/auth/session', {
-          method: 'POST',
+        const response = await fetch("/api/auth/session", {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${idToken}`,
+            "Content-Type": "application/json",
           },
-        });
+          body: JSON.stringify({
+            idToken: idToken,
+          }),
+        })
 
         if (response.ok) {
           // 3. เมื่อ Server ตอบกลับว่าทุกอย่างเรียบร้อย จึงค่อยเปลี่ยนหน้า
-          toast({ title: "สมัครสมาชิกสำเร็จ", description: "กำลังนำท่านไปยังหน้าแดชบอร์ด..." });
-          router.push("/dashboard");
+          toast({ title: "สมัครสมาชิกสำเร็จ", description: "กำลังนำท่านไปยังหน้าแดชบอร์ด..." })
+          router.push("/dashboard")
         } else {
           // ถ้า Server ของเรามีปัญหา
-          const errorData = await response.json();
-          throw new Error(errorData.message || "การยืนยันตัวตนหลังสมัครล้มเหลว");
+          const errorData = await response.json()
+          throw new Error(errorData.message || "การยืนยันตัวตนหลังสมัครล้มเหลว")
         }
       } else {
-        toast({ title: "การลงทะเบียนล้มเหลว", description: result.error || "ไม่สามารถสมัครสมาชิกได้", variant: "destructive" });
-        setIsSubmitting(false);
+        toast({
+          title: "การลงทะเบียนล้มเหลว",
+          description: result.error || "ไม่สามารถสมัครสมาชิกได้",
+          variant: "destructive",
+        })
+        setIsSubmitting(false)
       }
     } catch (error: any) {
-      console.error("Register page final error:", error);
-      toast({ title: "เกิดข้อผิดพลาดร้ายแรง", description: error.message || "กรุณาลองใหม่อีกครั้ง", variant: "destructive" });
-      setIsSubmitting(false);
+      console.error("Register page final error:", error)
+      toast({ title: "เกิดข้อผิดพลาดร้ายแรง", description: error.message || "กรุณาลองใหม่อีกครั้ง", variant: "destructive" })
+      setIsSubmitting(false)
     }
-  };
+  }
   // ============================================================================
   // END: ส่วนที่แก้ไข
   // ============================================================================
-
 
   // ============================================================================
   // RENDER - การแสดงผล UI
