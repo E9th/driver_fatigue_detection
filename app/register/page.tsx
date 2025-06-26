@@ -313,7 +313,7 @@ export default function RegisterPage() {
   }
 
   // ============================================================================
-  // START: ส่วนที่แก้ไขเพื่อแก้ปัญหาหน้า Loading ค้าง
+  // START: ส่วนที่แก้ไขเพื่อแก้ปัญหาหน้า Loading ค้าง (ตามที่คุณต้องการ)
   // ============================================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -334,13 +334,14 @@ export default function RegisterPage() {
         const idToken = await result.user.getIdToken()
 
         // 2. ส่ง Token นี้ไปให้ Server ของเราเองเพื่อตรวจสอบอย่างปลอดภัย
+        // หมายเหตุ: Endpoint ที่ถูกต้องตาม Log คือ /api/auth/session
         const response = await fetch("/api/auth/session", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            idToken: idToken,
+            idToken: idToken, // เพิ่ม idToken ใน body
           }),
         })
 
@@ -350,8 +351,15 @@ export default function RegisterPage() {
           router.push("/dashboard")
         } else {
           // ถ้า Server ของเรามีปัญหา
-          const errorData = await response.json()
-          throw new Error(errorData.message || "การยืนยันตัวตนหลังสมัครล้มเหลว")
+          // ตรวจสอบว่า response มี body เป็น json หรือไม่ก่อนที่จะพยายาม parse
+          const errorText = await response.text();
+          let errorData = { message: "การยืนยันตัวตนหลังสมัครล้มเหลว" };
+          try {
+            errorData = JSON.parse(errorText);
+          } catch(jsonError) {
+             console.error("Could not parse error response as JSON:", errorText);
+          }
+          throw new Error(errorData.message || "การยืนยันตัวตนหลังสมัครล้มเหลว");
         }
       } else {
         toast({
