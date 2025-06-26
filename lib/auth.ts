@@ -1,46 +1,24 @@
 "use client"
 
 /**
- * ============================================================================
- * AUTHENTICATION LIBRARY - ระบบจัดการการยืนยันตัวตน
- * ============================================================================
- *
- * ไฟล์นี้จัดการระบบ Authentication ทั้งหมด
- * รวมถึงการลงทะเบียน, ล็อกอิน, ล็อกเอาต์, และการจัดการข้อมูลผู้ใช้
- *
- * DEPENDENCIES:
- * - lib/firebase.ts: Firebase configuration และ instances
- * - firebase/auth: Firebase Authentication methods
- * - firebase/database: Firebase Realtime Database methods
- *
- * USED BY:
- * - app/register/page.tsx: สำหรับลงทะเบียนผู้ใช้ใหม่
- * - app/login/page.tsx: สำหรับล็อกอินผู้ใช้
- * - components/**: สำหรับตรวจสอบสถานะการล็อกอิน
+ * Authentication Service - Simplified Version
+ * Based on the working version from previous revisions
  */
 
+import { useState, useEffect } from "react"
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
-  signOut,
+  signOut as firebaseSignOut,
   onAuthStateChanged,
   type User,
   type UserCredential,
 } from "firebase/auth"
-import { ref, set, get } from "firebase/database"
+import { ref, set, get, query, orderByChild, equalTo } from "firebase/database"
 import { auth, database } from "./firebase"
-import { useState, useEffect } from "react"
 
 /**
  * Interface สำหรับข้อมูลการลงทะเบียนผู้ใช้
- *
- * VALIDATION RULES:
- * - fullName: ต้องไม่ว่าง
- * - email: ต้องเป็นรูปแบบอีเมลที่ถูกต้องและไม่ซ้ำ
- * - password: ต้องมีอย่างน้อย 6 ตัวอักษร
- * - phone: ต้องไม่ว่าง
- * - license: ต้องไม่ว่าง
- * - deviceId: ต้องเลือกและไม่ซ้ำกับผู้ใช้อื่น
  */
 export interface RegisterData {
   fullName: string
@@ -61,16 +39,6 @@ export interface LoginData {
 
 /**
  * Interface สำหรับผลลัพธ์การดำเนินการ
- *
- * SUCCESS RESPONSE:
- * - success: true
- * - user: User object จาก Firebase
- * - error: undefined
- *
- * ERROR RESPONSE:
- * - success: false
- * - user: undefined
- * - error: ข้อความแสดงข้อผิดพลาด
  */
 export interface AuthResult {
   success: boolean
@@ -78,36 +46,51 @@ export interface AuthResult {
   error?: string
 }
 
-// ============================================================================
-// useAuthState - Custom React hook for subscribing to Firebase auth updates
-// ============================================================================
+/**
+ * Interface สำหรับข้อมูลผู้ใช้
+ */
+export interface UserProfile {
+  uid: string
+  email: string
+  fullName: string
+  phone: string
+  license: string
+  deviceId: string
+  role: string
+  registeredAt: string
+  lastLogin?: number
+}
 
 /**
- * Track Firebase authentication status in React components.
- *
- * STATE RETURNED:
- * - user:           Firebase User object | null
- * - isLoading:      true จนกว่า auth state ถูกกำหนด
- * - error:          string | null – ข้อความ error ถ้ามี
+ * Custom React hook for authentication state
  */
 export function useAuthState() {
   const [user, setUser] = useState<User | null>(null)
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    // If Firebase not initialised (e.g. dev without env vars) – skip
     if (!auth) {
-      console.warn("🔧 Firebase auth not available, using mock state")
+      console.warn("🔧 Firebase auth not available")
       setIsLoading(false)
       return
     }
 
-    // Subscribe to auth state changes
     const unsubscribe = onAuthStateChanged(
       auth,
-      (currentUser) => {
+      async (currentUser) => {
         setUser(currentUser)
+        if (currentUser) {
+          try {
+            const profile = await getUserData(currentUser.uid)
+            setUserProfile(profile)
+          } catch (err) {
+            console.error("Error fetching user profile:", err)
+          }
+        } else {
+          setUserProfile(null)
+        }
         setIsLoading(false)
       },
       (err) => {
@@ -117,40 +100,25 @@ export function useAuthState() {
       },
     )
 
-    // Cleanup on unmount
     return unsubscribe
   }, [])
 
-  return { user, isLoading, error }
+  return { user, userProfile, isLoading, error }
 }
 
 /**
- * ลงทะเบียนผู้ใช้ใหม่
- *
- * PROCESS FLOW:
- * 1. สร้าง Firebase Authentication Account
- * 2. บันทึกข้อมูลเพิ่มเติมลง Realtime Database
- * 3. ส่งคืนผลลัพธ์
- *
- * @param data - ข้อมูลการลงทะเบียน
- * @returns Promise<AuthResult> - ผลลัพธ์การลงทะเบียน
- *
- * FIREBASE PATHS:
- * - Authentication: สร้าง user account
- * - Database: /users/{uid}/ - บันทึกข้อมูลเพิ่มเติม
- *
- * ERROR HANDLING:
- * - auth/email-already-in-use: อีเมลถูกใช้แล้ว
- * - auth/weak-password: รหัสผ่านไม่แข็งแรงพอ
- * - auth/invalid-email: รูปแบบอีเมลไม่ถูกต้อง
+ * ลงทะเบียนผู้ใช้ใหม่ - Simplified Version
  */
 export async function registerUser(data: RegisterData): Promise<AuthResult> {
   try {
     console.log("🔐 Auth: Starting user registration for:", data.email)
 
+    if (!auth || !database) {
+      throw new Error("Firebase not initialized")
+    }
+
     // STEP 1: สร้าง Firebase Authentication Account
     const userCredential: UserCredential = await createUserWithEmailAndPassword(auth, data.email, data.password)
-
     const user = userCredential.user
     console.log("🔐 Auth: Firebase user created with UID:", user.uid)
 
@@ -162,8 +130,8 @@ export async function registerUser(data: RegisterData): Promise<AuthResult> {
       phone: data.phone,
       license: data.license,
       deviceId: data.deviceId,
-      role: "driver", // <<< แก้ไข: เปลี่ยน "user" เป็น "driver"
-      registeredAt: new Date().toISOString(), // <<< แก้ไข: เปลี่ยน createdAt และรูปแบบข้อมูล
+      role: "driver",
+      registeredAt: new Date().toISOString(),
       lastLogin: Date.now(),
     }
 
@@ -181,7 +149,6 @@ export async function registerUser(data: RegisterData): Promise<AuthResult> {
   } catch (error: any) {
     console.error("🔥 Auth: Registration error:", error)
 
-    // แปลงข้อผิดพลาดเป็นภาษาไทย
     let errorMessage = "เกิดข้อผิดพลาดในการสมัครสมาชิก"
 
     switch (error.code) {
@@ -208,31 +175,20 @@ export async function registerUser(data: RegisterData): Promise<AuthResult> {
 
 /**
  * ล็อกอินผู้ใช้
- *
- * PROCESS FLOW:
- * 1. ตรวจสอบ email และ password กับ Firebase Auth
- * 2. อัปเดต lastLogin timestamp
- * 3. ส่งคืนผลลัพธ์
- *
- * @param data - ข้อมูลการล็อกอิน
- * @returns Promise<AuthResult> - ผลลัพธ์การล็อกอิน
- *
- * ERROR HANDLING:
- * - auth/user-not-found: ไม่พบผู้ใช้
- * - auth/wrong-password: รหัสผ่านไม่ถูกต้อง
- * - auth/invalid-email: รูปแบบอีเมลไม่ถูกต้อง
  */
 export async function loginUser(data: LoginData): Promise<AuthResult> {
   try {
     console.log("🔐 Auth: Starting user login for:", data.email)
 
-    // STEP 1: ตรวจสอบ credentials กับ Firebase Auth
-    const userCredential: UserCredential = await signInWithEmailAndPassword(auth, data.email, data.password)
+    if (!auth || !database) {
+      throw new Error("Firebase not initialized")
+    }
 
+    const userCredential: UserCredential = await signInWithEmailAndPassword(auth, data.email, data.password)
     const user = userCredential.user
     console.log("🔐 Auth: User logged in with UID:", user.uid)
 
-    // STEP 2: อัปเดต lastLogin timestamp
+    // อั���เดต lastLogin timestamp
     const userRef = ref(database, `users/${user.uid}/lastLogin`)
     await set(userRef, Date.now())
 
@@ -245,7 +201,6 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
   } catch (error: any) {
     console.error("🔥 Auth: Login error:", error)
 
-    // แปลงข้อผิดพลาดเป็นภาษาไทย
     let errorMessage = "เกิดข้อผิดพลาดในการเข้าสู่ระบบ"
 
     switch (error.code) {
@@ -272,50 +227,31 @@ export async function loginUser(data: LoginData): Promise<AuthResult> {
 
 /**
  * ล็อกเอาต์ผู้ใช้
- *
- * PROCESS FLOW:
- * 1. เรียก Firebase signOut()
- * 2. ล้าง Authentication State
- * 3. ส่งคืนผลลัพธ์
- *
- * @returns Promise<AuthResult> - ผลลัพธ์การล็อกเอาต์
  */
-export async function logoutUser(): Promise<AuthResult> {
+export async function signOut(): Promise<void> {
   try {
     console.log("🔐 Auth: Starting user logout")
-
-    await signOut(auth)
-
-    console.log("🔐 Auth: Logout completed successfully")
-
-    return {
-      success: true,
+    if (!auth) {
+      throw new Error("Firebase auth not initialized")
     }
+    await firebaseSignOut(auth)
+    console.log("🔐 Auth: Logout completed successfully")
   } catch (error: any) {
     console.error("🔥 Auth: Logout error:", error)
-
-    return {
-      success: false,
-      error: "เกิดข้อผิดพลาดในการออกจากระบบ",
-    }
+    throw new Error("เกิดข้อผิดพลาดในการออกจากระบบ")
   }
 }
 
 /**
  * ดึงข้อมูลผู้ใช้จาก Database
- *
- * @param uid - User ID จาก Firebase Auth
- * @returns Promise<any> - ข้อมูลผู้ใช้
- *
- * FIREBASE PATH: /users/{uid}/
- *
- * USED BY:
- * - Dashboard components: แสดงข้อมูลผู้ใช้
- * - Profile components: แก้ไขข้อมูลผู้ใช้
  */
-export async function getUserData(uid: string): Promise<any> {
+export async function getUserData(uid: string): Promise<UserProfile | null> {
   try {
     console.log("🔐 Auth: Getting user data for UID:", uid)
+
+    if (!database) {
+      throw new Error("Database not initialized")
+    }
 
     const userRef = ref(database, `users/${uid}`)
     const snapshot = await get(userRef)
@@ -336,14 +272,6 @@ export async function getUserData(uid: string): Promise<any> {
 
 /**
  * ตรวจสอบว่าผู้ใช้เป็น Admin หรือไม่
- *
- * @param uid - User ID จาก Firebase Auth
- * @returns Promise<boolean> - true ถ้าเป็น Admin
- *
- * ADMIN DETECTION:
- * - ตรวจสอบ role field ใน user data
- * - role === 'admin' = Admin User
- * - role === 'user' = Regular User
  */
 export async function isAdmin(uid: string): Promise<boolean> {
   try {
@@ -355,7 +283,140 @@ export async function isAdmin(uid: string): Promise<boolean> {
   }
 }
 
-// ✅ เพิ่ม exports ที่หายไปตามที่ร้องขอ
-// หมายเหตุ: `useAuthState` ถูก export ไปแล้วในฟังก์ชันด้านบน
-// `getUserProfile` ถูกสร้างเป็นชื่อเรียกแทน (alias) ของ `getUserData` เพื่อให้โค้ดทำงานได้
-export { getUserData as getUserProfile }
+/**
+ * ตรวจสอบอีเมลซ้ำ
+ */
+export async function checkEmailExists(email: string): Promise<boolean> {
+  try {
+    if (!database) {
+      console.warn("🔧 Database not available")
+      return false
+    }
+
+    console.log("🔍 Validation: Checking email existence:", email)
+    const usersRef = ref(database, "users")
+    const emailQuery = query(usersRef, orderByChild("email"), equalTo(email))
+    const snapshot = await get(emailQuery)
+
+    const exists = snapshot.exists()
+    console.log("🔍 Validation: Email exists:", exists)
+    return exists
+  } catch (error) {
+    console.error("🔥 Error checking email:", error)
+    return false
+  }
+}
+
+/**
+ * ตรวจสอบใบขับขี่ซ้ำ
+ */
+export async function checkLicenseExists(license: string): Promise<boolean> {
+  try {
+    if (!database) {
+      console.warn("🔧 Database not available")
+      return false
+    }
+
+    console.log("🔍 Validation: Checking license existence:", license)
+    const usersRef = ref(database, "users")
+    const licenseQuery = query(usersRef, orderByChild("license"), equalTo(license))
+    const snapshot = await get(licenseQuery)
+
+    const exists = snapshot.exists()
+    console.log("🔍 Validation: License exists:", exists)
+    return exists
+  } catch (error) {
+    console.error("🔥 Error checking license:", error)
+    return false
+  }
+}
+
+/**
+ * ตรวจสอบอุปกรณ์ซ้ำ
+ */
+export async function checkDeviceExists(deviceId: string): Promise<boolean> {
+  try {
+    if (!database) {
+      console.warn("🔧 Database not available")
+      return false
+    }
+
+    console.log("🔍 Validation: Checking device existence:", deviceId)
+    const usersRef = ref(database, "users")
+    const deviceQuery = query(usersRef, orderByChild("deviceId"), equalTo(deviceId))
+    const snapshot = await get(deviceQuery)
+
+    const exists = snapshot.exists()
+    console.log("🔍 Validation: Device exists:", exists)
+    return exists
+  } catch (error) {
+    console.error("🔥 Error checking device:", error)
+    return false
+  }
+}
+
+/**
+ * ดึงรายการอุปกรณ์ที่ถูกใช้งานแล้ว
+ */
+export async function getUsedDevices(): Promise<string[]> {
+  try {
+    if (!database) {
+      console.warn("🔧 Database not available")
+      return []
+    }
+
+    console.log("🔍 Validation: Getting used devices list")
+    const usersRef = ref(database, "users")
+    const snapshot = await get(usersRef)
+
+    if (snapshot.exists()) {
+      const users = snapshot.val()
+      const usedDevices = Object.values(users)
+        .map((user: any) => user.deviceId)
+        .filter((deviceId) => deviceId && deviceId !== "null")
+
+      console.log("🔍 Validation: Used devices:", usedDevices)
+      return usedDevices
+    }
+
+    return []
+  } catch (error) {
+    console.error("🔥 Error getting used devices:", error)
+    return []
+  }
+}
+
+// Export aliases for backward compatibility
+export const getUserProfile = getUserData
+export const getAllUsers = async (): Promise<UserProfile[]> => {
+  try {
+    const response = await fetch("/api/admin/users")
+    if (response.ok) {
+      return await response.json()
+    }
+    return []
+  } catch (e) {
+    console.error("🔥 getAllUsers error:", e)
+    return []
+  }
+}
+
+export const deleteUser = async (uid: string): Promise<{ success: boolean; error?: string }> => {
+  try {
+    const response = await fetch("/api/admin/delete-user", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uid }),
+    })
+
+    if (response.ok) {
+      return { success: true }
+    } else {
+      const error = await response.text()
+      return { success: false, error }
+    }
+  } catch (e) {
+    console.error("🔥 deleteUser error:", e)
+    return { success: false, error: "Network error" }
+  }
+}
