@@ -1,153 +1,101 @@
-/**
- * ============================================================================
- * VALIDATION LIBRARY - ระบบตรวจสอบความถูกต้องของข้อมูล
- * ============================================================================
- *
- * ไฟล์นี้จัดการการตรวจสอบข้อมูลต่างๆ ก่อนบันทึกลง Firebase
- * รวมถึงการตรวจสอบอีเมลซ้ำ, อุปกรณ์ซ้ำ, และดึงรายการอุปกรณ์ที่ใช้แล้ว
- *
- * DEPENDENCIES:
- * - lib/firebase.ts: สำหรับเชื่อมต่อ Firebase Realtime Database
- *
- * USED BY:
- * - app/register/page.tsx: ตรวจสอบข้อมูลก่อนลงทะเบียน
- * - components/device-id-selector.tsx: ดึงรายการอุปกรณ์ที่ใช้แล้ว
- */
+// Form validation utilities
+export interface ValidationResult {
+  isValid: boolean
+  errors: Record<string, string>
+}
 
-import { database } from "./firebase"
-import { ref, get, query, orderByChild, equalTo } from "firebase/database"
+export interface RegisterFormData {
+  fullName: string
+  email: string
+  password: string
+  confirmPassword: string
+  phone: string
+  license: string
+  deviceId: string
+}
 
-/**
- * ตรวจสอบว่าอีเมลนี้ถูกใช้งานแล้วหรือไม่
- *
- * @param email - อีเมลที่ต้องการตรวจสอบ
- * @returns Promise<boolean> - true ถ้าอีเมลถูกใช้แล้ว, false ถ้าใช้ได้
- *
- * FIREBASE PATH: /users/{uid}/email
- * QUERY: orderByChild('email').equalTo(email)
- */
-export async function checkEmailExists(email: string): Promise<boolean> {
-  try {
-    console.log("🔍 Validation: Checking email existence:", email)
+export function validateRegistrationForm(data: RegisterFormData): ValidationResult {
+  const errors: Record<string, string> = {}
 
-    // สร้าง query เพื่อค้นหาอีเมลใน users collection
-    const usersRef = ref(database, "users")
-    const emailQuery = query(usersRef, orderByChild("email"), equalTo(email))
+  // ตรวจสอบชื่อ-นามสกุล
+  if (!data.fullName.trim()) {
+    errors.fullName = "กรุณากรอกชื่อ-นามสกุล"
+  } else if (data.fullName.trim().length < 2) {
+    errors.fullName = "ชื่อ-นามสกุลต้องมีอย่างน้อย 2 ตัวอักษร"
+  } else if (!/^[a-zA-Zก-๙\s.'-]+$/.test(data.fullName)) {
+    errors.fullName = "ชื่อ-นามสกุลมีอักขระที่ไม่ได้รับอนุญาต"
+  }
 
-    // ดึงข้อมูลจาก Firebase
-    const snapshot = await get(emailQuery)
+  // ตรวจสอบอีเมล
+  if (!data.email.trim()) {
+    errors.email = "กรุณากรอกอีเมล"
+  } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(data.email)) {
+    errors.email = "รูปแบบอีเมลไม่ถูกต้อง"
+  }
 
-    // ตรวจสอบว่ามีข้อมูลหรือไม่
-    const exists = snapshot.exists()
-    console.log("🔍 Validation: Email exists:", exists)
+  // ตรวจสอบรหัสผ่าน
+  if (!data.password) {
+    errors.password = "กรุณากรอกรหัสผ่าน"
+  } else if (data.password.length < 6) {
+    errors.password = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"
+  } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(data.password)) {
+    errors.password = "รหัสผ่านต้องมีตัวพิมพ์เล็ก พิมพ์ใหญ่ และตัวเลข"
+  }
 
-    return exists
-  } catch (error) {
-    console.error("🔥 Validation: Error checking email:", error)
-    throw new Error("Permission denied")
+  // ตรวจสอบยืนยันรหัสผ่าน
+  if (!data.confirmPassword) {
+    errors.confirmPassword = "กรุณายืนยันรหัสผ่าน"
+  } else if (data.password !== data.confirmPassword) {
+    errors.confirmPassword = "รหัสผ่านไม่ตรงกัน"
+  }
+
+  // ตรวจสอบเบอร์โทรศัพท์
+  if (!data.phone.trim()) {
+    errors.phone = "กรุณากรอกเบอร์โทรศัพท์"
+  } else if (!/^[0-9]{10}$/.test(data.phone.replace(/[-\s]/g, ""))) {
+    errors.phone = "เบอร์โทรศัพท์ต้องเป็นตัวเลข 10 หลัก"
+  }
+
+  // ตรวจสอบเลขใบขับขี่
+  if (!data.license.trim()) {
+    errors.license = "กรุณากรอกเลขใบขับขี่"
+  } else if (data.license.trim().length < 8) {
+    errors.license = "เลขใบขับขี่ต้องมีอย่างน้อย 8 ตัวอักษร"
+  }
+
+  // ตรวจสอบ Device ID
+  if (!data.deviceId) {
+    errors.deviceId = "กรุณาเลือก Device ID"
+  }
+
+  return {
+    isValid: Object.keys(errors).length === 0,
+    errors,
   }
 }
 
-/**
- * ตรวจสอบว่าอุปกรณ์นี้ถูกใช้งานแล้วหรือไม่
- *
- * @param deviceId - ID ของอุปกรณ์ที่ต้องการตรวจสอบ (เช่น device_01)
- * @returns Promise<boolean> - true ถ้าอุปกรณ์ถูกใช้แล้ว, false ถ้าใช้ได้
- *
- * FIREBASE PATH: /users/{uid}/deviceId
- * QUERY: orderByChild('deviceId').equalTo(deviceId)
- */
-export async function checkDeviceExists(deviceId: string): Promise<boolean> {
-  try {
-    console.log("🔍 Validation: Checking device existence:", deviceId)
+export function getErrorMessage(error: any): string {
+  if (typeof error === "string") return error
 
-    // สร้าง query เพื่อค้นหาอุปกรณ์ใน users collection
-    const usersRef = ref(database, "users")
-    const deviceQuery = query(usersRef, orderByChild("deviceId"), equalTo(deviceId))
-
-    // ดึงข้อมูลจาก Firebase
-    const snapshot = await get(deviceQuery)
-
-    // ตรวจสอบว่ามีข้อมูลหรือไม่
-    const exists = snapshot.exists()
-    console.log("🔍 Validation: Device exists:", exists)
-
-    return exists
-  } catch (error) {
-    console.error("🔥 Validation: Error checking device:", error)
-    throw new Error("Permission denied")
-  }
-}
-
-/**
- * ตรวจสอบว่าเลขใบขับขี่นี้ถูกใช้งานแล้วหรือไม่
- *
- * @param license - เลขใบขับขี่ที่ต้องการตรวจสอบ
- * @returns Promise<boolean> - true ถ้าถูกใช้แล้ว, false ถ้าใช้ได้
- *
- * FIREBASE PATH: /users/{uid}/license
- * QUERY: orderByChild('license').equalTo(license)
- */
-export async function checkLicenseExists(license: string): Promise<boolean> {
-  try {
-    console.log("🔍 Validation: Checking license existence:", license);
-
-    // สร้าง query เพื่อค้นหาเลขใบขับขี่ใน users collection
-    const usersRef = ref(database, "users");
-    const licenseQuery = query(usersRef, orderByChild("license"), equalTo(license));
-
-    // ดึงข้อมูลจาก Firebase
-    const snapshot = await get(licenseQuery);
-
-    const exists = snapshot.exists();
-    console.log("🔍 Validation: License exists:", exists);
-
-    return exists;
-  } catch (error) {
-    console.error("🔥 Validation: Error checking license:", error);
-    // ในกรณีที่เกิดข้อผิดพลาด ให้โยน Error เพื่อให้ client จัดการต่อ
-    throw new Error("Permission denied or index not defined");
-  }
-}
-
-/**
- * ดึงรายการอุปกรณ์ที่ถูกใช้งานแล้วทั้งหมด
- *
- * @returns Promise<string[]> - อาร์เรย์ของ device ID ที่ถูกใช้แล้ว
- *
- * FIREBASE PATH: /users/{uid}/deviceId
- *
- * ใช้สำหรับ:
- * - แสดงรายการอุปกรณ์ที่ว่างใน dropdown
- * - ตรวจสอบความพร้อมใช้งานของอุปกรณ์
- */
-export async function getUsedDevices(): Promise<string[]> {
-  try {
-    console.log("🔍 Validation: Getting used devices list")
-
-    // ดึงข้อมูล users ทั้งหมด
-    const usersRef = ref(database, "users")
-    const snapshot = await get(usersRef)
-
-    const usedDevices: string[] = []
-
-    if (snapshot.exists()) {
-      // วนลูปผ่าน users ทั้งหมดเพื่อเก็บ deviceId
-      snapshot.forEach((childSnapshot) => {
-        const userData = childSnapshot.val()
-        if (userData.deviceId && userData.deviceId !== "null") {
-          usedDevices.push(userData.deviceId)
-        }
-      })
-    }
-
-    // กรองค่าที่ซ้ำออก
-    const uniqueDevices = [...new Set(usedDevices)]
-    console.log("🔍 Validation: Used devices:", uniqueDevices)
-
-    return uniqueDevices
-  } catch (error) {
-    console.error("🔥 Validation: Error getting used devices:", error)
-    return [] // ส่งคืนอาร์เรย์ว่างถ้าเกิดข้อผิดพลาด
+  // Firebase Auth Errors
+  switch (error.code) {
+    case "auth/email-already-in-use":
+      return "อีเมลนี้ถูกใช้งานแล้ว"
+    case "auth/invalid-email":
+      return "รูปแบบอีเมลไม่ถูกต้อง"
+    case "auth/weak-password":
+      return "รหัสผ่านไม่ปลอดภัย"
+    case "auth/user-disabled":
+      return "บัญชีนี้ถูกปิดใช้งาน"
+    case "auth/user-not-found":
+      return "ไม่พบบัญชีผู้ใช้"
+    case "auth/wrong-password":
+      return "รหัสผ่านไม่ถูกต้อง"
+    case "auth/too-many-requests":
+      return "มีการพยายามเข้าสู่ระบบมากเกินไป กรุณาลองใหม่ภายหลัง"
+    case "auth/network-request-failed":
+      return "เกิดข้อผิดพลาดในการเชื่อมต่อเครือข่าย"
+    default:
+      return error.message || "เกิดข้อผิดพลาดที่ไม่ทราบสาเหตุ"
   }
 }
