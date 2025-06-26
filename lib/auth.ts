@@ -29,6 +29,7 @@ import {
 } from "firebase/auth"
 import { ref, set, get } from "firebase/database"
 import { auth, database } from "./firebase"
+import { useState, useEffect } from "react"
 
 /**
  * Interface สำหรับข้อมูลการลงทะเบียนผู้ใช้
@@ -81,15 +82,13 @@ export interface AuthResult {
 // useAuthState - Custom React hook for subscribing to Firebase auth updates
 // ============================================================================
 
-import { useState, useEffect } from "react"
-
 /**
  * Track Firebase authentication status in React components.
  *
  * STATE RETURNED:
- * - user:            Firebase User object | null
- * - isLoading:       true จนกว่า auth state ถูกกำหนด
- * - error:           string | null – ข้อความ error ถ้ามี
+ * - user:           Firebase User object | null
+ * - isLoading:      true จนกว่า auth state ถูกกำหนด
+ * - error:          string | null – ข้อความ error ถ้ามี
  */
 export function useAuthState() {
   const [user, setUser] = useState<User | null>(null)
@@ -163,7 +162,7 @@ export async function registerUser(data: RegisterData): Promise<AuthResult> {
       phone: data.phone,
       license: data.license,
       deviceId: data.deviceId,
-      role: "driver",                        // <<< แก้ไข: เปลี่ยน "user" เป็น "driver"
+      role: "driver", // <<< แก้ไข: เปลี่ยน "user" เป็น "driver"
       registeredAt: new Date().toISOString(), // <<< แก้ไข: เปลี่ยน createdAt และรูปแบบข้อมูล
       lastLogin: Date.now(),
     }
@@ -355,3 +354,8 @@ export async function isAdmin(uid: string): Promise<boolean> {
     return false
   }
 }
+
+// ✅ เพิ่ม exports ที่หายไปตามที่ร้องขอ
+// หมายเหตุ: `useAuthState` ถูก export ไปแล้วในฟังก์ชันด้านบน
+// `getUserProfile` ถูกสร้างเป็นชื่อเรียกแทน (alias) ของ `getUserData` เพื่อให้โค้ดทำงานได้
+export { getUserData as getUserProfile }
