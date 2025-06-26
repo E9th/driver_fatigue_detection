@@ -1,24 +1,26 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { auth, database } from "@/lib/firebaseAdmin"
+import { auth, database } from "@/lib/firebase-admin"
 
 export async function POST(request: NextRequest) {
   try {
-    // Check if Firebase Admin is properly configured
-    if (!auth || !database) {
-      return NextResponse.json(
-        { error: "Firebase Admin not configured. Please set up environment variables." },
-        { status: 500 },
-      )
-    }
-
     const { uid } = await request.json()
 
     if (!uid) {
       return NextResponse.json({ error: "UID is required" }, { status: 400 })
     }
 
-    const adminAuth = await auth()
-    const adminDb = await database()
+    // Try to get Firebase Admin instances
+    let adminAuth, adminDb
+
+    try {
+      adminAuth = await auth()
+      adminDb = await database()
+    } catch (error) {
+      return NextResponse.json(
+        { error: "Firebase Admin not configured. Please set up environment variables." },
+        { status: 500 },
+      )
+    }
 
     // Delete from Firebase Auth
     await adminAuth.deleteUser(uid)
