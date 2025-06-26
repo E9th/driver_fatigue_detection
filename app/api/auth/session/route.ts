@@ -1,114 +1,94 @@
-import { NextResponse } from 'next/server';
-import { auth } from 'firebase-admin';
-import { customInitApp } from '@/lib/firebase-admin';
+import { NextResponse } from "next/server"
 
-// Initialize Firebase Admin SDK
-customInitApp();
+// Dynamic import to ensure Firebase Admin is initialized
+async function getAdminAuth() {
+  const { adminAuth } = await import("@/lib/firebase-admin")
+  return adminAuth
+}
 
-/**
- * @swagger
- * /api/auth/session:
- * get:
- * summary: Get session status
- * description: Checks if the user has a valid session cookie.
- * responses:
- * 200:
- * description: Session is valid.
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * isLogged:
- * type: boolean
- * example: true
- * 401:
- * description: Unauthorized, session cookie is missing or invalid.
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * isLogged:
- * type: boolean
- * example: false
- * error:
- * type: string
- * post:
- * summary: Create session
- * description: Creates a session cookie for the user after successful login/registration.
- * requestBody:
- * required: true
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * idToken:
- * type: string
- * description: Firebase ID token of the user.
- * responses:
- * 200:
- * description: Session cookie created successfully.
- * content:
- * application/json:
- * schema:
- * type: object
- * properties:
- * status:
- * type: string
- * example: success
- * 400:
- * description: Bad request, ID token is missing.
- * 401:
- * description: Unauthorized, ID token is invalid.
- */
 export async function GET(request: Request) {
-  const session = request.headers.get('cookie')?.match(/session=([^;]+)/)?.[1];
-
-  if (!session) {
-    return NextResponse.json({ isLogged: false }, { status: 401 });
-  }
-
   try {
-    const decodedClaims = await auth().verifySessionCookie(session, true);
-    if (!decodedClaims) {
-      return NextResponse.json({ isLogged: false }, { status: 401 });
+    const adminAuth = await getAdminAuth()
+    const session = request.headers.get("cookie")?.match(/session=([^;]+)/)?.[1]
+
+    if (!session) {
+      return NextResponse.json({ isLogged: false }, { status: 401 })
     }
-    return NextResponse.json({ isLogged: true }, { status: 200 });
+
+    const decodedClaims = await adminAuth.verifySessionCookie(session, true)
+    if (!decodedClaims) {
+      return NextResponse.json({ isLogged: false }, { status: 401 })
+    }
+    return NextResponse.json({ isLogged: true }, { status: 200 })
   } catch (error) {
-    console.error('Error verifying session cookie:', error);
-    return NextResponse.json({ isLogged: false, error: 'Invalid session cookie' }, { status: 401 });
+    console.error("❌ Error verifying session cookie:", error)
+    return NextResponse.json({ isLogged: false, error: "Invalid session cookie" }, { status: 401 })
   }
 }
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
-    const idToken = body.idToken;
+    console.log("🔧 Session API: Starting session creation")
+
+    const adminAuth = await getAdminAuth()
+    const body = await request.json()
+    const idToken = body.idToken
 
     if (!idToken) {
-      return NextResponse.json({ error: 'ID token is required' }, { status: 400 });
+      console.error("❌ Session API: No ID token provided")
+      return NextResponse.json({ error: "ID token is required" }, { status: 400 })
     }
 
-    const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
-    const sessionCookie = await auth().createSessionCookie(idToken, { expiresIn });
+    console.log("🔧 Session API: ID token received, length:", idToken.length)
+
+    // Verify the ID token first
+    console.log("🔧 Session API: Verifying ID token...")
+    const decodedToken = await adminAuth.verifyIdToken(idToken)
+    console.log("✅ Session API: ID Token verified for user:", decodedToken.uid)
+
+    // Create session cookie
+    console.log("🔧 Session API: Creating session cookie...")
+    const expiresIn = 60 * 60 * 24 * 5 * 1000 // 5 days
+    const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn })
+    console.log("✅ Session API: Session cookie created successfully")
 
     const options = {
-      name: 'session',
+      name: "session",
       value: sessionCookie,
       maxAge: expiresIn,
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
-      path: '/',
-    };
+      secure: process.env.NODE_ENV === "production",
+      path: "/",
+    }
 
-    const response = NextResponse.json({ status: 'success' }, { status: 200 });
-    response.cookies.set(options);
+    const response = NextResponse.json({ status: "success" }, { status: 200 })
+    response.cookies.set(options)
 
-    return response;
-  } catch (error) {
-    console.error('Error creating session cookie:', error);
-    return NextResponse.json({ error: 'Failed to create session' }, { status: 401 });
+    console.log("✅ Session API: Response sent successfully")
+    return response
+  } catch (error: any) {
+    console.error("❌ Session API: Error creating session cookie:", error)
+    console.error("❌ Session API: Error code:", error.code)
+    console.error("❌ Session API: Error message:", error.message)
+
+    // Provide more specific error messages
+    if (error.code === "auth/id-token-expired") {
+      return NextResponse.json({ error: "ID token has expired" }, { status: 401 })
+    } else if (error.code === "auth/invalid-id-token") {
+      return NextResponse.json({ error: "Invalid ID token" }, { status: 401 })
+    } else if (error.code === "auth/project-not-found") {
+      return NextResponse.json({ error: "Firebase project not found" }, { status: 500 })
+    } else if (error.code === "auth/insufficient-permission") {
+      return NextResponse.json({ error: "Insufficient permissions" }, { status: 403 })
+    }
+
+    return NextResponse.json(
+      {
+        error: "Failed to create session",
+        details: error.message,
+        code: error.code,
+      },
+      { status: 500 },
+    )
   }
 }
