@@ -1,19 +1,61 @@
-import admin from 'firebase-admin';
+import { initializeApp, getApps, cert, type ServiceAccount } from "firebase-admin/app"
+import { getAuth } from "firebase-admin/auth"
+import { getDatabase } from "firebase-admin/database"
 
-// ตรวจสอบว่ายังไม่มีการ initialize app เพื่อป้องกันการสร้างซ้ำ
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert({
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      // แก้ไขรูปแบบของ private key ให้ถูกต้อง
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-    }),
-    // ใส่ Database URL ของคุณที่นี่
-    databaseURL: `https://driver-fatigue-detection-default-rtdb.asia-southeast1.firebasedatabase.app`,
-  });
+let adminApp: any = null
+let isInitialized = false
+
+function initializeFirebaseAdmin() {
+  if (isInitialized) {
+    return adminApp
+  }
+
+  // Check if required environment variables are available
+  const hasRequiredEnvVars =
+    process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY
+
+  if (!hasRequiredEnvVars) {
+    console.warn("Firebase Admin environment variables not configured")
+    return null
+  }
+
+  try {
+    const serviceAccount: ServiceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID!,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL!,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY!.replace(/\\n/g, "\n"),
+    }
+
+    // Initialize Firebase Admin if not already initialized
+    if (!getApps().length) {
+      adminApp = initializeApp({
+        credential: cert(serviceAccount),
+        databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
+      })
+    } else {
+      adminApp = getApps()[0]
+    }
+
+    isInitialized = true
+    return adminApp
+  } catch (error) {
+    console.warn("Firebase Admin initialization failed:", error)
+    return null
+  }
 }
 
-// Export สิ่งที่ต้องใช้
-export const adminAuth = admin.auth();
-export const adminDb = admin.database();
+export async function auth() {
+  const app = initializeFirebaseAdmin()
+  if (!app) {
+    throw new Error("Firebase Admin not initialized")
+  }
+  return getAuth(app)
+}
+
+export async function database() {
+  const app = initializeFirebaseAdmin()
+  if (!app) {
+    throw new Error("Firebase Admin not initialized")
+  }
+  return getDatabase(app)
+}
