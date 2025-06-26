@@ -318,11 +318,177 @@ export async function checkDeviceConnection(deviceId: string): Promise<boolean> 
   }
 }
 
-// ✅ เพิ่ม exports ที่หายไป
-export { getLatestSensorData }
-export { calculateDashboardStats }
+/**
+ * Subscribe to historical data with caching for better performance
+ *
+ * @param deviceId - ID ของอุปกรณ์
+ * @param startTime - เวลาเริ่มต้น (timestamp)
+ * @param endTime - เวลาสิ้นสุด (timestamp)
+ * @param callback - Callback function ที่จะถูกเรียกเมื่อมีข้อมูลใหม่
+ * @returns Function to unsubscribe
+ */
+export function subscribeToHistoricalDataWithCache(
+  deviceId: string,
+  startTime: number,
+  endTime: number,
+  callback: (data: HistoricalData[], stats: DailyStats) => void,
+): () => void {
+  console.log(`📊 DataService: Subscribing to historical data with cache for ${deviceId}`)
 
-// สมมุติว่ามี object dataService (ถ้ายังไม่มี ให้เพิ่มเปล่าๆไว้ก่อน)
-export const dataService = {}
+  let isActive = true
+  let lastFetchTime = 0
+  const CACHE_DURATION = 30000 // 30 seconds cache
 
-export { dataService }
+  const fetchData = async () => {
+    if (!isActive) return
+
+    try {
+      const now = Date.now()
+      if (now - lastFetchTime < CACHE_DURATION) {
+        console.log(`📊 DataService: Using cached data for ${deviceId}`)
+        return
+      }
+
+      console.log(`📊 DataService: Fetching fresh data for ${deviceId}`)
+      const data = await getSensorDataByTimeRange(deviceId, startTime, endTime)
+
+      // Convert SensorData to HistoricalData format
+      const historicalData: HistoricalData[] = data.map((item, index) => ({
+        id: `${deviceId}-${item.timestamp}-${index}`,
+        timestamp: new Date(item.timestamp).toISOString(),
+        ear_value: item.ear,
+        ear: item.ear,
+        yawn_events: item.mouth > 0.7 ? 1 : 0,
+        drowsiness_events: item.ear < 0.25 ? 1 : 0,
+        critical_alerts: item.safety_score < 30 ? 1 : 0,
+        device_id: deviceId,
+        status:
+          item.safety_score < 30
+            ? "CRITICAL: EXTENDED DROWSINESS"
+            : item.ear < 0.25
+              ? "DROWSINESS DETECTED"
+              : item.mouth > 0.7
+                ? "YAWN DETECTED"
+                : "NORMAL",
+        mouth_distance: item.mouth,
+        face_detected_frames: 1,
+      }))
+
+      // Calculate daily stats
+      const stats: DailyStats = {
+        totalYawns: historicalData.filter((d) => d.yawn_events > 0).length,
+        totalDrowsiness: historicalData.filter((d) => d.drowsiness_events > 0).length,
+        totalAlerts: historicalData.filter((d) => d.critical_alerts > 0).length,
+        averageEAR: data.length > 0 ? data.reduce((sum, d) => sum + d.ear, 0) / data.length : 0,
+      }
+
+      lastFetchTime = now
+
+      if (isActive) {
+        callback(historicalData, stats)
+      }
+    } catch (error) {
+      console.error(`🔥 DataService: Error fetching historical data for ${deviceId}:`, error)
+      if (isActive) {
+        callback([], {
+          totalYawns: 0,
+          totalDrowsiness: 0,
+          totalAlerts: 0,
+          averageEAR: 0,
+        })
+      }
+    }
+  }
+
+  // Initial fetch
+  fetchData()
+
+  // Set up periodic refresh
+  const interval = setInterval(fetchData, CACHE_DURATION)
+
+  // Return unsubscribe function
+  return () => {
+    console.log(`📊 DataService: Unsubscribing from historical data for ${deviceId}`)
+    isActive = false
+    clearInterval(interval)
+  }
+}
+
+// Simple function to get basic device status
+export async function getDeviceStatus(deviceId: string): Promise<{ online: boolean; lastSeen?: string }> {
+  try {
+    console.log(`📊 DataService: Checking device status for ${deviceId}`)
+
+    if (!database) {
+      return { online: false }
+    }
+
+    const deviceRef = ref(database, `devices/${deviceId}/current_data`)
+    const snapshot = await get(deviceRef)
+
+    if (snapshot.exists()) {
+      const data = snapshot.val()
+      const lastSeen = data.timestamp ? new Date(data.timestamp).toISOString() : undefined
+      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
+      const online = data.timestamp ? new Date(data.timestamp).getTime() > fiveMinutesAgo : false
+
+      return { online, lastSeen }
+    }
+
+    return { online: false }
+  } catch (error) {
+    console.error("🔥 DataService: Error checking device status:", error)
+    return { online: false }
+  }
+}
+
+// Generate report function
+export function generateReport(data: HistoricalData[], startDate: string, endDate: string) {
+  console.log(`📊 DataService: Generating report from ${startDate} to ${endDate}`)
+
+  return {
+    summary: {
+      totalEvents: data.length,
+      yawnEvents: data.filter((d) => d.yawn_events > 0).length,
+      drowsinessEvents: data.filter((d) => d.drowsiness_events > 0).length,
+      criticalAlerts: data.filter((d) => d.critical_alerts > 0).length,
+    },
+    data: data,
+    period: { startDate, endDate },
+  }
+}
+
+export interface DailyStats {
+  totalYawns: number
+  totalDrowsiness: number
+  totalAlerts: number
+  averageEAR: number
+}
+
+export interface HistoricalData {
+  id: string
+  timestamp: string
+  ear_value: number
+  ear: number
+  yawn_events: number
+  drowsiness_events: number
+  critical_alerts: number
+  device_id: string
+  status: string
+  mouth_distance: number
+  face_detected_frames: number
+}
+
+// ---------------------------------------------------------------------------
+// Aggregated service export (for legacy imports)
+// ---------------------------------------------------------------------------
+export const dataService = {
+  getLatestSensorData,
+  getSensorDataByTimeRange,
+  calculateDashboardStats,
+  getChartData,
+  checkDeviceConnection,
+  subscribeToHistoricalDataWithCache,
+  getDeviceStatus,
+  generateReport,
+}
