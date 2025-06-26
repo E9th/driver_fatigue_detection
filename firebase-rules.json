@@ -1,24 +1,13 @@
 {
   "rules": {
-    ".read": "auth != null",
-    ".write": "auth != null",
     "users": {
       ".read": true,
       ".write": "auth != null",
-      // เพิ่มบรรทัดนี้เพื่อเปิดใช้งานการ Query
       ".indexOn": ["email", "deviceId", "license"],
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
         ".write": "auth != null && auth.uid == $uid"
       }
-    },
-    "devices": {
-      ".read": "auth != null",
-      ".write": "auth != null"
-    },
-    "alerts": {
-      ".read": "auth != null",
-      ".write": "auth != null"
     }
   }
 }
