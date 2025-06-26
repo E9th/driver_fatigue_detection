@@ -92,6 +92,31 @@ export const auth: Auth = getAuth(app)
  */
 export const database: Database = getDatabase(app)
 
+// Export the app instance as firebaseApp for compatibility
+export const firebaseApp = app
+
+// ---------------------------------------------------------------------------
+// Legacy helpers (no behavioural changes)
+// ---------------------------------------------------------------------------
+
+/** signIn – alias to loginUser in auth library */
+export async function signIn(email: string, password: string) {
+  const { loginUser } = await import("./auth")
+  return loginUser({ email, password })
+}
+
+/** getFilteredSafetyData – placeholder returning empty array (override later) */
+export async function getFilteredSafetyData() {
+  console.warn("getFilteredSafetyData: not implemented – returns empty []")
+  return []
+}
+
+/** subscribeToCurrentData – no-op listener (override later) */
+export function subscribeToCurrentData(_deviceId: string, _callback: (data: any) => void) {
+  console.warn("subscribeToCurrentData: not implemented – no-op")
+  return () => {}
+}
+
 /**
  * Firebase App Export
  * สำหรับใช้ในกรณีที่ต้องการ Firebase App Instance โดยตรง
