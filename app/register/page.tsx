@@ -9,14 +9,15 @@ import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DeviceIdSelector } from "@/components/device-id-selector"
 import { registerUser, checkEmailExists, checkLicenseExists, getUsedDevices } from "@/lib/auth"
+import { validateRegistrationForm, getErrorMessage, type RegisterFormData } from "@/lib/validation"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
 import Image from "next/image"
-import { Eye, EyeOff } from "lucide-react"
+import { Eye, EyeOff, Loader2 } from "lucide-react"
 
 export default function RegisterPage() {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<RegisterFormData>({
     fullName: "",
     email: "",
     password: "",
@@ -34,6 +35,8 @@ export default function RegisterPage() {
   const [emailCheckTimeout, setEmailCheckTimeout] = useState<NodeJS.Timeout | null>(null)
   const [licenseCheckTimeout, setLicenseCheckTimeout] = useState<NodeJS.Timeout | null>(null)
   const [usedDevices, setUsedDevices] = useState<string[]>([])
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false)
+  const [isCheckingLicense, setIsCheckingLicense] = useState(false)
 
   const router = useRouter()
   const { toast } = useToast()
@@ -47,11 +50,16 @@ export default function RegisterPage() {
         console.log("🔧 RegisterPage: Used devices:", devices)
       } catch (error) {
         console.error("🔧 RegisterPage: Error loading used devices:", error)
+        toast({
+          title: "เกิดข้อผิดพลาด",
+          description: "ไม่สามารถโหลดรายการอุปกรณ์ได้",
+          variant: "destructive",
+        })
       }
     }
 
     loadUsedDevices()
-  }, [])
+  }, [toast])
 
   // Real-time email validation
   useEffect(() => {
@@ -62,6 +70,8 @@ export default function RegisterPage() {
 
       const timeout = setTimeout(async () => {
         console.log("🔧 RegisterPage: Checking email availability:", formData.email)
+        setIsCheckingEmail(true)
+
         try {
           const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
 
@@ -84,6 +94,8 @@ export default function RegisterPage() {
         } catch (error) {
           console.error("🔧 RegisterPage: Error checking email:", error)
           setErrors((prev) => ({ ...prev, email: "ไม่สามารถตรวจสอบอีเมลได้" }))
+        } finally {
+          setIsCheckingEmail(false)
         }
       }, 1000)
 
@@ -106,6 +118,8 @@ export default function RegisterPage() {
 
       const timeout = setTimeout(async () => {
         console.log("🔧 RegisterPage: Checking license availability:", formData.license)
+        setIsCheckingLicense(true)
+
         try {
           const licenseExists = await checkLicenseExists(formData.license)
           if (licenseExists) {
@@ -119,6 +133,9 @@ export default function RegisterPage() {
           }
         } catch (error) {
           console.error("🔧 RegisterPage: Error checking license:", error)
+          setErrors((prev) => ({ ...prev, license: "ไม่สามารถตรวจสอบเลขใบขับขี่ได้" }))
+        } finally {
+          setIsCheckingLicense(false)
         }
       }, 1000)
 
@@ -132,10 +149,11 @@ export default function RegisterPage() {
     }
   }, [formData.license])
 
-  const handleInputChange = (field: string, value: string) => {
+  const handleInputChange = (field: keyof RegisterFormData, value: string) => {
     console.log(`🔧 RegisterPage: Input change: ${field} = ${value}`)
     setFormData((prev) => ({ ...prev, [field]: value }))
 
+    // Clear field error when user starts typing
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev }
@@ -145,69 +163,54 @@ export default function RegisterPage() {
     }
   }
 
-  const validateForm = async () => {
-    const newErrors: Record<string, string> = {}
-
-    const validFullNameRegex = /^[a-zA-Zก-๙\s.'-]+$/
-    const validEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
-
-    if (!formData.fullName.trim()) {
-      newErrors.fullName = "กรุณากรอกชื่อ-นามสกุล"
-    } else if (!validFullNameRegex.test(formData.fullName)) {
-      newErrors.fullName = "ชื่อ-นามสกุลมีอักขระที่ไม่ได้รับอนุญาต"
-    }
-
-    if (!formData.email.trim()) {
-      newErrors.email = "กรุณากรอกอีเมล"
-    } else if (!validEmailRegex.test(formData.email)) {
-      newErrors.email = "รูปแบบอีเมลไม่ถูกต้อง"
-    }
-
-    if (!formData.password) newErrors.password = "กรุณากรอกรหัสผ่าน"
-    if (formData.password.length < 6) newErrors.password = "รหัสผ่านต้องมีอย่างน้อย 6 ตัวอักษร"
-    if (formData.password !== formData.confirmPassword) newErrors.confirmPassword = "รหัสผ่านไม่ตรงกัน"
-    if (!formData.phone.trim()) newErrors.phone = "กรุณากรอกเบอร์โทรศัพท์"
-    if (!formData.license.trim()) newErrors.license = "กรุณากรอกเลขใบขับขี่"
-    if (!formData.deviceId) newErrors.deviceId = "กรุณาเลือก Device ID"
-    if (!acceptTerms) newErrors.terms = "กรุณายอมรับข้อกำหนดและเงื่อนไข"
-
-    // Check email availability
-    if (formData.email && !newErrors.email) {
-      try {
-        const emailExists = await checkEmailExists(formData.email)
-        if (emailExists) {
-          newErrors.email = "อีเมลนี้ถูกใช้งานแล้ว"
-        }
-      } catch (error) {
-        console.error("🔧 RegisterPage: Cannot check email during validation:", error)
-      }
-    }
-
-    // Check license availability
-    if (formData.license && !newErrors.license) {
-      try {
-        const licenseExists = await checkLicenseExists(formData.license)
-        if (licenseExists) {
-          newErrors.license = "เลขใบขับขี่นี้ถูกใช้งานแล้ว"
-        }
-      } catch (error) {
-        console.error("🔧 RegisterPage: Cannot check license during validation:", error)
-      }
-    }
-
-    setErrors(newErrors)
-    return Object.keys(newErrors).length === 0
-  }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     console.log("🔧 RegisterPage: Form submitted")
+
+    // Validate terms acceptance
+    if (!acceptTerms) {
+      setErrors({ terms: "กรุณายอมรับข้อกำหนดและเงื่อนไข" })
+      return
+    }
+
+    // Validate form data
+    const validation = validateRegistrationForm(formData)
+    if (!validation.isValid) {
+      setErrors(validation.errors)
+      toast({
+        title: "ข้อมูลไม่ถูกต้อง",
+        description: "กรุณาตรวจสอบข้อมูลที่กรอกใหม่อีกครั้ง",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
-      const isValid = await validateForm()
-      if (!isValid) {
-        setIsSubmitting(false)
+      // Check for duplicates one more time before submitting
+      const [emailExists, licenseExists] = await Promise.all([
+        checkEmailExists(formData.email),
+        checkLicenseExists(formData.license),
+      ])
+
+      if (emailExists) {
+        setErrors({ email: "อีเมลนี้ถูกใช้งานแล้ว" })
+        toast({
+          title: "อีเมลซ้ำ",
+          description: "อีเมลนี้ถูกใช้งานแล้ว กรุณาใช้อีเมลอื่น",
+          variant: "destructive",
+        })
+        return
+      }
+
+      if (licenseExists) {
+        setErrors({ license: "เลขใบขับขี่นี้ถูกใช้งานแล้ว" })
+        toast({
+          title: "เลขใบขับขี่ซ้ำ",
+          description: "เลขใบขับขี่นี้ถูกใช้งานแล้ว",
+          variant: "destructive",
+        })
         return
       }
 
@@ -216,28 +219,30 @@ export default function RegisterPage() {
       if (result.success) {
         toast({
           title: "สมัครสมาชิกสำเร็จ",
-          description: "กำลังนำท่านไปยังหน้าแดชบอร์ด...",
+          description: "ยินดีต้อนรับเข้าสู่ระบบ Driver Fatigue Detection",
         })
 
-        // Simple redirect without session API
+        // Redirect to dashboard
         setTimeout(() => {
           router.push("/dashboard")
         }, 1000)
       } else {
+        const errorMessage = getErrorMessage(result.error)
         toast({
           title: "การลงทะเบียนล้มเหลว",
-          description: result.error || "ไม่สามารถสมัครสมาชิกได้",
+          description: errorMessage,
           variant: "destructive",
         })
-        setIsSubmitting(false)
       }
     } catch (error: any) {
       console.error("Register page error:", error)
+      const errorMessage = getErrorMessage(error)
       toast({
         title: "เกิดข้อผิดพลาด",
-        description: error.message || "กรุณาลองใหม่อีกครั้ง",
+        description: errorMessage,
         variant: "destructive",
       })
+    } finally {
       setIsSubmitting(false)
     }
   }
@@ -247,7 +252,18 @@ export default function RegisterPage() {
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
-            <Image src="/logo.png" alt="Driver Fatigue Detection Logo" width={80} height={80} className="h-20 w-20" />
+            <Image
+              src="/logo.png"
+              alt="Driver Fatigue Detection Logo"
+              width={80}
+              height={80}
+              className="h-20 w-20"
+              onError={(e) => {
+                console.error("Logo loading error")
+                // Fallback to placeholder if logo fails to load
+                e.currentTarget.src = "/placeholder.svg?height=80&width=80"
+              }}
+            />
           </div>
           <CardTitle className="text-2xl font-bold">สมัครสมาชิกผู้ขับขี่</CardTitle>
           <CardDescription>กรอกข้อมูลเพื่อใช้งานระบบ Driver Fatigue Detection</CardDescription>
@@ -264,6 +280,7 @@ export default function RegisterPage() {
                 onChange={(e) => handleInputChange("fullName", e.target.value)}
                 className={errors.fullName ? "border-red-500" : ""}
                 placeholder="สมชาย ใจดี"
+                disabled={isSubmitting}
               />
               {errors.fullName && <p className="text-sm text-red-500">{errors.fullName}</p>}
             </div>
@@ -271,14 +288,18 @@ export default function RegisterPage() {
             {/* Email Field */}
             <div className="space-y-2">
               <Label htmlFor="email">อีเมล *</Label>
-              <Input
-                id="email"
-                type="email"
-                value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
-                className={errors.email ? "border-red-500" : ""}
-                placeholder="somchai.d@example.com"
-              />
+              <div className="relative">
+                <Input
+                  id="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  className={errors.email ? "border-red-500" : ""}
+                  placeholder="somchai.d@example.com"
+                  disabled={isSubmitting}
+                />
+                {isCheckingEmail && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin" />}
+              </div>
               {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
             </div>
 
@@ -293,6 +314,7 @@ export default function RegisterPage() {
                   onChange={(e) => handleInputChange("password", e.target.value)}
                   className={errors.password ? "border-red-500" : ""}
                   placeholder="••••••••"
+                  disabled={isSubmitting}
                 />
                 <Button
                   type="button"
@@ -300,6 +322,7 @@ export default function RegisterPage() {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={isSubmitting}
                 >
                   {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -318,6 +341,7 @@ export default function RegisterPage() {
                   onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
                   className={errors.confirmPassword ? "border-red-500" : ""}
                   placeholder="••••••••"
+                  disabled={isSubmitting}
                 />
                 <Button
                   type="button"
@@ -325,6 +349,7 @@ export default function RegisterPage() {
                   size="sm"
                   className="absolute right-0 top-0 h-full px-3 py-2 hover:bg-transparent"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  disabled={isSubmitting}
                 >
                   {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
                 </Button>
@@ -341,6 +366,7 @@ export default function RegisterPage() {
                 onChange={(e) => handleInputChange("phone", e.target.value)}
                 className={errors.phone ? "border-red-500" : ""}
                 placeholder="0812345678"
+                disabled={isSubmitting}
               />
               {errors.phone && <p className="text-sm text-red-500">{errors.phone}</p>}
             </div>
@@ -348,13 +374,17 @@ export default function RegisterPage() {
             {/* License Field */}
             <div className="space-y-2">
               <Label htmlFor="license">เลขใบขับขี่ *</Label>
-              <Input
-                id="license"
-                value={formData.license}
-                onChange={(e) => handleInputChange("license", e.target.value)}
-                className={errors.license ? "border-red-500" : ""}
-                placeholder="เลขใบขับขี่"
-              />
+              <div className="relative">
+                <Input
+                  id="license"
+                  value={formData.license}
+                  onChange={(e) => handleInputChange("license", e.target.value)}
+                  className={errors.license ? "border-red-500" : ""}
+                  placeholder="เลขใบขับขี่"
+                  disabled={isSubmitting}
+                />
+                {isCheckingLicense && <Loader2 className="absolute right-3 top-3 h-4 w-4 animate-spin" />}
+              </div>
               {errors.license && <p className="text-sm text-red-500">{errors.license}</p>}
             </div>
 
@@ -373,6 +403,7 @@ export default function RegisterPage() {
                 id="terms"
                 checked={acceptTerms}
                 onCheckedChange={(checked) => setAcceptTerms(checked as boolean)}
+                disabled={isSubmitting}
               />
               <Label htmlFor="terms" className="text-sm">
                 ฉันยอมรับ{" "}
@@ -390,7 +421,14 @@ export default function RegisterPage() {
 
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  กำลังสมัครสมาชิก...
+                </>
+              ) : (
+                "สมัครสมาชิก"
+              )}
             </Button>
             <div className="text-center text-sm">
               มีบัญชีอยู่แล้ว?{" "}
@@ -398,7 +436,7 @@ export default function RegisterPage() {
                 เข้าสู่ระบบ
               </Link>
             </div>
-            <Button variant="outline" className="w-full" asChild>
+            <Button variant="outline" className="w-full" asChild disabled={isSubmitting}>
               <Link href="/">กลับสู่หน้าหลัก</Link>
             </Button>
           </CardFooter>
