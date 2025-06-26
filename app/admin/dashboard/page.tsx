@@ -18,6 +18,9 @@ import { useToast } from "@/hooks/use-toast"
 import { useState, useRef } from "react"
 import type { SystemStats } from "@/lib/types"
 
+// Force dynamic rendering to prevent prerendering issues
+export const dynamic = "force-dynamic"
+
 export default function AdminDashboardPage() {
   const router = useRouter()
   const { toast } = useToast()
@@ -77,11 +80,7 @@ export default function AdminDashboardPage() {
             <div className="flex items-center justify-between h-16">
               <div className="flex items-center">
                 <div className="flex-shrink-0">
-                  <img
-                    src="https://hebbkx1anhila5yf.public.blob.vercel-storage.com/logo-eaQrLeDTZjvUG3Cdg1wfewuglXumn4.png"
-                    alt="Logo"
-                    className="h-8 w-8"
-                  />
+                  <img src="/logo.png" alt="Logo" className="h-8 w-8" />
                 </div>
                 <div className="ml-4">
                   <h1 className="text-xl font-bold">Admin Dashboard</h1>
