@@ -1,70 +1,79 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { adminAuth, adminDb } from "@/lib/firebase-admin"
-import { validateEnvironmentVariables } from "@/lib/config"
+import { getAdminAuth, getAdminDb } from "@/lib/firebase-admin"
+import { z } from "zod"
+
+const registerSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(6),
+  fullName: z.string().min(1),
+  phone: z.string().min(10),
+  license: z.string().min(1),
+  deviceId: z.string().min(1),
+})
 
 export async function POST(request: NextRequest) {
   try {
-    // ตรวจสอบ Environment Variables ก่อน
-    validateEnvironmentVariables()
+    const adminAuth = getAdminAuth()
+    const adminDb = getAdminDb()
 
-    const { userData, idToken } = await request.json()
-
-    if (!idToken) {
-      return NextResponse.json({ error: "ID Token is required" }, { status: 400 })
+    if (!adminAuth || !adminDb) {
+      return NextResponse.json(
+        {
+          error: "Server configuration error",
+          message: "Firebase Admin is not properly configured. Please contact the administrator.",
+        },
+        { status: 503 },
+      )
     }
 
-    // Verify idToken
-    const decodedToken = await adminAuth.verifyIdToken(idToken)
-    const uid = decodedToken.uid
+    const body = await request.json()
+    const validatedData = registerSchema.parse(body)
 
-    // ตรวจสอบว่า email ซ้ำหรือไม่
-    const existingUsers = await adminDb.ref("users").orderByChild("email").equalTo(userData.email).once("value")
-
-    if (existingUsers.exists()) {
-      return NextResponse.json({ error: "Email already exists" }, { status: 409 })
-    }
-
-    // ตรวจสอบว่า license ซ้ำหรือไม่
-    const existingLicense = await adminDb.ref("users").orderByChild("license").equalTo(userData.license).once("value")
-
-    if (existingLicense.exists()) {
-      return NextResponse.json({ error: "License already exists" }, { status: 409 })
-    }
-
-    // ตรวจสอบว่า deviceId ซ้ำหรือไม่
-    const existingDevice = await adminDb.ref("users").orderByChild("deviceId").equalTo(userData.deviceId).once("value")
-
-    if (existingDevice.exists()) {
-      return NextResponse.json({ error: "Device ID already in use" }, { status: 409 })
-    }
-
-    // บันทึกข้อมูล user
-    await adminDb.ref(`users/${uid}`).set({
-      ...userData,
-      uid,
-      createdAt: Date.now(),
-      updatedAt: Date.now(),
-      isActive: true,
+    // Create user in Firebase Auth
+    const userRecord = await adminAuth.createUser({
+      email: validatedData.email,
+      password: validatedData.password,
+      displayName: validatedData.fullName,
     })
 
-    console.log(`✅ User registered successfully: ${uid}`)
+    // Save user data to Realtime Database
+    const userData = {
+      email: validatedData.email,
+      fullName: validatedData.fullName,
+      phone: validatedData.phone,
+      license: validatedData.license,
+      deviceId: validatedData.deviceId,
+      role: "user",
+      createdAt: new Date().toISOString(),
+    }
+
+    await adminDb.ref(`users/${userRecord.uid}`).set(userData)
 
     return NextResponse.json({
       success: true,
       message: "User registered successfully",
-      uid,
+      uid: userRecord.uid,
     })
   } catch (error: any) {
-    console.error("❌ Registration error:", error)
+    console.error("Registration error:", error)
 
-    if (error.code === "auth/id-token-expired") {
-      return NextResponse.json({ error: "Token expired, please try again" }, { status: 401 })
+    if (error.code === "auth/email-already-exists") {
+      return NextResponse.json(
+        { error: "Email already exists", message: "This email is already registered." },
+        { status: 400 },
+      )
     }
 
-    if (error.code === "auth/invalid-id-token") {
-      return NextResponse.json({ error: "Invalid token" }, { status: 401 })
+    if (error.name === "ZodError") {
+      return NextResponse.json(
+        { error: "Validation error", message: "Invalid input data.", details: error.errors },
+        { status: 400 },
+      )
     }
 
-    return NextResponse.json({ error: error.message || "Registration failed" }, { status: 500 })
+    return NextResponse.json(
+      { error: "Registration failed", message: "An unexpected error occurred." },
+      { status: 500 },
+    )
   }
 }
