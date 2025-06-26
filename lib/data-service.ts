@@ -317,3 +317,12 @@ export async function checkDeviceConnection(deviceId: string): Promise<boolean> 
     return false
   }
 }
+
+// ✅ เพิ่ม exports ที่หายไป
+export { getLatestSensorData }
+export { calculateDashboardStats }
+
+// สมมุติว่ามี object dataService (ถ้ายังไม่มี ให้เพิ่มเปล่าๆไว้ก่อน)
+export const dataService = {}
+
+export { dataService }
