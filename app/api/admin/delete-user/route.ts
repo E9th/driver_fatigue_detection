@@ -3,6 +3,14 @@ import { auth, database } from "@/lib/firebaseAdmin"
 
 export async function POST(request: NextRequest) {
   try {
+    // Check if Firebase Admin is properly configured
+    if (!auth || !database) {
+      return NextResponse.json(
+        { error: "Firebase Admin not configured. Please set up environment variables." },
+        { status: 500 },
+      )
+    }
+
     const { uid } = await request.json()
 
     if (!uid) {
