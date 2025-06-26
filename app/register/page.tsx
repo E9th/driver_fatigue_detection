@@ -1,31 +1,5 @@
 "use client"
 
-/**
- * ============================================================================
- * REGISTRATION PAGE - หน้าลงทะเบียนผู้ใช้ใหม่
- * ============================================================================
- *
- * หน้านี้จัดการการลงทะเบียนผู้ใช้ใหม่เข้าสู่ระบบ Driver Fatigue Detection
- * รวมถึงการตรวจสอบข้อมูลซ้ำ, การป้องกันการเลือกอุปกรณ์ซ้ำ, และการบันทึกข้อมูล
- *
- * MAIN FEATURES:
- * - Real-time email validation (ตรวจสอบอีเมลซ้ำแบบ real-time)
- * - Real-time license validation (ตรวจสอบใบขับขี่ซ้ำแบบ real-time) // เพิ่มใหม่
- * - Device availability checking (ตรวจสอบอุปกรณ์ที่ใช้ได้)
- * - Form validation (ตรวจสอบความถูกต้องของข้อมูล)
- * - Password strength validation (ตรวจสอบความแข็งแรงของรหัสผ่าน)
- * - Terms and conditions acceptance (การยอมรับข้อกำหนด)
- *
- * DEPENDENCIES:
- * - lib/auth.ts: สำหรับการลงทะเบียนผู้ใช้
- * - lib/validation.ts: สำหรับตรวจสอบข้อมูลซ้ำ
- * - components/device-id-selector.tsx: สำหรับเลือกอุปกรณ์
- *
- * NAVIGATION FLOW:
- * Register Success → /dashboard (ผู้ใช้ทั่วไป)
- * Register Success → /admin/dashboard (ผู้ดูแลระบบ)
- */
-
 import type React from "react"
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -34,9 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Checkbox } from "@/components/ui/checkbox"
 import { DeviceIdSelector } from "@/components/device-id-selector"
-import { registerUser } from "@/lib/auth"
-// แก้ไข: เพิ่ม checkLicenseExists จาก lib/validation
-import { checkEmailExists, checkDeviceExists, getUsedDevices, checkLicenseExists } from "@/lib/validation"
+import { registerUser, checkEmailExists, checkLicenseExists, getUsedDevices } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 import { useToast } from "@/hooks/use-toast"
 import Link from "next/link"
@@ -44,13 +16,6 @@ import Image from "next/image"
 import { Eye, EyeOff } from "lucide-react"
 
 export default function RegisterPage() {
-  // ============================================================================
-  // STATE MANAGEMENT - การจัดการสถานะของ Component
-  // ============================================================================
-
-  /**
-   * ข้อมูลฟอร์มลงทะเบียน
-   */
   const [formData, setFormData] = useState({
     fullName: "",
     email: "",
@@ -61,49 +26,19 @@ export default function RegisterPage() {
     deviceId: "",
   })
 
-  /**
-   * ข้อผิดพลาดของแต่ละฟิลด์
-   */
   const [errors, setErrors] = useState<Record<string, string>>({})
-
-  /**
-   * การแสดง/ซ่อนรหัสผ่าน
-   */
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-
-  /**
-   * การยอมรับข้อกำหนดและเงื่อนไข
-   */
   const [acceptTerms, setAcceptTerms] = useState(false)
-
-  /**
-   * สถานะการส่งฟอร์ม
-   */
   const [isSubmitting, setIsSubmitting] = useState(false)
-
-  /**
-   * Timeout สำหรับการตรวจสอบอีเมลและใบขับขี่
-   */
   const [emailCheckTimeout, setEmailCheckTimeout] = useState<NodeJS.Timeout | null>(null)
-  const [licenseCheckTimeout, setLicenseCheckTimeout] = useState<NodeJS.Timeout | null>(null) // เพิ่ม state ใหม่
-
-  /**
-   * รายการอุปกรณ์ที่ถูกใช้งานแล้ว
-   */
+  const [licenseCheckTimeout, setLicenseCheckTimeout] = useState<NodeJS.Timeout | null>(null)
   const [usedDevices, setUsedDevices] = useState<string[]>([])
 
-  // Hooks สำหรับ navigation และ notifications
   const router = useRouter()
   const { toast } = useToast()
 
-  // ============================================================================
-  // EFFECTS - การทำงานเมื่อ Component โหลดหรือ State เปลี่ยน
-  // ============================================================================
-
-  /**
-   * โหลดรายการอุปกรณ์ที่ถูกใช้งานแล้ว
-   */
+  // Load used devices
   useEffect(() => {
     const loadUsedDevices = async () => {
       try {
@@ -112,28 +47,22 @@ export default function RegisterPage() {
         console.log("🔧 RegisterPage: Used devices:", devices)
       } catch (error) {
         console.error("🔧 RegisterPage: Error loading used devices:", error)
-        // ไม่แสดง error ให้ผู้ใช้เห็น เพราะไม่ใช่ข้อผิดพลาดร้ายแรง
       }
     }
 
     loadUsedDevices()
   }, [])
 
-  /**
-   * ตรวจสอบอีเมลซ้ำแบบ Real-time
-   */
+  // Real-time email validation
   useEffect(() => {
     if (formData.email && formData.email.includes("@")) {
-      // ล้าง timeout เดิม
       if (emailCheckTimeout) {
         clearTimeout(emailCheckTimeout)
       }
 
-      // ตั้ง timeout ใหม่
       const timeout = setTimeout(async () => {
         console.log("🔧 RegisterPage: Checking email availability:", formData.email)
         try {
-          // ตรวจสอบรูปแบบอีเมล
           const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
 
           if (!isValidEmail) {
@@ -141,13 +70,11 @@ export default function RegisterPage() {
             return
           }
 
-          // ตรวจสอบอีเมลซ้ำ
           const emailExists = await checkEmailExists(formData.email)
 
           if (emailExists) {
             setErrors((prev) => ({ ...prev, email: "อีเมลนี้ถูกใช้งานแล้ว" }))
           } else {
-            // ล้าง error ถ้าอีเมลใช้ได้
             setErrors((prev) => {
               const newErrors = { ...prev }
               delete newErrors.email
@@ -156,15 +83,13 @@ export default function RegisterPage() {
           }
         } catch (error) {
           console.error("🔧 RegisterPage: Error checking email:", error)
-          // ไม่แสดง error ถ้าไม่สามารถตรวจสอบได้ (อาจเป็นปัญหา network)
           setErrors((prev) => ({ ...prev, email: "ไม่สามารถตรวจสอบอีเมลได้" }))
         }
-      }, 1000) // รอ 1 วินาที
+      }, 1000)
 
       setEmailCheckTimeout(timeout)
     }
 
-    // Cleanup function
     return () => {
       if (emailCheckTimeout) {
         clearTimeout(emailCheckTimeout)
@@ -172,12 +97,9 @@ export default function RegisterPage() {
     }
   }, [formData.email])
 
-  /**
-   * [โค้ดใหม่] ตรวจสอบเลขใบขับขี่ซ้ำแบบ Real-time
-   */
+  // Real-time license validation
   useEffect(() => {
     if (formData.license && formData.license.length > 5) {
-      // เริ่มตรวจเมื่อความยาวพอสมควร
       if (licenseCheckTimeout) {
         clearTimeout(licenseCheckTimeout)
       }
@@ -197,9 +119,8 @@ export default function RegisterPage() {
           }
         } catch (error) {
           console.error("🔧 RegisterPage: Error checking license:", error)
-          // ไม่ต้องแสดง error หาก network มีปัญหา แต่จะไปดักอีกทีตอน submit
         }
-      }, 1000) // รอ 1 วินาที
+      }, 1000)
 
       setLicenseCheckTimeout(timeout)
     }
@@ -211,20 +132,10 @@ export default function RegisterPage() {
     }
   }, [formData.license])
 
-  // ============================================================================
-  // EVENT HANDLERS - ฟังก์ชันจัดการ Events
-  // ============================================================================
-
-  /**
-   * จัดการการเปลี่ยนแปลงข้อมูลในฟอร์ม
-   */
   const handleInputChange = (field: string, value: string) => {
     console.log(`🔧 RegisterPage: Input change: ${field} = ${value}`)
-
-    // อัปเดตข้อมูล
     setFormData((prev) => ({ ...prev, [field]: value }))
 
-    // ล้าง error เมื่อผู้ใช้เริ่มพิมพ์
     if (errors[field]) {
       setErrors((prev) => {
         const newErrors = { ...prev }
@@ -234,17 +145,12 @@ export default function RegisterPage() {
     }
   }
 
-  /**
-   * [โค้ดแก้ไข] ตรวจสอบความถูกต้องของฟอร์มทั้งหมด
-   */
   const validateForm = async () => {
     const newErrors: Record<string, string> = {}
 
-    // [โค้ดใหม่] Regex สำหรับตรวจสอบ
     const validFullNameRegex = /^[a-zA-Zก-๙\s.'-]+$/
     const validEmailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/
 
-    // ตรวจสอบข้อมูลพื้นฐาน และรูปแบบ
     if (!formData.fullName.trim()) {
       newErrors.fullName = "กรุณากรอกชื่อ-นามสกุล"
     } else if (!validFullNameRegex.test(formData.fullName)) {
@@ -265,7 +171,7 @@ export default function RegisterPage() {
     if (!formData.deviceId) newErrors.deviceId = "กรุณาเลือก Device ID"
     if (!acceptTerms) newErrors.terms = "กรุณายอมรับข้อกำหนดและเงื่อนไข"
 
-    // ตรวจสอบอีเมลซ้ำ (ถ้าผ่านการตรวจสอบพื้นฐาน)
+    // Check email availability
     if (formData.email && !newErrors.email) {
       try {
         const emailExists = await checkEmailExists(formData.email)
@@ -277,7 +183,7 @@ export default function RegisterPage() {
       }
     }
 
-    // [โค้ดใหม่] ตรวจสอบเลขใบขับขี่ซ้ำ (ถ้าผ่านการตรวจสอบพื้นฐาน)
+    // Check license availability
     if (formData.license && !newErrors.license) {
       try {
         const licenseExists = await checkLicenseExists(formData.license)
@@ -289,32 +195,10 @@ export default function RegisterPage() {
       }
     }
 
-    // ตรวจสอบอุปกรณ์ซ้ำ (ถ้าผ่านการตรวจสอบพื้นฐาน)
-    if (formData.deviceId && !newErrors.deviceId) {
-      try {
-        const deviceExists = await checkDeviceExists(formData.deviceId)
-        if (deviceExists) {
-          const allDevices = Array.from({ length: 20 }, (_, i) => `device_${String(i + 1).padStart(2, "0")}`)
-          const availableDevices = allDevices.filter((device) => !usedDevices.includes(device))
-          const suggestion = availableDevices.length > 0 ? ` แนะนำ: ${availableDevices.slice(0, 3).join(", ")}` : ""
-
-          newErrors.deviceId = `อุปกรณ์นี้ถูกใช้งานแล้ว${suggestion}`
-        }
-      } catch (error) {
-        console.error("🔧 RegisterPage: Cannot check device during validation:", error)
-      }
-    }
-
-    // อัปเดต errors state
     setErrors(newErrors)
-
-    // ส่งคืนผลลัพธ์
     return Object.keys(newErrors).length === 0
   }
 
-  // ============================================================================
-  // START: ส่วนที่แก้ไขเพื่อแก้ปัญหาหน้า Loading ค้าง (ตามที่คุณต้องการ)
-  // ============================================================================
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     console.log("🔧 RegisterPage: Form submitted")
@@ -329,38 +213,16 @@ export default function RegisterPage() {
 
       const result = await registerUser(formData)
 
-      if (result.success && result.user) {
-        // 1. ดึง idToken จาก user ที่เพิ่งสมัคร
-        const idToken = await result.user.getIdToken()
-
-        // 2. ส่ง Token นี้ไปให้ Server ของเราเองเพื่อตรวจสอบอย่างปลอดภัย
-        // หมายเหตุ: Endpoint ที่ถูกต้องตาม Log คือ /api/auth/session
-        const response = await fetch("/api/auth/session", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            idToken: idToken, // เพิ่ม idToken ใน body
-          }),
+      if (result.success) {
+        toast({
+          title: "สมัครสมาชิกสำเร็จ",
+          description: "กำลังนำท่านไปยังหน้าแดชบอร์ด...",
         })
 
-        if (response.ok) {
-          // 3. เมื่อ Server ตอบกลับว่าทุกอย่างเรียบร้อย จึงค่อยเปลี่ยนหน้า
-          toast({ title: "สมัครสมาชิกสำเร็จ", description: "กำลังนำท่านไปยังหน้าแดชบอร์ด..." })
+        // Simple redirect without session API
+        setTimeout(() => {
           router.push("/dashboard")
-        } else {
-          // ถ้า Server ของเรามีปัญหา
-          // ตรวจสอบว่า response มี body เป็น json หรือไม่ก่อนที่จะพยายาม parse
-          const errorText = await response.text();
-          let errorData = { message: "การยืนยันตัวตนหลังสมัครล้มเหลว" };
-          try {
-            errorData = JSON.parse(errorText);
-          } catch(jsonError) {
-             console.error("Could not parse error response as JSON:", errorText);
-          }
-          throw new Error(errorData.message || "การยืนยันตัวตนหลังสมัครล้มเหลว");
-        }
+        }, 1000)
       } else {
         toast({
           title: "การลงทะเบียนล้มเหลว",
@@ -370,23 +232,19 @@ export default function RegisterPage() {
         setIsSubmitting(false)
       }
     } catch (error: any) {
-      console.error("Register page final error:", error)
-      toast({ title: "เกิดข้อผิดพลาดร้ายแรง", description: error.message || "กรุณาลองใหม่อีกครั้ง", variant: "destructive" })
+      console.error("Register page error:", error)
+      toast({
+        title: "เกิดข้อผิดพลาด",
+        description: error.message || "กรุณาลองใหม่อีกครั้ง",
+        variant: "destructive",
+      })
       setIsSubmitting(false)
     }
   }
-  // ============================================================================
-  // END: ส่วนที่แก้ไข
-  // ============================================================================
-
-  // ============================================================================
-  // RENDER - การแสดงผล UI
-  // ============================================================================
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-900 p-4">
       <Card className="w-full max-w-md">
-        {/* Header Section */}
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <Image src="/logo.png" alt="Driver Fatigue Detection Logo" width={80} height={80} className="h-20 w-20" />
@@ -395,7 +253,6 @@ export default function RegisterPage() {
           <CardDescription>กรอกข้อมูลเพื่อใช้งานระบบ Driver Fatigue Detection</CardDescription>
         </CardHeader>
 
-        {/* Form Section */}
         <form onSubmit={handleSubmit}>
           <CardContent className="space-y-4">
             {/* Full Name Field */}
@@ -531,7 +388,6 @@ export default function RegisterPage() {
             {errors.terms && <p className="text-sm text-red-500">{errors.terms}</p>}
           </CardContent>
 
-          {/* Footer Section */}
           <CardFooter className="flex flex-col space-y-4">
             <Button type="submit" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? "กำลังสมัครสมาชิก..." : "สมัครสมาชิก"}
