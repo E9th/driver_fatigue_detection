@@ -1,17 +1,20 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { database } from "@/lib/firebaseAdmin"
+import { database } from "@/lib/firebase-admin"
 
 export async function GET(request: NextRequest) {
   try {
-    // Check if Firebase Admin is properly configured
-    if (!database) {
+    // Try to get Firebase Admin database instance
+    let db
+
+    try {
+      db = await database()
+    } catch (error) {
       return NextResponse.json(
         { error: "Firebase Admin not configured. Please set up environment variables." },
         { status: 500 },
       )
     }
 
-    const db = await database()
     const snapshot = await db.ref("users").get()
 
     if (snapshot.exists()) {
