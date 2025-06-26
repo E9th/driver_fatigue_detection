@@ -414,50 +414,6 @@ export function subscribeToHistoricalDataWithCache(
   }
 }
 
-// Simple function to get basic device status
-export async function getDeviceStatus(deviceId: string): Promise<{ online: boolean; lastSeen?: string }> {
-  try {
-    console.log(`📊 DataService: Checking device status for ${deviceId}`)
-
-    if (!database) {
-      return { online: false }
-    }
-
-    const deviceRef = ref(database, `devices/${deviceId}/current_data`)
-    const snapshot = await get(deviceRef)
-
-    if (snapshot.exists()) {
-      const data = snapshot.val()
-      const lastSeen = data.timestamp ? new Date(data.timestamp).toISOString() : undefined
-      const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
-      const online = data.timestamp ? new Date(data.timestamp).getTime() > fiveMinutesAgo : false
-
-      return { online, lastSeen }
-    }
-
-    return { online: false }
-  } catch (error) {
-    console.error("🔥 DataService: Error checking device status:", error)
-    return { online: false }
-  }
-}
-
-// Generate report function
-export function generateReport(data: HistoricalData[], startDate: string, endDate: string) {
-  console.log(`📊 DataService: Generating report from ${startDate} to ${endDate}`)
-
-  return {
-    summary: {
-      totalEvents: data.length,
-      yawnEvents: data.filter((d) => d.yawn_events > 0).length,
-      drowsinessEvents: data.filter((d) => d.drowsiness_events > 0).length,
-      criticalAlerts: data.filter((d) => d.critical_alerts > 0).length,
-    },
-    data: data,
-    period: { startDate, endDate },
-  }
-}
-
 export interface DailyStats {
   totalYawns: number
   totalDrowsiness: number
@@ -489,6 +445,4 @@ export const dataService = {
   getChartData,
   checkDeviceConnection,
   subscribeToHistoricalDataWithCache,
-  getDeviceStatus,
-  generateReport,
 }
