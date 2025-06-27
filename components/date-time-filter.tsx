@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Calendar, Clock, RefreshCw } from "lucide-react"
@@ -103,77 +102,78 @@ export function DateTimeFilter({ onFilterChange, initialStartDate, initialEndDat
   }
 
   return (
-    <Card>
-      <CardHeader className="pb-3">
-        <CardTitle className="text-lg flex items-center">
-          <Calendar className="h-5 w-5 mr-2" />
-          ตัวกรองข้อมูล
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Start Date & Time */}
+    <div className="space-y-6">
+      {/* Date and Time Inputs */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Start Date & Time */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">วันที่เริ่มต้น</Label>
           <div className="space-y-2">
-            <Label htmlFor="start-date">วันที่เริ่มต้น</Label>
-            <Input
-              id="start-date"
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="w-full"
-            />
-            <div className="flex items-center space-x-2">
-              <Clock className="h-4 w-4 text-gray-500" />
-              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="flex-1" />
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input type="date" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="pl-10" />
             </div>
-          </div>
-
-          {/* End Date & Time */}
-          <div className="space-y-2">
-            <Label htmlFor="end-date">วันที่สิ้นสุด</Label>
-            <Input
-              id="end-date"
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="w-full"
-            />
-            <div className="flex items-center space-x-2">
-              <Clock className="h-4 w-4 text-gray-500" />
-              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="flex-1" />
+            <div className="relative">
+              <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input type="time" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="pl-10" />
             </div>
           </div>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <Button onClick={handleApplyFilter} className="flex-1" disabled={typeof onFilterChange !== "function"}>
-            <Calendar className="h-4 w-4 mr-2" />
-            ใช้ตัวกรอง
-          </Button>
-          <Button
-            onClick={handleResetToToday}
-            variant="outline"
-            className="flex-1"
-            disabled={typeof onFilterChange !== "function"}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            รีเซ็ตเป็นวันนี้
-          </Button>
+        {/* End Date & Time */}
+        <div className="space-y-3">
+          <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">วันที่สิ้นสุด</Label>
+          <div className="space-y-2">
+            <div className="relative">
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input type="date" value={endDate} onChange={(e) => setEndDate(e.target.value)} className="pl-10" />
+            </div>
+            <div className="relative">
+              <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Input type="time" value={endTime} onChange={(e) => setEndTime(e.target.value)} className="pl-10" />
+            </div>
+          </div>
         </div>
+      </div>
 
-        {/* Current Filter Display */}
-        <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-          <div className="font-medium mb-1">ช่วงเวลาที่เลือก:</div>
-          <div>
-            {new Date(`${startDate}T${startTime}`).toLocaleString("th-TH")} -{" "}
+      {/* Action Buttons */}
+      <div className="flex flex-col sm:flex-row gap-3">
+        <Button
+          onClick={handleApplyFilter}
+          className="flex-1 sm:flex-none sm:min-w-[140px]"
+          disabled={typeof onFilterChange !== "function"}
+        >
+          <Calendar className="h-4 w-4 mr-2" />
+          ใช้ตัวกรอง
+        </Button>
+        <Button
+          onClick={handleResetToToday}
+          variant="outline"
+          className="flex-1 sm:flex-none sm:min-w-[140px] bg-transparent"
+          disabled={typeof onFilterChange !== "function"}
+        >
+          <RefreshCw className="h-4 w-4 mr-2" />
+          รีเซ็ตเป็นวันนี้
+        </Button>
+      </div>
+
+      {/* Current Filter Display */}
+      <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-4 border">
+        <div className="text-sm">
+          <div className="font-medium text-gray-700 dark:text-gray-300 mb-2">ช่วงเวลาที่เลือก:</div>
+          <div className="text-gray-600 dark:text-gray-400 font-mono text-xs">
+            {new Date(`${startDate}T${startTime}`).toLocaleString("th-TH")}
+            <span className="mx-2">ถึง</span>
             {new Date(`${endDate}T${endTime}`).toLocaleString("th-TH")}
           </div>
           {typeof onFilterChange !== "function" && (
-            <div className="text-orange-600 text-xs mt-1">⚠️ ตัวกรองไม่พร้อมใช้งาน (onFilterChange ไม่ได้กำหนด)</div>
+            <div className="text-orange-600 dark:text-orange-400 text-xs mt-2 flex items-center gap-1">
+              <span>⚠️</span>
+              ตัวกรองไม่พร้อมใช้งาน (onFilterChange ไม่ได้กำหนด)
+            </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 }
