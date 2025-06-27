@@ -437,7 +437,7 @@ export function AdminExportData({ type, systemStats, userData, dateRange, disabl
                       <div class="label">เหตุการณ์อันตราย</div>
                   </div>
                   <div class="card">
-                      <div class="value">${stats.averageEAR.toFixed(3)}</div>
+                      <div class="value">${(stats.averageEAR || 0).toFixed(3)}</div>
                       <div class="label">ค่าการเปิดตาเฉลี่ย</div>
                   </div>
               </div>
@@ -450,20 +450,23 @@ export function AdminExportData({ type, systemStats, userData, dateRange, disabl
                       <tr><th>เวลา</th><th>เหตุการณ์</th><th>ระดับความรุนแรง</th></tr>
                   </thead>
                   <tbody>
-                      ${events
-                        .slice(-10)
-                        .reverse()
-                        .map(
-                          (event) => `
-                          <tr>
-                              <td>${new Date(event.timestamp).toLocaleString("th-TH")}</td>
-                              <td>${event.details || event.type}</td>
-                              <td>${event.severity >= 3 ? "สูง" : event.severity === 2 ? "ปานกลาง" : "ต่ำ"}</td>
-                          </tr>
-                      `,
-                        )
-                        .join("")}
-                      ${events.length === 0 ? '<tr><td colspan="3" style="text-align:center;">ไม่มีเหตุการณ์</td></tr>' : ""}
+                      ${
+                        events && events.length > 0
+                          ? events
+                              .slice(-10)
+                              .reverse()
+                              .map(
+                                (event) => `
+                              <tr>
+                                  <td>${new Date(event.timestamp || Date.now()).toLocaleString("th-TH")}</td>
+                                  <td>${event.details || event.type || "ไม่ระบุ"}</td>
+                                  <td>${(event.severity || 0) >= 3 ? "สูง" : (event.severity || 0) === 2 ? "ปานกลาง" : "ต่ำ"}</td>
+                              </tr>
+                          `,
+                              )
+                              .join("")
+                          : '<tr><td colspan="3" style="text-align:center;">ไม่มีเหตุการณ์</td></tr>'
+                      }
                   </tbody>
               </table>
           </div>
@@ -502,9 +505,9 @@ export function AdminExportData({ type, systemStats, userData, dateRange, disabl
 
     events.forEach((event) => {
       const values = [
-        `"${new Date(event.timestamp).toLocaleString("sv-SE")}"`,
-        `"${event.type}"`,
-        event.severity,
+        `"${new Date(event.timestamp || Date.now()).toLocaleString("sv-SE")}"`,
+        `"${event.type || "unknown"}"`,
+        event.severity || 0,
         `"${event.details || ""}"`,
         `"${profile.fullName}"`,
         `"${profile.deviceId}"`,

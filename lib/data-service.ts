@@ -18,7 +18,7 @@
  */
 
 import { database } from "./firebase"
-import { ref, get, query, orderByChild, limitToLast, startAt, endAt } from "firebase/database"
+import { ref, get, query, orderByChild, equalTo, startAt, endAt } from "firebase/database"
 import type { SensorData, DashboardStats, TimeRange } from "./types"
 
 /**
@@ -27,51 +27,25 @@ import type { SensorData, DashboardStats, TimeRange } from "./types"
  * @param deviceId - ID ของอุปกรณ์ (เช่น device_01)
  * @param limit - จำนวนข้อมูลที่ต้องการ (default: 100)
  * @returns Promise<SensorData[]> - อาร์เรย์ของข้อมูลเซ็นเซอร์
- *
- * FIREBASE PATH: /sensor_data/{deviceId}/
- * QUERY: orderByChild('timestamp').limitToLast(limit)
- *
- * DATA STRUCTURE:
- * {
- *   timestamp: number,
- *   ear: number (0-1),
- *   mouth: number (0-1),
- *   safety_score: number (0-100)
- * }
  */
 export async function getLatestSensorData(deviceId: string, limit = 100): Promise<SensorData[]> {
   try {
     console.log(`📊 DataService: Getting latest sensor data for ${deviceId}, limit: ${limit}`)
 
-    // สร้าง reference และ query
-    const sensorRef = ref(database, `sensor_data/${deviceId}`)
-    const sensorQuery = query(sensorRef, orderByChild("timestamp"), limitToLast(limit))
+    // ใช้ช่วงเวลา 24 ชั่วโมงที่ผ่านมา
+    const endTime = Date.now()
+    const startTime = endTime - 24 * 60 * 60 * 1000
 
-    // ดึงข้อมูลจาก Firebase
-    const snapshot = await get(sensorQuery)
+    const data = await getSensorDataByTimeRange(deviceId, startTime, endTime)
 
-    if (!snapshot.exists()) {
-      console.log(`📊 DataService: No sensor data found for ${deviceId}`)
-      return []
-    }
+    // เรียงและเอาข้อมูลล่าสุด
+    const latestData = data
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, limit)
+      .sort((a, b) => a.timestamp - b.timestamp)
 
-    // แปลงข้อมูลเป็น array และเรียงตาม timestamp
-    const data: SensorData[] = []
-    snapshot.forEach((childSnapshot) => {
-      const sensorData = childSnapshot.val()
-      data.push({
-        timestamp: sensorData.timestamp,
-        ear: sensorData.ear || 0,
-        mouth: sensorData.mouth || 0,
-        safety_score: sensorData.safety_score || 0,
-      })
-    })
-
-    // เรียงข้อมูลจากเก่าไปใหม่
-    data.sort((a, b) => a.timestamp - b.timestamp)
-
-    console.log(`📊 DataService: Retrieved ${data.length} sensor records`)
-    return data
+    console.log(`📊 DataService: Retrieved ${latestData.length} latest sensor records`)
+    return latestData
   } catch (error) {
     console.error("🔥 DataService: Error getting sensor data:", error)
     return []
@@ -79,20 +53,12 @@ export async function getLatestSensorData(deviceId: string, limit = 100): Promis
 }
 
 /**
- * ดึงข้อมูลเซ็นเซอร์ในช่วงเวลาที่กำหนด
+ * ดึงข้อมูลเซ็นเซอร์ในช่วงเวลาที่กำหนด - ปรับปรุงให้จัดการ indexing error
  *
  * @param deviceId - ID ของอุปกรณ์
  * @param startTime - เวลาเริ่มต้น (timestamp)
  * @param endTime - เวลาสิ้นสุด (timestamp)
  * @returns Promise<SensorData[]> - ข้อมูลเซ็นเซอร์ในช่วงเวลาที่กำหนด
- *
- * FIREBASE QUERY:
- * orderByChild('timestamp').startAt(startTime).endAt(endTime)
- *
- * USE CASES:
- * - ดูข้อมูลย้อนหลังตามวันที่
- * - สร้างรายงานประจำวัน/สัปดาห์/เดือน
- * - วิเคราะห์แนวโน้มในช่วงเวลาเฉพาะ
  */
 export async function getSensorDataByTimeRange(
   deviceId: string,
@@ -104,30 +70,122 @@ export async function getSensorDataByTimeRange(
       `📊 DataService: Getting sensor data for ${deviceId} from ${new Date(startTime)} to ${new Date(endTime)}`,
     )
 
-    const sensorRef = ref(database, `sensor_data/${deviceId}`)
-    const timeRangeQuery = query(sensorRef, orderByChild("timestamp"), startAt(startTime), endAt(endTime))
-
-    const snapshot = await get(timeRangeQuery)
-
-    if (!snapshot.exists()) {
+    if (!database) {
+      console.error("Firebase DB not available for getSensorDataByTimeRange")
       return []
     }
 
-    const data: SensorData[] = []
-    snapshot.forEach((childSnapshot) => {
-      const sensorData = childSnapshot.val()
-      data.push({
-        timestamp: sensorData.timestamp,
-        ear: sensorData.ear || 0,
-        mouth: sensorData.mouth || 0,
-        safety_score: sensorData.safety_score || 0,
-      })
-    })
+    const startISO = new Date(startTime).toISOString()
+    const endISO = new Date(endTime).toISOString()
 
-    data.sort((a, b) => a.timestamp - b.timestamp)
+    // ลองดึงข้อมูลจากหลายแหล่ง
+    const sensorData: SensorData[] = []
 
-    console.log(`📊 DataService: Retrieved ${data.length} records for time range`)
-    return data
+    // 1. ลองดึงจาก alerts ด้วย indexed query
+    try {
+      console.log(`🔍 Querying alerts for device: ${deviceId}`)
+      const alertsQuery = query(ref(database, "alerts"), orderByChild("device_id"), equalTo(deviceId))
+      const alertsSnapshot = await get(alertsQuery)
+
+      if (alertsSnapshot.exists()) {
+        const allAlerts = Object.values(alertsSnapshot.val())
+        const deviceAlerts = allAlerts.filter((alert: any) => {
+          const alertTime = new Date(alert.timestamp).getTime()
+          return alertTime >= startTime && alertTime <= endTime
+        })
+        console.log(`✅ Found ${deviceAlerts.length} alerts in date range.`)
+
+        // แปลงข้อมูล alerts เป็น SensorData
+        deviceAlerts.forEach((alert: any) => {
+          const alertTime = new Date(alert.timestamp).getTime()
+          sensorData.push({
+            timestamp: alertTime,
+            ear: alert.alert_type === "drowsiness_detected" ? 0.2 : 0.5,
+            mouth: alert.alert_type === "yawn_detected" ? 0.8 : 0.3,
+            safety_score: alert.severity === "high" ? 20 : alert.severity === "medium" ? 50 : 80,
+          })
+        })
+      }
+    } catch (alertError) {
+      console.warn("⚠️ DataService: Could not query alerts with index, trying fallback:", alertError)
+
+      // Fallback: ดึงข้อมูล alerts ทั้งหมดแล้วกรองเอง
+      try {
+        const alertsRef = ref(database, "alerts")
+        const alertsSnapshot = await get(alertsRef)
+
+        if (alertsSnapshot.exists()) {
+          const allAlerts = Object.values(alertsSnapshot.val())
+          const deviceAlerts = allAlerts.filter((alert: any) => {
+            const alertTime = new Date(alert.timestamp).getTime()
+            return alert.device_id === deviceId && alertTime >= startTime && alertTime <= endTime
+          })
+          console.log(`✅ Found ${deviceAlerts.length} alerts via fallback method.`)
+
+          deviceAlerts.forEach((alert: any) => {
+            const alertTime = new Date(alert.timestamp).getTime()
+            sensorData.push({
+              timestamp: alertTime,
+              ear: alert.alert_type === "drowsiness_detected" ? 0.2 : 0.5,
+              mouth: alert.alert_type === "yawn_detected" ? 0.8 : 0.3,
+              safety_score: alert.severity === "high" ? 20 : alert.severity === "medium" ? 50 : 80,
+            })
+          })
+        }
+      } catch (fallbackError) {
+        console.error("❌ DataService: Fallback alerts query also failed:", fallbackError)
+      }
+    }
+
+    // 2. ลองดึงจาก history
+    try {
+      console.log(`🔍 Querying history for device: ${deviceId} between ${startISO} and ${endISO}`)
+      const historyQuery = query(
+        ref(database, `devices/${deviceId}/history`),
+        orderByChild("timestamp"),
+        startAt(startISO),
+        endAt(endISO),
+      )
+      const historySnapshot = await get(historyQuery)
+
+      if (historySnapshot.exists()) {
+        const deviceHistory: HistoricalData[] = []
+        Object.entries(historySnapshot.val()).forEach(([key, value]) => {
+          deviceHistory.push({ id: key, ...(value as any) })
+        })
+        console.log(`✅ Found ${deviceHistory.length} history records in date range.`)
+
+        // แปลงข้อมูล history เป็น SensorData
+        deviceHistory.forEach((item: any) => {
+          const historyTime = new Date(item.timestamp).getTime()
+          // ตรวจสอบว่ามีข้อมูลใน timestamp นี้แล้วหรือไม่
+          const existingData = sensorData.find((data) => Math.abs(data.timestamp - historyTime) < 60000)
+
+          if (!existingData) {
+            sensorData.push({
+              timestamp: historyTime,
+              ear: item.ear || 0.5,
+              mouth: item.mouth_distance || 0.3,
+              safety_score: calculateSafetyScoreFromHistory(item),
+            })
+          }
+        })
+      }
+    } catch (historyError) {
+      console.warn("⚠️ DataService: Could not query history:", historyError)
+    }
+
+    // 3. ถ้าไม่มีข้อมูลจริง ให้คืนค่า array ว่าง (ไม่สร้างข้อมูลตัวอย่าง)
+    if (sensorData.length === 0) {
+      console.log(`📊 DataService: No data found for ${deviceId} in the specified time range`)
+      return []
+    }
+
+    // เรียงข้อมูลตาม timestamp
+    sensorData.sort((a, b) => a.timestamp - b.timestamp)
+
+    console.log(`📊 DataService: Retrieved ${sensorData.length} records for time range`)
+    return sensorData
   } catch (error) {
     console.error("🔥 DataService: Error getting time range data:", error)
     return []
@@ -136,29 +194,13 @@ export async function getSensorDataByTimeRange(
 
 /**
  * คำนวณสถิติสำหรับ Dashboard
- *
- * @param sensorData - อาร์เรย์ของข้อมูลเซ็นเซอร์
- * @returns DashboardStats - สถิติที่คำนวณแล้ว
- *
- * CALCULATED METRICS:
- * - averageSafetyScore: คะแนนความปลอดภัยเฉลี่ย
- * - totalAlerts: จำนวนการแจ้งเตือนทั้งหมด
- * - fatigueEvents: จำนวนครั้งที่ตรวจพบความเหนื่อยล้า
- * - activeTime: เวลาที่ใช้งานระบบ (นาที)
- * - lastUpdate: เวลาอัปเดตล่าสุด
- *
- * ALERT CRITERIA:
- * - Safety Score < 50: High Risk Alert
- * - Safety Score < 70: Medium Risk Alert
- * - Ear < 0.3: Eye Closure Alert
- * - Mouth > 0.7: Yawning Alert
  */
 export function calculateDashboardStats(sensorData: SensorData[]): DashboardStats {
   console.log(`📊 DataService: Calculating dashboard stats for ${sensorData.length} records`)
 
   if (sensorData.length === 0) {
     return {
-      averageSafetyScore: 0,
+      averageSafetyScore: 100, // เปลี่ยนจาก 0 เป็น 100 เมื่อไม่มีข้อมูล
       totalAlerts: 0,
       fatigueEvents: 0,
       activeTime: 0,
@@ -215,20 +257,6 @@ export function calculateDashboardStats(sensorData: SensorData[]): DashboardStat
 
 /**
  * ดึงข้อมูลสำหรับกราฟแสดงแนวโน้ม
- *
- * @param deviceId - ID ของอุปกรณ์
- * @param timeRange - ช่วงเวลาที่ต้องการ ('1h', '6h', '24h', '7d')
- * @returns Promise<SensorData[]> - ข้อมูลสำหรับกราฟ
- *
- * TIME RANGES:
- * - '1h': 1 ชั่วโมงที่ผ่านมา
- * - '6h': 6 ชั่วโมงที่ผ่านมา
- * - '24h': 24 ชั่วโมงที่ผ่านมา
- * - '7d': 7 วันที่ผ่านมา
- *
- * DATA SAMPLING:
- * - สำหรับช่วงเวลาสั้น: ใช้ข้อมูลทุกจุด
- * - สำหรับช่วงเวลายาว: สุ่มตัวอย่างเพื่อลดขนาดข้อมูล
  */
 export async function getChartData(deviceId: string, timeRange: TimeRange): Promise<SensorData[]> {
   try {
@@ -280,32 +308,22 @@ export async function getChartData(deviceId: string, timeRange: TimeRange): Prom
 
 /**
  * ตรวจสอบสถานะการเชื่อมต่อของอุปกรณ์
- *
- * @param deviceId - ID ของอุปกรณ์
- * @returns Promise<boolean> - true ถ้าอุปกรณ์ออนไลน์
- *
- * CONNECTION CRITERIA:
- * - มีข้อมูลใหม่ภายใน 5 นาทีที่ผ่านมา = ออนไลน์
- * - ไม่มีข้อมูลใหม่เกิน 5 นาที = ออฟไลน์
- *
- * USED BY:
- * - components/connection-status.tsx: แสดงสถานะการเชื่อมต่อ
- * - Dashboard components: แสดงสถานะอุปกรณ์
  */
 export async function checkDeviceConnection(deviceId: string): Promise<boolean> {
   try {
     console.log(`📊 DataService: Checking connection for ${deviceId}`)
 
-    // ดึงข้อมูลล่าสุด 1 รายการ
-    const latestData = await getLatestSensorData(deviceId, 1)
+    // ตรวจสอบจาก current_data
+    const currentDataRef = ref(database, `devices/${deviceId}/current_data`)
+    const snapshot = await get(currentDataRef)
 
-    if (latestData.length === 0) {
-      console.log(`📊 DataService: No data found for ${deviceId} - offline`)
+    if (!snapshot.exists()) {
+      console.log(`📊 DataService: No current data found for ${deviceId} - offline`)
       return false
     }
 
-    // ตรวจสอบว่าข้อมูลล่าสุดอายุไม่เกิน 5 นาที
-    const lastTimestamp = latestData[0].timestamp
+    const currentData = snapshot.val()
+    const lastTimestamp = new Date(currentData.timestamp).getTime()
     const fiveMinutesAgo = Date.now() - 5 * 60 * 1000
 
     const isOnline = lastTimestamp > fiveMinutesAgo
@@ -320,12 +338,6 @@ export async function checkDeviceConnection(deviceId: string): Promise<boolean> 
 
 /**
  * Subscribe to historical data with caching for better performance
- *
- * @param deviceId - ID ของอุปกรณ์
- * @param startTime - เวลาเริ่มต้น (timestamp)
- * @param endTime - เวลาสิ้นสุด (timestamp)
- * @param callback - Callback function ที่จะถูกเรียกเมื่อมีข้อมูลใหม่
- * @returns Function to unsubscribe
  */
 export function subscribeToHistoricalDataWithCache(
   deviceId: string,
@@ -414,6 +426,139 @@ export function subscribeToHistoricalDataWithCache(
   }
 }
 
+/**
+ * สร้างรายงานสรุปจากข้อมูลประวัติ
+ */
+export function generateReport(data: HistoricalData[], stats: DailyStats): ReportData {
+  const trends = analyzeTrends(data)
+  const recommendations = generateRecommendations(stats, trends)
+
+  return {
+    stats,
+    trends,
+    recommendations,
+    summary: {
+      totalEvents: data.length,
+      riskLevel: stats.totalAlerts > 10 ? "high" : stats.totalAlerts > 5 ? "medium" : "low",
+    },
+  }
+}
+
+/**
+ * คำนวณคะแนนความปลอดภัย - ปรับปรุงให้จัดการกรณีไม่มีข้อมูล
+ */
+export function calculateSafetyScore(stats: DailyStats, hasData = true): number {
+  // ถ้าไม่มีข้อมูลเลย ให้คืนค่า 100
+  if (
+    !hasData ||
+    (stats.totalYawns === 0 && stats.totalDrowsiness === 0 && stats.totalAlerts === 0 && stats.averageEAR === 0)
+  ) {
+    return 100
+  }
+
+  let score = 100
+  score -= Math.min(stats.totalYawns * 2, 30)
+  score -= Math.min(stats.totalDrowsiness * 5, 40)
+  score -= Math.min(stats.totalAlerts * 10, 50)
+
+  // เฉพาะเมื่อมีข้อมูล EAR จริง
+  if (stats.averageEAR > 0) {
+    if (stats.averageEAR < 0.25) score -= 20
+    else if (stats.averageEAR < 0.3) score -= 10
+  }
+
+  return Math.max(score, 0)
+}
+
+/**
+ * วิเคราะห์แนวโน้ม
+ */
+function analyzeTrends(data: HistoricalData[]) {
+  const midPoint = Math.floor(data.length / 2)
+  const firstHalf = data.slice(0, midPoint)
+  const secondHalf = data.slice(midPoint)
+
+  const firstHalfYawns = firstHalf.filter((d) => d.yawn_events > 0).length
+  const secondHalfYawns = secondHalf.filter((d) => d.yawn_events > 0).length
+
+  const firstHalfDrowsiness = firstHalf.filter((d) => d.drowsiness_events > 0).length
+  const secondHalfDrowsiness = secondHalf.filter((d) => d.drowsiness_events > 0).length
+
+  return {
+    yawnTrend:
+      secondHalfYawns > firstHalfYawns ? "increasing" : secondHalfYawns < firstHalfYawns ? "decreasing" : "stable",
+    drowsinessTrend:
+      secondHalfDrowsiness > firstHalfDrowsiness
+        ? "increasing"
+        : secondHalfDrowsiness < firstHalfDrowsiness
+          ? "decreasing"
+          : "stable",
+    alertnessTrend:
+      secondHalfDrowsiness < firstHalfDrowsiness
+        ? "improving"
+        : secondHalfDrowsiness > firstHalfDrowsiness
+          ? "declining"
+          : "stable",
+  }
+}
+
+/**
+ * สร้างคำแนะนำ
+ */
+function generateRecommendations(stats: DailyStats, trends: any): string[] {
+  const recommendations: string[] = []
+
+  if (stats.totalYawns > 10) {
+    recommendations.push("พบการหาวบ่อย แนะนำให้พักผ่อนให้เพียงพอก่อนขับขี่")
+  }
+
+  if (stats.totalDrowsiness > 5) {
+    recommendations.push("ตรวจพบความง่วงนอนบ่อย ควรหยุดพักทุก 2 ชั่วโมง")
+  }
+
+  if (stats.totalAlerts > 3) {
+    recommendations.push("มีการแจ้งเตือนด่วนหลายครั้ง ควรตรวจสอบสุขภาพและหลีกเลี่ยงการขับขี่เมื่อเหนื่อยล้า")
+  }
+
+  if (stats.averageEAR < 0.25) {
+    recommendations.push("ค่าเฉลี่ย EAR ต่ำ แสดงถึงการปิดตาบ่อย ควรพักผ่อนเพิ่มเติม")
+  }
+
+  if (trends.yawnTrend === "increasing") {
+    recommendations.push("แนวโน้มการหาวเพิ่มขึ้น ควรปรับเวลาพักผ่อน")
+  }
+
+  if (recommendations.length === 0) {
+    recommendations.push("ไม่มีข้อมูลการขับขี่ในช่วงเวลาที่เลือก")
+  }
+
+  return recommendations
+}
+
+// เพิ่ม interface สำหรับ ReportData
+export interface ReportData {
+  stats: DailyStats
+  trends: {
+    yawnTrend: string
+    drowsinessTrend: string
+    alertnessTrend: string
+  }
+  recommendations: string[]
+  summary: {
+    totalEvents: number
+    riskLevel: string
+  }
+}
+
+function calculateSafetyScoreFromHistory(historyData: any): number {
+  let score = 100
+  score -= (historyData.yawn_events || 0) * 2
+  score -= (historyData.drowsiness_events || 0) * 5
+  score -= (historyData.critical_alerts || 0) * 10
+  if (historyData.ear < 0.25) score -= 20
+  return Math.max(score, 0)
+}
+
 export interface DailyStats {
   totalYawns: number
   totalDrowsiness: number
@@ -445,4 +590,6 @@ export const dataService = {
   getChartData,
   checkDeviceConnection,
   subscribeToHistoricalDataWithCache,
+  generateReport,
+  calculateSafetyScore,
 }

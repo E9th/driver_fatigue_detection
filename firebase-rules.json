@@ -1,13 +1,49 @@
 {
   "rules": {
+    ".read": true,
+    ".write": "auth != null",
     "users": {
       ".read": true,
       ".write": "auth != null",
-      ".indexOn": ["email", "deviceId", "license"],
+      ".indexOn": ["email", "deviceId", "device_id", "license"],
       "$uid": {
         ".read": "auth != null && auth.uid == $uid",
         ".write": "auth != null && auth.uid == $uid"
       }
+    },
+    "devices": {
+      ".read": true,
+      ".write": "auth != null",
+      ".indexOn": ["device_id", "timestamp"],
+      "$deviceId": {
+        ".read": true,
+        ".write": "auth != null",
+        "current_data": {
+          ".read": true,
+          ".write": "auth != null",
+          ".indexOn": ["timestamp", "device_id"]
+        },
+        "history": {
+          ".read": true,
+          ".write": "auth != null",
+          ".indexOn": ["timestamp", "device_id"]
+        }
+      }
+    },
+    "alerts": {
+      ".read": true,
+      ".write": "auth != null",
+      ".indexOn": ["device_id", "timestamp", "alert_type", "severity"]
+    },
+    "sensor_data": {
+      ".read": true,
+      ".write": "auth != null",
+      ".indexOn": ["device_id", "timestamp"]
+    },
+    "device_data": {
+      ".read": true,
+      ".write": "auth != null",
+      ".indexOn": ["device_id", "timestamp"]
     }
   }
 }

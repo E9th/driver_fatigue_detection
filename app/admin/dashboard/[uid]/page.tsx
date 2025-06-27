@@ -20,7 +20,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
-import { ArrowLeft, AlertCircle, User, Activity, Shield, MoreVertical, Eye, AlertTriangle, Mail } from "lucide-react"
+import {
+  ArrowLeft,
+  AlertCircle,
+  User,
+  Activity,
+  Shield,
+  MoreVertical,
+  Eye,
+  AlertTriangle,
+  Mail,
+  Calendar,
+} from "lucide-react"
 
 interface AdminUserDashboardProps {
   params: {
@@ -78,7 +89,7 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
     } finally {
       setLoading(false)
     }
-  }, [uid, dateRange.start, dateRange.end]) // dependencies ที่ชัดเจน
+  }, [uid, dateRange]) // dependencies ที่ชัดเจน
 
   // useEffect ที่ไม่ทำให้เกิด infinite loop
   useEffect(() => {
@@ -154,10 +165,15 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
             </div>
           </div>
 
-          {/* Action Buttons - จัดเรียงใหม่ให้เป็นระเบียบ */}
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Date Filter - ให้พื้นที่เต็ม */}
-            <div className="flex-1">
+          {/* Improved Action Section */}
+          <div className="bg-white dark:bg-gray-800 rounded-lg border p-6 space-y-6">
+            {/* Date Filter Section */}
+            <div className="space-y-4">
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                ตัวกรองข้อมูล
+              </h3>
+
               <DateTimeFilter
                 onFilterChange={handleFilterChange}
                 initialStartDate={dateRange.start}
@@ -165,15 +181,18 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
               />
             </div>
 
-            {/* Action Buttons - จัดกลุ่มให้เป็นระเบียบ */}
-            <div className="flex flex-col sm:flex-row gap-2 lg:w-auto">
-              {/* Primary Actions */}
-              <div className="flex gap-2">
+            {/* Action Buttons Section */}
+            <div className="border-t pt-6">
+              <h3 className="text-lg font-semibold mb-4">การจัดการ</h3>
+
+              <div className="flex flex-wrap gap-3">
+                {/* Primary Action Buttons */}
                 <DeviceNotificationButton
                   deviceId={userProfile.deviceId || ""}
                   adminId="admin"
                   disabled={!userProfile.deviceId}
                 />
+
                 <AdminExportData
                   type="user"
                   userData={{
@@ -182,26 +201,27 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
                     dateRange,
                   }}
                 />
-              </div>
 
-              {/* Secondary Actions */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="icon">
-                    <MoreVertical className="h-4 w-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end">
-                  <DropdownMenuItem onClick={() => router.push(`/admin/profile/${uid}`)}>
-                    <User className="mr-2 h-4 w-4" />
-                    ดูโปรไฟล์
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => window.open(`mailto:${userProfile.email}`)}>
-                    <Mail className="mr-2 h-4 w-4" />
-                    ส่งอีเมล
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                {/* Secondary Actions Dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2 bg-transparent">
+                      <MoreVertical className="h-4 w-4" />
+                      เพิ่มเติม
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    <DropdownMenuItem onClick={() => router.push(`/admin/profile/${uid}`)}>
+                      <User className="mr-2 h-4 w-4" />
+                      ดูโปรไฟล์ผู้ใช้
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => window.open(`mailto:${userProfile.email}`)}>
+                      <Mail className="mr-2 h-4 w-4" />
+                      ส่งอีเมล
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
           </div>
         </div>
@@ -225,7 +245,7 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
               <Activity className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.yawnEvents}</div>
+              <div className="text-2xl font-bold">{stats?.yawnEvents || 0}</div>
               <p className="text-xs text-muted-foreground">ครั้ง</p>
             </CardContent>
           </Card>
@@ -236,7 +256,7 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
               <Eye className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{stats.fatigueEvents}</div>
+              <div className="text-2xl font-bold">{stats?.fatigueEvents || 0}</div>
               <p className="text-xs text-muted-foreground">ครั้ง</p>
             </CardContent>
           </Card>
@@ -247,7 +267,7 @@ export default function AdminUserDashboardPage({ params }: AdminUserDashboardPro
               <AlertTriangle className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600">{stats.criticalEvents}</div>
+              <div className="text-2xl font-bold text-red-600">{stats?.criticalEvents || 0}</div>
               <p className="text-xs text-muted-foreground">ครั้ง</p>
             </CardContent>
           </Card>

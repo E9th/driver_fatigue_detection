@@ -46,6 +46,7 @@
     "embla-carousel-react": "latest",
     "firebase": "latest",
     "firebase-admin": "latest",
+    "fs": "latest",
     "input-otp": "latest",
     "lucide-react": "^0.454.0",
     "next": "15.2.4",
@@ -60,7 +61,7 @@
     "tailwind-merge": "^2.5.5",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "latest",
-    "zod": "^3.24.1"
+    "zod": "latest"
   },
   "devDependencies": {
     "@types/node": "^22",

@@ -1,140 +1,190 @@
-"use client"
 /**
  * ============================================================================
- * FIREBASE CONFIGURATION - การตั้งค่าและเชื่อมต่อ Firebase
+ * FIREBASE CONFIGURATION AND SERVICES
  * ============================================================================
- *
- * ไฟล์นี้เป็นหัวใจของการเชื่อมต่อกับ Firebase Services
- * จัดการการตั้งค่า Firebase App, Authentication, และ Realtime Database
- *
- * FIREBASE SERVICES ที่ใช้:
- * - Firebase Authentication: สำหรับระบบล็อกอิน/ลงทะเบียน
- * - Firebase Realtime Database: สำหรับเก็บข้อมูลผู้ใช้และข้อมูลเซ็นเซอร์
- *
- * ENVIRONMENT VARIABLES ที่ต้องการ:
- * - NEXT_PUBLIC_FIREBASE_API_KEY
- * - NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN
- * - NEXT_PUBLIC_FIREBASE_DATABASE_URL
- * - NEXT_PUBLIC_FIREBASE_PROJECT_ID
- * - NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET
- * - NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID
- * - NEXT_PUBLIC_FIREBASE_APP_ID
- *
- * USED BY:
- * - lib/auth.ts: สำหรับ Authentication
- * - lib/validation.ts: สำหรับตรวจสอบข้อมูล
- * - lib/data-service.ts: สำหรับดึงข้อมูลเซ็นเซอร์
- * - components/**: สำหรับ components ต่างๆ ที่ต้องใช้ Firebase
  */
 
-import { initializeApp, getApps, type FirebaseApp } from "firebase/app"
-import { getAuth, type Auth } from "firebase/auth"
-import { getDatabase, type Database } from "firebase/database"
-import { firebaseConfig } from "./config"
+import { initializeApp, getApps } from "firebase/app"
+import { getDatabase, ref, get } from "firebase/database"
+import { getAuth } from "firebase/auth"
 
-/**
- * Firebase Configuration Object
- * ดึงค่าจาก Environment Variables เพื่อความปลอดภัย
- */
+// Firebase configuration
+const firebaseConfig = {
+  apiKey: "AIzaSyC7Syu0aTE5WkAr7cMWdyllo5F6g--NsxM",
+  authDomain: "driver-fatigue-detection.firebaseapp.com",
+  databaseURL: "https://driver-fatigue-detection-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "driver-fatigue-detection",
+  storageBucket: "driver-fatigue-detection.firebasestorage.app",
+  messagingSenderId: "590232998044",
+  appId: "1:590232998044:web:7c5c5f5c5f5c5f5c5f5c5f",
+}
 
-/**
- * Firebase App Instance
- * ใช้ Singleton Pattern เพื่อป้องกันการสร้าง Firebase App ซ้ำ
- *
- * SINGLETON PATTERN:
- * - ตรวจสอบว่ามี Firebase App อยู่แล้วหรือไม่
- * - ถ้ามีแล้วใช้ตัวเดิม ถ้าไม่มีสร้างใหม่
- */
-let app: FirebaseApp
-if (getApps().length === 0) {
-  app = initializeApp(firebaseConfig)
-  console.log("✅ Firebase: Initialized successfully")
-} else {
-  app = getApps()[0]
-  console.log("✅ Firebase: Using existing instance")
+// Initialize Firebase
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0]
+export const database = getDatabase(app)
+export const auth = getAuth(app)
+
+console.log("✅ Firebase: Initialized successfully")
+
+// Types for better type safety
+export interface SafetyEvent {
+  id: string
+  type: string
+  severity: number
+  timestamp: number
+  details?: string
+}
+
+export interface SafetyStats {
+  yawnEvents: number
+  fatigueEvents: number
+  criticalEvents: number
+}
+
+export interface SafetyData {
+  stats: SafetyStats
+  events: SafetyEvent[]
+  safetyScore: number
 }
 
 /**
- * Firebase Authentication Instance
- * สำหรับจัดการระบบล็อกอิน/ลงทะเบียน
- *
- * FEATURES:
- * - Email/Password Authentication
- * - User Session Management
- * - Authentication State Persistence
+ * ปรับปรุง getFilteredSafetyData ให้ทำงานได้จริงตามข้อมูลจริง
  */
-export const auth: Auth = getAuth(app)
+export async function getFilteredSafetyData(deviceId: string, startDate: string, endDate: string): Promise<SafetyData> {
+  try {
+    console.log(`🔍 getFilteredSafetyData: Loading data for ${deviceId} from ${startDate} to ${endDate}`)
 
-/**
- * Firebase Realtime Database Instance
- * สำหรับเก็บและดึงข้อมูลแบบ Real-time
- *
- * DATABASE STRUCTURE:
- * /users/{uid}/
- *   ├── email: string
- *   ├── fullName: string
- *   ├── phone: string
- *   ├── license: string
- *   ├── deviceId: string
- *   ├── role: 'user' | 'admin'
- *   └── createdAt: timestamp
- *
- * /sensor_data/{deviceId}/{timestamp}/
- *   ├── ear: number (0-1)
- *   ├── mouth: number (0-1)
- *   ├── timestamp: number
- *   └── safety_score: number (0-100)
- *
- * /device_commands/{deviceId}/
- *   ├── command: string
- *   ├── timestamp: number
- *   └── status: 'pending' | 'executed'
- */
-export const database: Database = getDatabase(app)
+    const startTime = new Date(startDate).getTime()
+    const endTime = new Date(endDate).getTime()
 
-// Export the app instance as firebaseApp for compatibility
-export const firebaseApp = app
+    // ดึงข้อมูลจาก alerts collection
+    const alertsRef = ref(database, "alerts")
+    const alertsSnapshot = await get(alertsRef)
 
-// ---------------------------------------------------------------------------
-// Legacy helpers (no behavioural changes)
-// ---------------------------------------------------------------------------
+    const alerts: SafetyEvent[] = []
+    const stats: SafetyStats = {
+      yawnEvents: 0,
+      fatigueEvents: 0,
+      criticalEvents: 0,
+    }
 
-/** signIn – alias to loginUser in auth library */
-export async function signIn(email: string, password: string) {
-  const { loginUser } = await import("./auth")
-  return loginUser({ email, password })
+    if (alertsSnapshot.exists()) {
+      const allAlerts = alertsSnapshot.val()
+
+      // กรองเฉพาะ alerts ของ device และในช่วงเวลาที่กำหนด
+      Object.entries(allAlerts).forEach(([key, alert]: [string, any]) => {
+        const alertTime = new Date(alert.timestamp).getTime()
+
+        if (alert.device_id === deviceId && alertTime >= startTime && alertTime <= endTime) {
+          // แปลงเป็น SafetyEvent
+          const safetyEvent: SafetyEvent = {
+            id: key,
+            type: alert.alert_type || "unknown",
+            severity: alert.severity === "high" ? 3 : alert.severity === "medium" ? 2 : 1,
+            timestamp: alertTime,
+            details: `${alert.alert_type} - ${alert.severity}`,
+          }
+
+          alerts.push(safetyEvent)
+
+          // นับสถิติ
+          if (alert.alert_type === "yawn_detected") {
+            stats.yawnEvents++
+          } else if (alert.alert_type === "drowsiness_detected") {
+            stats.fatigueEvents++
+          } else if (alert.alert_type === "critical_drowsiness") {
+            stats.criticalEvents++
+          }
+        }
+      })
+    }
+
+    // ดึงข้อมูลจาก history เพื่อคำนวณ safety score
+    const historyRef = ref(database, `devices/${deviceId}/history`)
+    const historySnapshot = await get(historyRef)
+
+    let averageEAR = 0 // เปลี่ยนจาก 0.5 เป็น 0
+    let hasValidEARData = false
+
+    if (historySnapshot.exists()) {
+      const historyData = historySnapshot.val()
+      const historyArray = Object.values(historyData) as any[]
+
+      // กรองเฉพาะข้อมูลในช่วงเวลาที่กำหนด
+      const filteredHistory = historyArray.filter((h) => {
+        const historyTime = new Date(h.timestamp).getTime()
+        return historyTime >= startTime && historyTime <= endTime
+      })
+
+      // คำนวณค่าเฉลี่ย EAR จากข้อมูลในช่วงเวลาที่กำหนดเท่านั้น
+      const validEARRecords = filteredHistory.filter((h) => h.ear && h.ear > 0)
+      if (validEARRecords.length > 0) {
+        averageEAR = validEARRecords.reduce((sum, h) => sum + h.ear, 0) / validEARRecords.length
+        hasValidEARData = true
+      }
+    }
+
+    // คำนวณ Safety Score ตามสูตรจริง
+    const safetyScore = calculateSafetyScore(
+      stats.yawnEvents,
+      stats.fatigueEvents,
+      stats.criticalEvents,
+      averageEAR,
+      hasValidEARData,
+    )
+
+    console.log(`✅ getFilteredSafetyData: Found ${alerts.length} events, safety score: ${safetyScore}`)
+
+    return {
+      stats,
+      events: alerts.sort((a, b) => b.timestamp - a.timestamp), // เรียงจากใหม่ไปเก่า
+      safetyScore,
+    }
+  } catch (error) {
+    console.error("❌ getFilteredSafetyData error:", error)
+
+    // Return empty data structure on error
+    return {
+      stats: {
+        yawnEvents: 0,
+        fatigueEvents: 0,
+        criticalEvents: 0,
+      },
+      events: [],
+      safetyScore: 100,
+    }
+  }
 }
 
-/** getFilteredSafetyData – placeholder returning empty array (override later) */
-export async function getFilteredSafetyData() {
-  console.warn("getFilteredSafetyData: not implemented – returns empty []")
-  return []
+/**
+ * คำนวณ Safety Score ตามสูตรเดียวกับใน data-analyzer.ts
+ */
+function calculateSafetyScore(
+  yawnCount: number,
+  drowsinessCount: number,
+  criticalCount: number,
+  averageEAR: number,
+  hasValidEARData = true,
+): number {
+  let score = 100
+
+  // หักคะแนนตามจำนวนเหตุการณ์
+  score -= Math.min(yawnCount * 2, 30) // หักสูงสุด 30 คะแนนสำหรับการหาว
+  score -= Math.min(drowsinessCount * 5, 40) // หักสูงสุด 40 คะแนนสำหรับความง่วง
+  score -= Math.min(criticalCount * 10, 50) // หักสูงสุด 50 คะแนนสำหรับเหตุการณ์วิกฤต
+
+  // หักคะแนนตามค่า EAR เฉลี่ย เฉพาะเมื่อมีข้อมูลจริง
+  if (hasValidEARData && averageEAR > 0) {
+    if (averageEAR < 0.25) {
+      score -= 20
+    } else if (averageEAR < 0.3) {
+      score -= 10
+    }
+  }
+
+  // ปรับคะแนนให้อยู่ในช่วง 0-100
+  return Math.max(0, Math.min(100, score))
 }
 
-/** subscribeToCurrentData – no-op listener (override later) */
-export function subscribeToCurrentData(_deviceId: string, _callback: (data: any) => void) {
-  console.warn("subscribeToCurrentData: not implemented – no-op")
-  return () => {}
-}
-
-/**
- * Firebase App Export
- * สำหรับใช้ในกรณีที่ต้องการ Firebase App Instance โดยตรง
- */
-export default app
-
-/**
- * ERROR HANDLING NOTES:
- *
- * 1. Permission Denied:
- *    - ตรวจสอบ Firebase Security Rules
- *    - ตรวจสอบ Authentication State
- *
- * 2. Network Error:
- *    - ตรวจสอบการเชื่อมต่ออินเทอร์เน็ต
- *    - ตรวจสอบ Firebase Project Status
- *
- * 3. Configuration Error:
- *    - ตรวจสอบ Environment Variables
- *    - ตรวจสอบ Firebase Project Settings
- */
+// Export other existing functions...
+export * from "./firebase-singleton"

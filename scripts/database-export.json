@@ -1,0 +1,4121 @@
+{
+  "alerts": {
+    "20250608_184213_079764": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-08T18:42:13.079752"
+    },
+    "20250608_184216_071242": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-08T18:42:16.071229"
+    },
+    "20250608_184219_045637": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-08T18:42:19.045625"
+    },
+    "20250608_184341_040378": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-08T18:43:41.040367"
+    },
+    "20250608_184351_093917": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-08T18:43:51.093906"
+    },
+    "20250608_184451_264399": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-08T18:44:51.264365"
+    },
+    "20250608_184501_293388": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-08T18:45:01.293376"
+    },
+    "20250608_184511_316706": {
+      "acknowledged": false,
+      "alert_type": "critical_drowsiness",
+      "device_id": "device_01",
+      "severity": "high",
+      "status": "active",
+      "timestamp": "2025-06-08T18:45:11.316700"
+    },
+    "20250608_184825_598577": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-08T18:48:25.598570"
+    },
+    "20250609_215916_201547": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T21:59:16.201524"
+    },
+    "20250609_215925_559112": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T21:59:25.559089"
+    },
+    "20250609_215930_168922": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-09T21:59:30.168891"
+    },
+    "20250609_215936_757362": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T21:59:36.757332"
+    },
+    "20250609_215937_798074": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T21:59:37.798055"
+    },
+    "20250609_220214_834376": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-09T22:02:14.834344"
+    },
+    "20250609_220227_827492": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:02:27.827429"
+    },
+    "20250609_221606_921257": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:16:06.921232"
+    },
+    "20250609_221609_956783": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:16:09.956751"
+    },
+    "20250609_221619_107551": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:16:19.107519"
+    },
+    "20250609_221628_374787": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-09T22:16:28.374761"
+    },
+    "20250609_221631_438938": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:16:31.438910"
+    },
+    "20250609_221640_494641": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:16:40.494607"
+    },
+    "20250609_221655_807134": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-09T22:16:55.807113"
+    },
+    "20250609_221717_367241": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:17:17.367216"
+    },
+    "20250609_222506_096022": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:25:06.095997"
+    },
+    "20250609_222509_150983": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:25:09.150936"
+    },
+    "20250609_222521_463045": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:25:21.463023"
+    },
+    "20250609_222524_467199": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:25:24.467176"
+    },
+    "20250609_222527_506777": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-09T22:25:27.506747"
+    },
+    "20250609_222530_535604": {
+      "acknowledged": false,
+      "alert_type": "critical_drowsiness",
+      "device_id": "device_01",
+      "severity": "high",
+      "status": "active",
+      "timestamp": "2025-06-09T22:25:30.535580"
+    },
+    "20250609_222533_608924": {
+      "acknowledged": false,
+      "alert_type": "critical_drowsiness",
+      "device_id": "device_01",
+      "severity": "high",
+      "status": "active",
+      "timestamp": "2025-06-09T22:25:33.608900"
+    },
+    "20250609_222537_182491": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-09T22:25:37.182466"
+    },
+    "20250610_214934_888282": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-10T21:49:34.888275"
+    },
+    "20250610_214937_866464": {
+      "acknowledged": false,
+      "alert_type": "critical_drowsiness",
+      "device_id": "device_01",
+      "severity": "high",
+      "status": "active",
+      "timestamp": "2025-06-10T21:49:37.866456"
+    },
+    "20250610_214940_929840": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-10T21:49:40.929834"
+    },
+    "20250610_214959_185434": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-10T21:49:59.185422"
+    },
+    "20250610_215008_227270": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-10T21:50:08.227258"
+    },
+    "20250610_215014_311959": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-10T21:50:14.311950"
+    },
+    "20250610_215020_420612": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-10T21:50:20.420605"
+    },
+    "20250610_215044_727757": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-10T21:50:44.727737"
+    },
+    "20250610_215053_982694": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-10T21:50:53.982678"
+    },
+    "20250610_215109_181848": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-10T21:51:09.181834"
+    },
+    "20250610_215112_216798": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-10T21:51:12.216781"
+    },
+    "20250610_215127_311808": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-10T21:51:27.311794"
+    },
+    "20250610_215130_361130": {
+      "acknowledged": false,
+      "alert_type": "critical_drowsiness",
+      "device_id": "device_01",
+      "severity": "high",
+      "status": "active",
+      "timestamp": "2025-06-10T21:51:30.361117"
+    },
+    "20250610_215133_409411": {
+      "acknowledged": false,
+      "alert_type": "critical_drowsiness",
+      "device_id": "device_01",
+      "severity": "high",
+      "status": "active",
+      "timestamp": "2025-06-10T21:51:33.409398"
+    },
+    "20250610_215136_403751": {
+      "acknowledged": false,
+      "alert_type": "critical_drowsiness",
+      "device_id": "device_01",
+      "severity": "high",
+      "status": "active",
+      "timestamp": "2025-06-10T21:51:36.403719"
+    },
+    "20250610_215139_467082": {
+      "acknowledged": false,
+      "alert_type": "critical_drowsiness",
+      "device_id": "device_01",
+      "severity": "high",
+      "status": "active",
+      "timestamp": "2025-06-10T21:51:39.467069"
+    },
+    "20250612_194209_096937": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-12T19:42:09.096929"
+    },
+    "20250614_094052_525577": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_02",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T09:40:52.525599"
+    },
+    "20250614_094054_373776": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_02",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T09:40:54.373813"
+    },
+    "20250614_094101_019337": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_02",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T09:41:01.019359"
+    },
+    "20250614_094104_264814": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_02",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T09:41:04.264853"
+    },
+    "20250614_094105_381087": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_02",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-14T09:41:05.381113"
+    },
+    "20250614_094115_852043": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_02",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-14T09:41:15.852072"
+    },
+    "20250614_094123_186701": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_02",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-14T09:41:23.186724"
+    },
+    "20250614_100037_031340": {
+      "acknowledged": false,
+      "alert_type": "critical_drowsiness",
+      "device_id": "device_01",
+      "severity": "high",
+      "status": "active",
+      "timestamp": "2025-06-14T10:00:37.031388"
+    },
+    "20250614_100107_238260": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-14T10:01:07.238330"
+    },
+    "20250614_100548_106565": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T10:05:48.106606"
+    },
+    "20250614_100618_342306": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-14T10:06:18.342345"
+    },
+    "20250614_101650_200586": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T10:16:50.200586"
+    },
+    "20250614_102020_134813": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T10:20:20.134813"
+    },
+    "20250614_102120_536352": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-14T10:21:20.536352"
+    },
+    "20250614_102251_100823": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-14T10:22:51.100823"
+    },
+    "20250614_102521_898308": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-14T10:25:21.898308"
+    },
+    "20250614_102552_132476": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-14T10:25:52.132476"
+    },
+    "20250614_102652_520993": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T10:26:52.520993"
+    },
+    "20250614_102722_751562": {
+      "acknowledged": false,
+      "alert_type": "drowsiness_detected",
+      "device_id": "device_01",
+      "severity": "medium",
+      "status": "active",
+      "timestamp": "2025-06-14T10:27:22.751562"
+    },
+    "20250614_102752_989226": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T10:27:52.989226"
+    },
+    "20250614_102823_210872": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T10:28:23.210872"
+    },
+    "20250614_142132_301337": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T14:21:32.301337"
+    },
+    "20250614_142202_524138": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T14:22:02.524138"
+    },
+    "20250614_142232_750626": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T14:22:32.750626"
+    },
+    "20250614_142302_960152": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T14:23:02.960152"
+    },
+    "20250614_142333_163881": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T14:23:33.163881"
+    },
+    "20250614_142403_355192": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T14:24:03.355192"
+    },
+    "20250614_142433_587368": {
+      "acknowledged": false,
+      "alert_type": "yawn_detected",
+      "device_id": "device_01",
+      "severity": "low",
+      "status": "active",
+      "timestamp": "2025-06-14T14:24:33.587368"
+    }
+  },
+  "devices": {
+    "device_01": {
+      "commands": {
+        "notifications": {
+          "-OTQqywuJAlSHhrC23js": {
+            "adminId": "admin",
+            "channels": [
+              "sound_with_tts",
+              "display"
+            ],
+            "deviceId": "device_01",
+            "message": "🚨 การแจ้งเตือนฉุกเฉิน: ตรวจพบความง่วงนอนระดับวิกฤต กรุณาหยุดรถในที่ปลอดภัย",
+            "priority": "critical",
+            "status": "pending",
+            "timestamp": 1750666571617,
+            "ttsEnabled": true,
+            "type": "emergency"
+          },
+          "-OTQr3OxYc-smYkl0aC3": {
+            "adminId": "admin",
+            "channels": [
+              "sound_with_tts"
+            ],
+            "deviceId": "device_01",
+            "message": "สวัสดี",
+            "priority": "medium",
+            "status": "pending",
+            "timestamp": 1750666593955,
+            "ttsEnabled": true,
+            "type": "alert"
+          },
+          "-OTQu2HUEi-jsaxYRYKS": {
+            "adminId": "admin",
+            "channels": [
+              "sound_with_tts"
+            ],
+            "deviceId": "device_01",
+            "message": "สวัสดี",
+            "priority": "critical",
+            "status": "pending",
+            "timestamp": 1750667375819,
+            "ttsEnabled": true,
+            "type": "emergency"
+          }
+        }
+      },
+      "connection": {
+        "device_id": "device_01",
+        "last_connection_test": "2025-06-12T19:41:04.703912",
+        "status": "connected_auth_v8",
+        "timestamp": "2025-06-14T22:28:47.936993"
+      },
+      "current_data": {
+        "critical_alerts": 0,
+        "drowsiness_events": 0,
+        "ear": 0.2456159259748223,
+        "mouth_distance": 0.3468428280066738,
+        "status": "NORMAL",
+        "timestamp": "2025-06-14T22:28:48.656017",
+        "yawn_events": 0
+      },
+      "history": {
+        "20250608_184815": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.21794642376355405,
+          "face_detected_frames": 1,
+          "mouth_distance": 13,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-08T18:48:15.112460",
+          "yawn_events": 0
+        },
+        "20250608_184825": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.2660249349962404,
+          "face_detected_frames": 160,
+          "mouth_distance": 43.93333333333333,
+          "status": "YAWN DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-08T18:48:25.171270",
+          "yawn_events": 2
+        },
+        "20250608_210336": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.19898209993653015,
+          "face_detected_frames": 1,
+          "mouth_distance": 14.5,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-08T21:03:36.797779",
+          "yawn_events": 0
+        },
+        "20250608_210346": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.2444460413012397,
+          "face_detected_frames": 152,
+          "mouth_distance": 13.6,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-08T21:03:46.822299",
+          "yawn_events": 3
+        },
+        "20250609_215857": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.3369079527468622,
+          "face_detected_frames": 1,
+          "mouth_distance": 7,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:58:57.278847",
+          "yawn_events": 0
+        },
+        "20250609_215900": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.3321727855232546,
+          "face_detected_frames": 4,
+          "mouth_distance": 7.3333333333333375,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:00.399260",
+          "yawn_events": 0
+        },
+        "20250609_215903": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.2060053484050127,
+          "face_detected_frames": 23,
+          "mouth_distance": 6.866666666666663,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:03.490947",
+          "yawn_events": 1
+        },
+        "20250609_215906": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.3696765503061171,
+          "face_detected_frames": 5,
+          "mouth_distance": 8.1,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:06.589990",
+          "yawn_events": 1
+        },
+        "20250609_215909": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.2649581762756184,
+          "face_detected_frames": 13,
+          "mouth_distance": 10.300000000000011,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:09.621500",
+          "yawn_events": 1
+        },
+        "20250609_215912": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.1579772236251284,
+          "face_detected_frames": 32,
+          "mouth_distance": 9.800000000000011,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:12.639184",
+          "yawn_events": 1
+        },
+        "20250609_215915": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.19388030380727833,
+          "face_detected_frames": 3,
+          "mouth_distance": 9.533333333333314,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:15.728541",
+          "yawn_events": 1
+        },
+        "20250609_215918": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.33412834632041954,
+          "face_detected_frames": 7,
+          "mouth_distance": 7.233333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:18.849877",
+          "yawn_events": 1
+        },
+        "20250609_215922": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.20642609054831174,
+          "face_detected_frames": 2,
+          "mouth_distance": 7.566666666666697,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:21.954590",
+          "yawn_events": 1
+        },
+        "20250609_215925": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0.20605006474219706,
+          "face_detected_frames": 19,
+          "mouth_distance": 17.066666666666674,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:25.070943",
+          "yawn_events": 2
+        },
+        "20250609_215929": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0.1715042974491377,
+          "face_detected_frames": 35,
+          "mouth_distance": 26.766666666666662,
+          "status": "YAWN DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:28.151245",
+          "yawn_events": 3
+        },
+        "20250609_215931": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0.14776178841355952,
+          "face_detected_frames": 40,
+          "mouth_distance": 7.700000000000022,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:31.248975",
+          "yawn_events": 3
+        },
+        "20250609_215936": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.1738128121510927,
+          "face_detected_frames": 59,
+          "mouth_distance": 7.700000000000012,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:34.291194",
+          "yawn_events": 3
+        },
+        "20250609_215937": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.19576963954768128,
+          "face_detected_frames": 60,
+          "mouth_distance": 7.766666666666675,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:37.307695",
+          "yawn_events": 3
+        },
+        "20250609_215940": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.2844680731095386,
+          "face_detected_frames": 76,
+          "mouth_distance": 8.133333333333349,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T21:59:40.401084",
+          "yawn_events": 3
+        },
+        "20250609_220045": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.3291422825379011,
+          "face_detected_frames": 1,
+          "mouth_distance": 7.833333333333371,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:00:45.466499",
+          "yawn_events": 0
+        },
+        "20250609_220048": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:00:48.569055",
+          "yawn_events": 0
+        },
+        "20250609_220051": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:00:51.594261",
+          "yawn_events": 0
+        },
+        "20250609_220156": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.3305997261320607,
+          "face_detected_frames": 1,
+          "mouth_distance": 8.166666666666686,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:01:55.894904",
+          "yawn_events": 0
+        },
+        "20250609_220159": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.21937282988911014,
+          "face_detected_frames": 12,
+          "mouth_distance": 7.866666666666663,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:01:59.025195",
+          "yawn_events": 0
+        },
+        "20250609_220202": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.32311226082065114,
+          "face_detected_frames": 18,
+          "mouth_distance": 6.733333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:02.073766",
+          "yawn_events": 0
+        },
+        "20250609_220205": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.22555003427112305,
+          "face_detected_frames": 5,
+          "mouth_distance": 6.2666666666666515,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:05.124796",
+          "yawn_events": 0
+        },
+        "20250609_220208": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.23033713903785605,
+          "face_detected_frames": 23,
+          "mouth_distance": 6.933333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:08.163879",
+          "yawn_events": 0
+        },
+        "20250609_220211": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.25933093572643146,
+          "face_detected_frames": 40,
+          "mouth_distance": 7.033333333333326,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:11.274199",
+          "yawn_events": 0
+        },
+        "20250609_220214": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.21360966397545847,
+          "face_detected_frames": 59,
+          "mouth_distance": 20.46666666666666,
+          "status": "YAWN DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:14.314110",
+          "yawn_events": 1
+        },
+        "20250609_220217": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.22947513677138104,
+          "face_detected_frames": 4,
+          "mouth_distance": 12.033333333333342,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:17.347188",
+          "yawn_events": 1
+        },
+        "20250609_220221": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.19409279686029862,
+          "face_detected_frames": 22,
+          "mouth_distance": 8.566666666666652,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:20.423129",
+          "yawn_events": 3
+        },
+        "20250609_220223": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.2118354865215127,
+          "face_detected_frames": 35,
+          "mouth_distance": 8.833333333333334,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:23.433065",
+          "yawn_events": 3
+        },
+        "20250609_220227": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.2106328080087446,
+          "face_detected_frames": 54,
+          "mouth_distance": 6.7666666666666515,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:26.535100",
+          "yawn_events": 3
+        },
+        "20250609_220229": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.2987347828980963,
+          "face_detected_frames": 64,
+          "mouth_distance": 6.633333333333314,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:29.567136",
+          "yawn_events": 3
+        },
+        "20250609_220233": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.2539511956469879,
+          "face_detected_frames": 83,
+          "mouth_distance": 6.699999999999989,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:32.645489",
+          "yawn_events": 3
+        },
+        "20250609_220235": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.28993008718131813,
+          "face_detected_frames": 95,
+          "mouth_distance": 6.766666666666663,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:35.687519",
+          "yawn_events": 3
+        },
+        "20250609_220239": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.2571682836712966,
+          "face_detected_frames": 114,
+          "mouth_distance": 6.499999999999977,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:38.753861",
+          "yawn_events": 3
+        },
+        "20250609_220241": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.24931652317339797,
+          "face_detected_frames": 1,
+          "mouth_distance": 5.733333333333332,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:41.768801",
+          "yawn_events": 3
+        },
+        "20250609_220245": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.19317772294970115,
+          "face_detected_frames": 1,
+          "mouth_distance": 3.666666666666677,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:02:44.888436",
+          "yawn_events": 3
+        },
+        "20250609_221545": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.3135490530243955,
+          "face_detected_frames": 1,
+          "mouth_distance": 8,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:15:44.744740",
+          "yawn_events": 0
+        },
+        "20250609_221547": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.29681741505710796,
+          "face_detected_frames": 18,
+          "mouth_distance": 7.866666666666674,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:15:47.823581",
+          "yawn_events": 0
+        },
+        "20250609_221551": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.2657860067694518,
+          "face_detected_frames": 37,
+          "mouth_distance": 8.233333333333338,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:15:50.937383",
+          "yawn_events": 0
+        },
+        "20250609_221554": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.2880603871772248,
+          "face_detected_frames": 56,
+          "mouth_distance": 7.766666666666675,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:15:54.050764",
+          "yawn_events": 0
+        },
+        "20250609_221557": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.2894787028218492,
+          "face_detected_frames": 75,
+          "mouth_distance": 7.7333333333333485,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:15:57.152796",
+          "yawn_events": 0
+        },
+        "20250609_221600": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.30421052099270207,
+          "face_detected_frames": 94,
+          "mouth_distance": 8.066666666666674,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:00.259833",
+          "yawn_events": 0
+        },
+        "20250609_221603": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.24956234267968705,
+          "face_detected_frames": 113,
+          "mouth_distance": 7.766666666666663,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:03.300429",
+          "yawn_events": 0
+        },
+        "20250609_221606": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.23319733062739284,
+          "face_detected_frames": 132,
+          "mouth_distance": 8.099999999999989,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:06.427718",
+          "yawn_events": 0
+        },
+        "20250609_221609": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.19221681694016018,
+          "face_detected_frames": 148,
+          "mouth_distance": 7.966666666666663,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:09.458384",
+          "yawn_events": 0
+        },
+        "20250609_221612": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.2558645677554403,
+          "face_detected_frames": 9,
+          "mouth_distance": 6.133333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:12.495058",
+          "yawn_events": 0
+        },
+        "20250609_221615": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.20284589751378376,
+          "face_detected_frames": 3,
+          "mouth_distance": 4.966666666666683,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:15.534273",
+          "yawn_events": 0
+        },
+        "20250609_221618": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0.15232300822368486,
+          "face_detected_frames": 22,
+          "mouth_distance": 29.566666666666663,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:18.618906",
+          "yawn_events": 1
+        },
+        "20250609_221622": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0.2895784885287929,
+          "face_detected_frames": 38,
+          "mouth_distance": 10.333333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:21.734803",
+          "yawn_events": 1
+        },
+        "20250609_221624": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:24.800403",
+          "yawn_events": 1
+        },
+        "20250609_221628": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0.14837391269656416,
+          "face_detected_frames": 19,
+          "mouth_distance": 28.333333333333325,
+          "status": "YAWN DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:27.892698",
+          "yawn_events": 2
+        },
+        "20250609_221631": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.12977139041791305,
+          "face_detected_frames": 35,
+          "mouth_distance": 7.566666666666663,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:30.930338",
+          "yawn_events": 2
+        },
+        "20250609_221634": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.30737660398846056,
+          "face_detected_frames": 51,
+          "mouth_distance": 7.933333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:33.938867",
+          "yawn_events": 2
+        },
+        "20250609_221637": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.21316231427567983,
+          "face_detected_frames": 70,
+          "mouth_distance": 7.8333333333333375,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:37.008824",
+          "yawn_events": 2
+        },
+        "20250609_221640": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0.22398888067252803,
+          "face_detected_frames": 11,
+          "mouth_distance": 6.833333333333314,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:40.010204",
+          "yawn_events": 2
+        },
+        "20250609_221643": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0.2826267916721029,
+          "face_detected_frames": 1,
+          "mouth_distance": 6.933333333333326,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:43.157670",
+          "yawn_events": 2
+        },
+        "20250609_221646": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0.3197684099371796,
+          "face_detected_frames": 16,
+          "mouth_distance": 6.966666666666663,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:46.159720",
+          "yawn_events": 2
+        },
+        "20250609_221649": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0.24848708822004015,
+          "face_detected_frames": 30,
+          "mouth_distance": 7.600000000000011,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:49.270706",
+          "yawn_events": 2
+        },
+        "20250609_221652": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0.2748306234417724,
+          "face_detected_frames": 1,
+          "mouth_distance": 8.933333333333326,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:52.296391",
+          "yawn_events": 2
+        },
+        "20250609_221655": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0.21707569362198137,
+          "face_detected_frames": 10,
+          "mouth_distance": 21.1,
+          "status": "YAWN DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:55.352402",
+          "yawn_events": 3
+        },
+        "20250609_221658": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:16:58.470733",
+          "yawn_events": 3
+        },
+        "20250609_221701": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 5,
+          "ear": 0.13924007075035577,
+          "face_detected_frames": 16,
+          "mouth_distance": 5.2,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:01.519395",
+          "yawn_events": 3
+        },
+        "20250609_221704": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 5,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:04.570885",
+          "yawn_events": 3
+        },
+        "20250609_221707": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 5,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:07.623818",
+          "yawn_events": 3
+        },
+        "20250609_221710": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 5,
+          "ear": 0.3275046310730855,
+          "face_detected_frames": 7,
+          "mouth_distance": 7.9,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:10.665885",
+          "yawn_events": 3
+        },
+        "20250609_221713": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 5,
+          "ear": 0.1706802493140955,
+          "face_detected_frames": 26,
+          "mouth_distance": 8.133333333333315,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:13.738610",
+          "yawn_events": 3
+        },
+        "20250609_221716": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.1762197401760163,
+          "face_detected_frames": 45,
+          "mouth_distance": 8.666666666666675,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:16.852737",
+          "yawn_events": 3
+        },
+        "20250609_221720": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.27825443317724313,
+          "face_detected_frames": 58,
+          "mouth_distance": 9.9,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:19.869839",
+          "yawn_events": 3
+        },
+        "20250609_221723": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.37720082342576006,
+          "face_detected_frames": 76,
+          "mouth_distance": 8.300000000000011,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:22.871501",
+          "yawn_events": 3
+        },
+        "20250609_221726": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:25.983465",
+          "yawn_events": 3
+        },
+        "20250609_221729": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:29.097250",
+          "yawn_events": 3
+        },
+        "20250609_221732": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.3046774230656505,
+          "face_detected_frames": 1,
+          "mouth_distance": 7.7333333333333485,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:32.099366",
+          "yawn_events": 3
+        },
+        "20250609_221735": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:35.112890",
+          "yawn_events": 3
+        },
+        "20250609_221738": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:38.143938",
+          "yawn_events": 3
+        },
+        "20250609_221741": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:41.270474",
+          "yawn_events": 3
+        },
+        "20250609_221744": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:44.278553",
+          "yawn_events": 3
+        },
+        "20250609_221747": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.30039354720845995,
+          "face_detected_frames": 1,
+          "mouth_distance": 4.4999999999999885,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:47.399386",
+          "yawn_events": 3
+        },
+        "20250609_221750": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:50.503001",
+          "yawn_events": 3
+        },
+        "20250609_221754": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.27833491116551656,
+          "face_detected_frames": 1,
+          "mouth_distance": 2.933333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:53.549709",
+          "yawn_events": 3
+        },
+        "20250609_221756": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.22613802155212243,
+          "face_detected_frames": 1,
+          "mouth_distance": 2.2666666666666684,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:56.615697",
+          "yawn_events": 3
+        },
+        "20250609_221800": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.2991168707744106,
+          "face_detected_frames": 1,
+          "mouth_distance": 5.133333333333326,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:17:59.618676",
+          "yawn_events": 3
+        },
+        "20250609_221803": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.29333992664205744,
+          "face_detected_frames": 1,
+          "mouth_distance": 4.733333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:18:02.631445",
+          "yawn_events": 3
+        },
+        "20250609_221805": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:18:05.738548",
+          "yawn_events": 3
+        },
+        "20250609_221808": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:18:08.852101",
+          "yawn_events": 3
+        },
+        "20250609_221812": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.2797800027771031,
+          "face_detected_frames": 1,
+          "mouth_distance": 4.033333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:18:11.873520",
+          "yawn_events": 3
+        },
+        "20250609_221815": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.26676750047216585,
+          "face_detected_frames": 1,
+          "mouth_distance": 3.63333333333334,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:18:14.883424",
+          "yawn_events": 3
+        },
+        "20250609_221818": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.26255703922858525,
+          "face_detected_frames": 3,
+          "mouth_distance": 5.9999999999999885,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:18:17.901394",
+          "yawn_events": 3
+        },
+        "20250609_221821": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.19621012911374697,
+          "face_detected_frames": 16,
+          "mouth_distance": 7.6666666666666625,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:18:21.027521",
+          "yawn_events": 3
+        },
+        "20250609_222453": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:24:53.116121",
+          "yawn_events": 0
+        },
+        "20250609_222456": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.3045479698751898,
+          "face_detected_frames": 10,
+          "mouth_distance": 8.766666666666662,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:24:56.198585",
+          "yawn_events": 0
+        },
+        "20250609_222459": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.26036660499870784,
+          "face_detected_frames": 29,
+          "mouth_distance": 8.933333333333326,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:24:59.272232",
+          "yawn_events": 0
+        },
+        "20250609_222502": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.21544918210793468,
+          "face_detected_frames": 46,
+          "mouth_distance": 10.233333333333338,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:02.404160",
+          "yawn_events": 0
+        },
+        "20250609_222505": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.1590025144209499,
+          "face_detected_frames": 65,
+          "mouth_distance": 9.933333333333326,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:05.522868",
+          "yawn_events": 0
+        },
+        "20250609_222508": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.19013104299578593,
+          "face_detected_frames": 80,
+          "mouth_distance": 9.833333333333337,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:08.626831",
+          "yawn_events": 0
+        },
+        "20250609_222511": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.17453968227308647,
+          "face_detected_frames": 96,
+          "mouth_distance": 9.533333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:11.738168",
+          "yawn_events": 0
+        },
+        "20250609_222514": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0.2851231300935479,
+          "face_detected_frames": 8,
+          "mouth_distance": 9.299999999999988,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:14.824305",
+          "yawn_events": 0
+        },
+        "20250609_222518": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0.1672193226343772,
+          "face_detected_frames": 27,
+          "mouth_distance": 9.266666666666675,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:17.865293",
+          "yawn_events": 0
+        },
+        "20250609_222521": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.18667092142793934,
+          "face_detected_frames": 44,
+          "mouth_distance": 9.066666666666674,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:20.936063",
+          "yawn_events": 0
+        },
+        "20250609_222524": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.1619563709439849,
+          "face_detected_frames": 60,
+          "mouth_distance": 8.933333333333348,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:23.966461",
+          "yawn_events": 0
+        },
+        "20250609_222527": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.17980754873737623,
+          "face_detected_frames": 76,
+          "mouth_distance": 8.666666666666663,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:27.016080",
+          "yawn_events": 0
+        },
+        "20250609_222530": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.1799906568881208,
+          "face_detected_frames": 92,
+          "mouth_distance": 8.7,
+          "status": "CRITICAL: EXTENDED DROWSINESS",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:30.040233",
+          "yawn_events": 0
+        },
+        "20250609_222533": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.1903771866341058,
+          "face_detected_frames": 108,
+          "mouth_distance": 8.633333333333336,
+          "status": "CRITICAL: EXTENDED DROWSINESS",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:33.077537",
+          "yawn_events": 0
+        },
+        "20250609_222536": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.19985089331445655,
+          "face_detected_frames": 124,
+          "mouth_distance": 22.766666666666673,
+          "status": "YAWN DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-09T22:25:36.145426",
+          "yawn_events": 1
+        },
+        "20250610_214922": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.20823292125161297,
+          "face_detected_frames": 1,
+          "mouth_distance": 9.166666666666657,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:22.308995",
+          "yawn_events": 0
+        },
+        "20250610_214925": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.27908700062784636,
+          "face_detected_frames": 41,
+          "mouth_distance": 8.799999999999994,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:25.374613",
+          "yawn_events": 0
+        },
+        "20250610_214928": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.24325829522247347,
+          "face_detected_frames": 81,
+          "mouth_distance": 12.400000000000006,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:28.444149",
+          "yawn_events": 0
+        },
+        "20250610_214931": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.20631522723202042,
+          "face_detected_frames": 123,
+          "mouth_distance": 14.233333333333338,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:31.477896",
+          "yawn_events": 1
+        },
+        "20250610_214934": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.190117536619112,
+          "face_detected_frames": 164,
+          "mouth_distance": 40.50000000000001,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:34.527656",
+          "yawn_events": 3
+        },
+        "20250610_214937": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.21518814286955226,
+          "face_detected_frames": 201,
+          "mouth_distance": 7.433333333333314,
+          "status": "CRITICAL: EXTENDED DROWSINESS",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:37.564526",
+          "yawn_events": 3
+        },
+        "20250610_214940": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 1,
+          "ear": 0.19455094453544003,
+          "face_detected_frames": 239,
+          "mouth_distance": 40.533333333333324,
+          "status": "YAWN DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:40.607402",
+          "yawn_events": 4
+        },
+        "20250610_214943": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0.18305929795990863,
+          "face_detected_frames": 276,
+          "mouth_distance": 14.433333333333326,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:43.674492",
+          "yawn_events": 6
+        },
+        "20250610_214946": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 2,
+          "ear": 0.2170883416089981,
+          "face_detected_frames": 318,
+          "mouth_distance": 9.666666666666668,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:46.700862",
+          "yawn_events": 8
+        },
+        "20250610_214949": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.2650626992144943,
+          "face_detected_frames": 359,
+          "mouth_distance": 10.2,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:49.710936",
+          "yawn_events": 8
+        },
+        "20250610_214952": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.19017662414591358,
+          "face_detected_frames": 399,
+          "mouth_distance": 9.8,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:52.769850",
+          "yawn_events": 8
+        },
+        "20250610_214955": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0.27451587619558804,
+          "face_detected_frames": 435,
+          "mouth_distance": 9.399999999999995,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:55.792822",
+          "yawn_events": 8
+        },
+        "20250610_214958": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0.29287820133617315,
+          "face_detected_frames": 474,
+          "mouth_distance": 25.03333333333334,
+          "status": "YAWN DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:49:58.827773",
+          "yawn_events": 9
+        },
+        "20250610_215003": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0.2706392118718998,
+          "face_detected_frames": 510,
+          "mouth_distance": 9.033333333333337,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:01.850538",
+          "yawn_events": 9
+        },
+        "20250610_215004": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 4,
+          "ear": 0.19778996029972865,
+          "face_detected_frames": 525,
+          "mouth_distance": 8.6,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:04.876251",
+          "yawn_events": 9
+        },
+        "20250610_215008": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 5,
+          "ear": 0.204659499607176,
+          "face_detected_frames": 562,
+          "mouth_distance": 9.166666666666663,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:07.928088",
+          "yawn_events": 9
+        },
+        "20250610_215011": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 5,
+          "ear": 0.3236698715407632,
+          "face_detected_frames": 598,
+          "mouth_distance": 9.966666666666669,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:10.990054",
+          "yawn_events": 9
+        },
+        "20250610_215014": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.20021034518212216,
+          "face_detected_frames": 634,
+          "mouth_distance": 10.26666666666667,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:13.996985",
+          "yawn_events": 9
+        },
+        "20250610_215017": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 6,
+          "ear": 0.20119747444681052,
+          "face_detected_frames": 670,
+          "mouth_distance": 11.299999999999994,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:17.022873",
+          "yawn_events": 9
+        },
+        "20250610_215020": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 8,
+          "ear": 0.21444675020693835,
+          "face_detected_frames": 708,
+          "mouth_distance": 12.333333333333325,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:20.095740",
+          "yawn_events": 10
+        },
+        "20250610_215023": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 8,
+          "ear": 0.26690597699457896,
+          "face_detected_frames": 744,
+          "mouth_distance": 9.9,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:23.159484",
+          "yawn_events": 10
+        },
+        "20250610_215026": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 8,
+          "ear": 0.19883951965969582,
+          "face_detected_frames": 782,
+          "mouth_distance": 9.800000000000006,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:26.200434",
+          "yawn_events": 10
+        },
+        "20250610_215029": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 8,
+          "ear": 0.252767026722,
+          "face_detected_frames": 821,
+          "mouth_distance": 9.633333333333331,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:29.262854",
+          "yawn_events": 10
+        },
+        "20250610_215032": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 8,
+          "ear": 0.18684555700296485,
+          "face_detected_frames": 861,
+          "mouth_distance": 9.733333333333325,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:32.315891",
+          "yawn_events": 10
+        },
+        "20250610_215035": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 9,
+          "ear": 0.17131841234185835,
+          "face_detected_frames": 900,
+          "mouth_distance": 9.999999999999995,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:35.359796",
+          "yawn_events": 10
+        },
+        "20250610_215038": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 9,
+          "ear": 0.18565060712163112,
+          "face_detected_frames": 940,
+          "mouth_distance": 6.4,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:38.414892",
+          "yawn_events": 10
+        },
+        "20250610_215041": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 10,
+          "ear": 0.22074935468888124,
+          "face_detected_frames": 978,
+          "mouth_distance": 7.6666666666666625,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:41.416378",
+          "yawn_events": 10
+        },
+        "20250610_215044": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 11,
+          "ear": 0.24910303878174972,
+          "face_detected_frames": 1017,
+          "mouth_distance": 9.333333333333332,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:44.425525",
+          "yawn_events": 10
+        },
+        "20250610_215047": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 11,
+          "ear": 0.2560699846383144,
+          "face_detected_frames": 1053,
+          "mouth_distance": 9.966666666666658,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:47.498467",
+          "yawn_events": 10
+        },
+        "20250610_215050": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 11,
+          "ear": 0.2340664425538163,
+          "face_detected_frames": 1092,
+          "mouth_distance": 8.066666666666663,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:50.582477",
+          "yawn_events": 10
+        },
+        "20250610_215053": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 12,
+          "ear": 0.20669985948625796,
+          "face_detected_frames": 1128,
+          "mouth_distance": 8.266666666666662,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:53.647101",
+          "yawn_events": 10
+        },
+        "20250610_215056": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 12,
+          "ear": 0.28159728005525986,
+          "face_detected_frames": 1163,
+          "mouth_distance": 8.633333333333344,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:56.693515",
+          "yawn_events": 10
+        },
+        "20250610_215059": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 12,
+          "ear": 0.21803545535031402,
+          "face_detected_frames": 1202,
+          "mouth_distance": 8.4,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:50:59.752474",
+          "yawn_events": 10
+        },
+        "20250610_215103": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 12,
+          "ear": 0.17050513478797205,
+          "face_detected_frames": 1241,
+          "mouth_distance": 8.233333333333325,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:02.779970",
+          "yawn_events": 10
+        },
+        "20250610_215105": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 12,
+          "ear": 0.1989598964439994,
+          "face_detected_frames": 1275,
+          "mouth_distance": 8.833333333333332,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:05.813424",
+          "yawn_events": 10
+        },
+        "20250610_215108": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 13,
+          "ear": 0.197097891650256,
+          "face_detected_frames": 1315,
+          "mouth_distance": 8.466666666666669,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:08.862489",
+          "yawn_events": 10
+        },
+        "20250610_215111": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 14,
+          "ear": 0.23611306202288543,
+          "face_detected_frames": 1351,
+          "mouth_distance": 8.966666666666669,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:11.890616",
+          "yawn_events": 10
+        },
+        "20250610_215115": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 14,
+          "ear": 0.2535302504231513,
+          "face_detected_frames": 1386,
+          "mouth_distance": 9,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:14.911843",
+          "yawn_events": 10
+        },
+        "20250610_215118": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 14,
+          "ear": 0.2060698025667866,
+          "face_detected_frames": 1424,
+          "mouth_distance": 9.099999999999994,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:17.912829",
+          "yawn_events": 10
+        },
+        "20250610_215121": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 15,
+          "ear": 0.222603704098419,
+          "face_detected_frames": 1461,
+          "mouth_distance": 9.833333333333325,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:20.924634",
+          "yawn_events": 10
+        },
+        "20250610_215124": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 15,
+          "ear": 0.1511043494032438,
+          "face_detected_frames": 1502,
+          "mouth_distance": 14.3,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:23.961991",
+          "yawn_events": 12
+        },
+        "20250610_215127": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 16,
+          "ear": 0.19785925051274633,
+          "face_detected_frames": 1540,
+          "mouth_distance": 13.266666666666662,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:26.968324",
+          "yawn_events": 12
+        },
+        "20250610_215130": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 16,
+          "ear": 0.20417571231888174,
+          "face_detected_frames": 1576,
+          "mouth_distance": 13.266666666666662,
+          "status": "CRITICAL: EXTENDED DROWSINESS",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:30.042104",
+          "yawn_events": 12
+        },
+        "20250610_215133": {
+          "critical_alerts": 1,
+          "device_id": "device_01",
+          "drowsiness_events": 16,
+          "ear": 0.15098811907284793,
+          "face_detected_frames": 1612,
+          "mouth_distance": 14.099999999999989,
+          "status": "CRITICAL: EXTENDED DROWSINESS",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:33.087108",
+          "yawn_events": 12
+        },
+        "20250610_215136": {
+          "critical_alerts": 2,
+          "device_id": "device_01",
+          "drowsiness_events": 16,
+          "ear": 0.18583221183373502,
+          "face_detected_frames": 1649,
+          "mouth_distance": 40.36666666666665,
+          "status": "CRITICAL: EXTENDED DROWSINESS",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:36.114331",
+          "yawn_events": 13
+        },
+        "20250610_215139": {
+          "critical_alerts": 3,
+          "device_id": "device_01",
+          "drowsiness_events": 16,
+          "ear": 0.18768843809834396,
+          "face_detected_frames": 1686,
+          "mouth_distance": 17.066666666666652,
+          "status": "CRITICAL: EXTENDED DROWSINESS",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:39.135232",
+          "yawn_events": 14
+        },
+        "20250610_215142": {
+          "critical_alerts": 4,
+          "device_id": "device_01",
+          "drowsiness_events": 16,
+          "ear": 0.23998149030529695,
+          "face_detected_frames": 1721,
+          "mouth_distance": 8.06666666666668,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-10T21:51:42.189754",
+          "yawn_events": 14
+        },
+        "20250612_194108": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 0,
+          "ear": 0.19026059766179762,
+          "face_detected_frames": 1,
+          "mouth_distance": 10.166666666666629,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-12T19:41:08.704986",
+          "yawn_events": 0
+        },
+        "20250612_194138": {
+          "critical_alerts": 0,
+          "device_id": "device_01",
+          "drowsiness_events": 3,
+          "ear": 0.26114479414022856,
+          "face_detected_frames": 3,
+          "mouth_distance": 4.966666666666674,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-12T19:41:38.746149",
+          "yawn_events": 11
+        },
+        "20250612_194208": {
+          "critical_alerts": 1,
+          "device_id": "device_01",
+          "drowsiness_events": 5,
+          "ear": 0.19790515073702314,
+          "face_detected_frames": 450,
+          "mouth_distance": 11.066666666666674,
+          "status": "DROWSINESS DETECTED",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_01",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-12T19:42:08.801836",
+          "yawn_events": 37
+        },
+        "20250614_095936_649272": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.42183790956012235,
+          "face_detected_frames": 1,
+          "mouth_distance": 9.333333333333314,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T09:59:36.610013",
+          "yawn_events": 0
+        },
+        "20250614_100006_814845": {
+          "critical_alerts": 0,
+          "drowsiness_events": 3,
+          "ear": 0.30785037757026623,
+          "face_detected_frames": 456,
+          "mouth_distance": 10.300000000000006,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T10:00:06.771997",
+          "yawn_events": 5
+        },
+        "20250614_100036_950738": {
+          "critical_alerts": 1,
+          "drowsiness_events": 6,
+          "ear": 0.23484189022762045,
+          "face_detected_frames": 914,
+          "mouth_distance": 6.900000000000011,
+          "status": "CRITICAL: EXTENDED DROWSINESS",
+          "timestamp": "2025-06-14T10:00:36.910530",
+          "yawn_events": 5
+        },
+        "20250614_100107_159272": {
+          "critical_alerts": 4,
+          "drowsiness_events": 8,
+          "ear": 0.1427465899550101,
+          "face_detected_frames": 303,
+          "mouth_distance": 8.866666666666674,
+          "status": "DROWSINESS DETECTED",
+          "timestamp": "2025-06-14T10:01:07.122360",
+          "yawn_events": 12
+        },
+        "20250614_100138_391498": {
+          "critical_alerts": 4,
+          "drowsiness_events": 11,
+          "ear": 0.2457212950802985,
+          "face_detected_frames": 586,
+          "mouth_distance": 8.466666666666674,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T10:01:38.352845",
+          "yawn_events": 12
+        },
+        "20250614_100548_027668": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.31546143894727324,
+          "face_detected_frames": 1,
+          "mouth_distance": 16.5,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T10:05:47.991044",
+          "yawn_events": 1
+        },
+        "20250614_100618_266687": {
+          "critical_alerts": 0,
+          "drowsiness_events": 3,
+          "ear": 0.15260782809532322,
+          "face_detected_frames": 55,
+          "mouth_distance": 14.733333333333325,
+          "status": "DROWSINESS DETECTED",
+          "timestamp": "2025-06-14T10:06:18.231065",
+          "yawn_events": 7
+        },
+        "20250614_101650_112671": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3343486501040348,
+          "mouth_distance": 15.705281496047974,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T10:16:50.069262",
+          "yawn_events": 1
+        },
+        "20250614_102020_053926": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3485373765086035,
+          "mouth_distance": 21.58382534980774,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T10:20:20.017771",
+          "yawn_events": 1
+        },
+        "20250614_102050_304555": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.4577609329258931,
+          "mouth_distance": 11.968463659286499,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T10:20:50.263319",
+          "yawn_events": 11
+        },
+        "20250614_102120_450402": {
+          "critical_alerts": 0,
+          "drowsiness_events": 1,
+          "ear": 0.17296248663665484,
+          "mouth_distance": 12.793296575546265,
+          "status": "DROWSINESS DETECTED",
+          "timestamp": "2025-06-14T10:21:20.408745",
+          "yawn_events": 43
+        },
+        "20250614_102150_697709": {
+          "critical_alerts": 0,
+          "drowsiness_events": 2,
+          "ear": 0.3066544213202117,
+          "mouth_distance": 11.096110939979553,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T10:21:50.659741",
+          "yawn_events": 51
+        },
+        "20250614_102220_862036": {
+          "critical_alerts": 0,
+          "drowsiness_events": 3,
+          "ear": 0.2641041257249906,
+          "mouth_distance": 12.468749284744263,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T10:22:20.822299",
+          "yawn_events": 54
+        },
+        "20250614_102251_026021": {
+          "critical_alerts": 0,
+          "drowsiness_events": 9,
+          "ear": 0.16664620968894367,
+          "mouth_distance": 13.283586502075195,
+          "status": "DROWSINESS DETECTED",
+          "timestamp": "2025-06-14T10:22:50.986134",
+          "yawn_events": 59
+        },
+        "20250614_102321_249219": {
+          "critical_alerts": 0,
+          "drowsiness_events": 16,
+          "ear": 0.3249432001123508,
+          "mouth_distance": 13.109010457992554,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T10:23:21.207701",
+          "yawn_events": 59
+        },
+        "20250614_102351_408831": {
+          "critical_alerts": 0,
+          "drowsiness_events": 19,
+          "ear": 0.3436030352107362,
+          "mouth_distance": 10.666412115097046,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T10:23:51.366468",
+          "yawn_events": 65
+        },
+        "20250614_102421_545709": {
+          "critical_alerts": 0,
+          "drowsiness_events": 22,
+          "ear": 0.29692964661955085,
+          "mouth_distance": 12.987059354782104,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T10:24:21.503560",
+          "yawn_events": 67
+        },
+        "20250614_102451_675321": {
+          "critical_alerts": 0,
+          "drowsiness_events": 30,
+          "ear": 0.21920181532919597,
+          "mouth_distance": 11.962294578552246,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T10:24:51.637743",
+          "yawn_events": 67
+        },
+        "20250614_102521_806656": {
+          "critical_alerts": 0,
+          "drowsiness_events": 33,
+          "ear": 0.16669145860792187,
+          "mouth_distance": 13.919717073440552,
+          "status": "DROWSINESS DETECTED",
+          "timestamp": "2025-06-14T10:25:21.765735",
+          "yawn_events": 87
+        },
+        "20250614_102552_050330": {
+          "critical_alerts": 1,
+          "drowsiness_events": 40,
+          "ear": 0.14242040496613884,
+          "mouth_distance": 13.630002737045288,
+          "status": "DROWSINESS DETECTED",
+          "timestamp": "2025-06-14T10:25:52.013663",
+          "yawn_events": 87
+        },
+        "20250614_102622_261760": {
+          "critical_alerts": 6,
+          "drowsiness_events": 42,
+          "ear": 0.3094721308010502,
+          "mouth_distance": 13.180536031723022,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T10:26:22.225320",
+          "yawn_events": 98
+        },
+        "20250614_102652_434743": {
+          "critical_alerts": 7,
+          "drowsiness_events": 46,
+          "ear": 0.3720620104134229,
+          "mouth_distance": 15.255528688430786,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T10:26:52.393057",
+          "yawn_events": 113
+        },
+        "20250614_102722_664912": {
+          "critical_alerts": 7,
+          "drowsiness_events": 50,
+          "ear": 0.13434828134482796,
+          "mouth_distance": 13.55663537979126,
+          "status": "DROWSINESS DETECTED",
+          "timestamp": "2025-06-14T10:27:22.618073",
+          "yawn_events": 115
+        },
+        "20250614_102752_907087": {
+          "critical_alerts": 7,
+          "drowsiness_events": 52,
+          "ear": 0.33517858787887544,
+          "mouth_distance": 23.225480318069458,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T10:27:52.864947",
+          "yawn_events": 126
+        },
+        "20250614_102823_128223": {
+          "critical_alerts": 7,
+          "drowsiness_events": 55,
+          "ear": 0.11804111966345747,
+          "mouth_distance": 15.760713815689087,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T10:28:23.082791",
+          "yawn_events": 135
+        },
+        "20250614_142132_230016": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.31218080615630805,
+          "mouth_distance": 27.132636308670044,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T14:21:32.130122",
+          "yawn_events": 1
+        },
+        "20250614_142202_444300": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.36428621331586614,
+          "mouth_distance": 22.59480357170105,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T14:22:02.407275",
+          "yawn_events": 1
+        },
+        "20250614_142232_677252": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.315930172283726,
+          "mouth_distance": 16.72908067703247,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T14:22:32.640638",
+          "yawn_events": 8
+        },
+        "20250614_142302_882059": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3164560932243353,
+          "mouth_distance": 21.931064128875732,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T14:23:02.846133",
+          "yawn_events": 17
+        },
+        "20250614_142333_091966": {
+          "critical_alerts": 2,
+          "drowsiness_events": 1,
+          "ear": 0.18213673724564544,
+          "mouth_distance": 17.6180899143219,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T14:23:33.053965",
+          "yawn_events": 27
+        },
+        "20250614_142403_279279": {
+          "critical_alerts": 2,
+          "drowsiness_events": 4,
+          "ear": 0.42240209153825825,
+          "mouth_distance": 19.71348524093628,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T14:24:03.241992",
+          "yawn_events": 28
+        },
+        "20250614_142433_518215": {
+          "critical_alerts": 2,
+          "drowsiness_events": 7,
+          "ear": 0.3816636950284139,
+          "mouth_distance": 24.031251668930054,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T14:24:33.480533",
+          "yawn_events": 28
+        },
+        "20250614_155928_267703": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.2968910874898348,
+          "mouth_distance": 11.858439445495605,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T15:59:28.231828",
+          "yawn_events": 0
+        },
+        "20250614_160036_772642": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.33180686686870653,
+          "mouth_distance": 15.76504111289978,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:00:36.738375",
+          "yawn_events": 0
+        },
+        "20250614_160237_716975": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3180657615844529,
+          "mouth_distance": 13.610601425170898,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:02:37.678772",
+          "yawn_events": 0
+        },
+        "20250614_160406_338339": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.32402337154883726,
+          "mouth_distance": 0.0216769278049469,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:04:06.295178",
+          "yawn_events": 0
+        },
+        "20250614_160436_501702": {
+          "critical_alerts": 0,
+          "drowsiness_events": 2,
+          "ear": 0.3442417339827879,
+          "mouth_distance": 0.03507903218269348,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:04:36.457044",
+          "yawn_events": 0
+        },
+        "20250614_160506_685244": {
+          "critical_alerts": 0,
+          "drowsiness_events": 6,
+          "ear": 0.3846263210106605,
+          "mouth_distance": 0.01843675971031189,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:05:06.641626",
+          "yawn_events": 0
+        },
+        "20250614_160536_838651": {
+          "critical_alerts": 0,
+          "drowsiness_events": 11,
+          "ear": 0.22716612613939322,
+          "mouth_distance": 0.023253142833709717,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:05:36.795626",
+          "yawn_events": 0
+        },
+        "20250614_160606_979996": {
+          "critical_alerts": 1,
+          "drowsiness_events": 14,
+          "ear": 0.2962149268102541,
+          "mouth_distance": 0.02550700306892395,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:06:06.938026",
+          "yawn_events": 0
+        },
+        "20250614_160800_792535": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.32797588749856704,
+          "mouth_distance": 0.024425745010375977,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:08:00.747825",
+          "yawn_events": 0
+        },
+        "20250614_161051_266996": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3699652220744296,
+          "mouth_distance": 0.025776445865631104,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:10:51.227898",
+          "yawn_events": 0
+        },
+        "20250614_161659_761449": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3049914549155449,
+          "mouth_distance": 0.02287474274635315,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:16:59.721551",
+          "yawn_events": 0
+        },
+        "20250614_162538_761443": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.32784925125831954,
+          "mouth_distance": 0.3301202026996016,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:25:38.721409",
+          "yawn_events": 0
+        },
+        "20250614_162608_889290": {
+          "critical_alerts": 0,
+          "drowsiness_events": 1,
+          "ear": 0.28150302040373715,
+          "mouth_distance": 0.2898735592876993,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:26:08.850585",
+          "yawn_events": 0
+        },
+        "20250614_162639_049750": {
+          "critical_alerts": 0,
+          "drowsiness_events": 5,
+          "ear": 0.29516322757020486,
+          "mouth_distance": 0.6217158760964194,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:26:39.007880",
+          "yawn_events": 0
+        },
+        "20250614_162741_510675": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3104929947812769,
+          "mouth_distance": 0.3024062089552379,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T16:27:41.468543",
+          "yawn_events": 0
+        },
+        "20250614_214555_169675": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.33450384907560493,
+          "mouth_distance": 0.3413726857912261,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T21:45:55.132571",
+          "yawn_events": 0
+        },
+        "20250614_214625_306801": {
+          "critical_alerts": 0,
+          "drowsiness_events": 3,
+          "ear": 0.2738463410132148,
+          "mouth_distance": 0.5205751683311312,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T21:46:25.268700",
+          "yawn_events": 3
+        },
+        "20250614_214655_446142": {
+          "critical_alerts": 0,
+          "drowsiness_events": 4,
+          "ear": 0.309266090650946,
+          "mouth_distance": 0.2848688737366299,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T21:46:55.407721",
+          "yawn_events": 7
+        },
+        "20250614_215851_865396": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.34297179982142467,
+          "mouth_distance": 0.34270972441462566,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T21:58:51.821408",
+          "yawn_events": 0
+        },
+        "20250614_215922_003614": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.2559489191586762,
+          "mouth_distance": 0.3524016258666018,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T21:59:21.959751",
+          "yawn_events": 3
+        },
+        "20250614_220223_240602": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3388922370916946,
+          "mouth_distance": 0.2490264872156511,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:02:23.196659",
+          "yawn_events": 0
+        },
+        "20250614_220253_415706": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3837758170501009,
+          "mouth_distance": 0.2362703331779768,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:02:53.369746",
+          "yawn_events": 0
+        },
+        "20250614_221003_410498": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.30226116130229663,
+          "mouth_distance": 0.33454353712247903,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:10:03.372437",
+          "yawn_events": 0
+        },
+        "20250614_221033_549609": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.20718690541953363,
+          "mouth_distance": 0.3301438483242598,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:10:33.513678",
+          "yawn_events": 1
+        },
+        "20250614_221103_690697": {
+          "critical_alerts": 0,
+          "drowsiness_events": 1,
+          "ear": 0.3273586633268944,
+          "mouth_distance": 0.308060252894739,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:11:03.648196",
+          "yawn_events": 1
+        },
+        "20250614_221146_851146": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3447201719567947,
+          "mouth_distance": 0.34268313198016104,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:11:46.812775",
+          "yawn_events": 0
+        },
+        "20250614_221217_002966": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3346126856586567,
+          "mouth_distance": 0.31985432507049194,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:12:16.963872",
+          "yawn_events": 0
+        },
+        "20250614_221247_141905": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3270145798194456,
+          "mouth_distance": 0.3199994123234426,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:12:47.103523",
+          "yawn_events": 0
+        },
+        "20250614_221317_291750": {
+          "critical_alerts": 0,
+          "drowsiness_events": 6,
+          "ear": 0.18629617263861997,
+          "mouth_distance": 0.3309704285335548,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:13:17.256273",
+          "yawn_events": 0
+        },
+        "20250614_221347_433462": {
+          "critical_alerts": 0,
+          "drowsiness_events": 9,
+          "ear": 0.40432340212658685,
+          "mouth_distance": 0.37075522201193006,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:13:47.396786",
+          "yawn_events": 0
+        },
+        "20250614_221417_582702": {
+          "critical_alerts": 0,
+          "drowsiness_events": 9,
+          "ear": 0.33653968597251394,
+          "mouth_distance": 0.34552698090683387,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:14:17.547381",
+          "yawn_events": 0
+        },
+        "20250614_221555_044937": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3464883311118327,
+          "mouth_distance": 0.3050642620790879,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:15:55.001533",
+          "yawn_events": 0
+        },
+        "20250614_221745_828809": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3588655689274483,
+          "mouth_distance": 0.335518762618723,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:17:45.787252",
+          "yawn_events": 0
+        },
+        "20250614_222215_793750": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.27444371030675463,
+          "mouth_distance": 0.34410856093080294,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:22:15.758258",
+          "yawn_events": 0
+        },
+        "20250614_222316_907889": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.34011559934604574,
+          "mouth_distance": 0.3559118290523617,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:23:16.866626",
+          "yawn_events": 0
+        },
+        "20250614_222347_075562": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.30890852444368044,
+          "mouth_distance": 0.3418307661150282,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:23:47.033156",
+          "yawn_events": 0
+        },
+        "20250614_222417_231928": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.288459535192352,
+          "mouth_distance": 0.3462393614737582,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:24:17.192153",
+          "yawn_events": 0
+        },
+        "20250614_222447_380902": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.22440226602087682,
+          "mouth_distance": 0.33706458220104246,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:24:47.339137",
+          "yawn_events": 0
+        },
+        "20250614_222549_999141": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.43336855152733056,
+          "mouth_distance": 0.41450155902211333,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:25:49.963309",
+          "yawn_events": 0
+        },
+        "20250614_222620_137350": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.41581653601515134,
+          "mouth_distance": 0.3927934837056337,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:26:20.094002",
+          "yawn_events": 0
+        },
+        "20250614_222650_280344": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.42323702947304576,
+          "mouth_distance": 0.3938718446218393,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:26:50.242721",
+          "yawn_events": 0
+        },
+        "20250614_222720_424351": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.3915521346827665,
+          "mouth_distance": 0.3722491389550785,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:27:20.385012",
+          "yawn_events": 1
+        },
+        "20250614_222750_571092": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.29484384660647955,
+          "mouth_distance": 0.3284322621718042,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:27:50.529630",
+          "yawn_events": 1
+        },
+        "20250614_222848_697302": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.2456159259748223,
+          "mouth_distance": 0.3468428280066738,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T22:28:48.656017",
+          "yawn_events": 0
+        }
+      },
+      "last_update": "2025-06-14T22:28:48.741106",
+      "latest_alert": {
+        "acknowledged": false,
+        "alert_type": "yawn_detected",
+        "device_id": "device_01",
+        "severity": "low",
+        "status": "active",
+        "timestamp": "2025-06-14T14:24:33.587368"
+      }
+    },
+    "device_02": {
+      "connection": {
+        "device_id": "device_02",
+        "last_connection_test": "2025-06-12T19:56:55.422633",
+        "status": "connected_auth_v8",
+        "timestamp": "2025-06-14T09:58:45.196427"
+      },
+      "current_data": {
+        "critical_alerts": 0,
+        "drowsiness_events": 3,
+        "ear": 0.17777258840600715,
+        "face_detected_frames": 382,
+        "mouth_distance": 17.19999999999999,
+        "status": "DROWSINESS DETECTED",
+        "timestamp": "2025-06-14T09:41:25.952275",
+        "yawn_events": 4
+      },
+      "history": {
+        "20250612_194303": {
+          "critical_alerts": 0,
+          "device_id": "device_02",
+          "drowsiness_events": 0,
+          "ear": 0.26842737675360706,
+          "face_detected_frames": 1,
+          "mouth_distance": 10.333333333333314,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_02",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-12T19:43:03.129921",
+          "yawn_events": 0
+        },
+        "20250612_194333": {
+          "critical_alerts": 1,
+          "device_id": "device_02",
+          "drowsiness_events": 4,
+          "ear": 0,
+          "face_detected_frames": 0,
+          "mouth_distance": 0,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_02",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-12T19:43:33.166518",
+          "yawn_events": 5
+        },
+        "20250612_195658": {
+          "critical_alerts": 0,
+          "device_id": "device_02",
+          "drowsiness_events": 0,
+          "ear": 0.08571799904746746,
+          "face_detected_frames": 1,
+          "mouth_distance": 10.5,
+          "status": "NORMAL",
+          "system_info": {
+            "device_name": "Driver Fatigue Detector device_02",
+            "location": "Unknown",
+            "version": "v2.0"
+          },
+          "timestamp": "2025-06-12T19:56:58.175790",
+          "yawn_events": 0
+        },
+        "20250614_094052_647766": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.20412672894233008,
+          "face_detected_frames": 1,
+          "mouth_distance": 21.166666666666686,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T09:40:52.608558",
+          "yawn_events": 1
+        },
+        "20250614_094055_667096": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.27010482565238286,
+          "face_detected_frames": 37,
+          "mouth_distance": 19.80000000000001,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T09:40:55.624119",
+          "yawn_events": 2
+        },
+        "20250614_094058_673154": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.2534020316404698,
+          "face_detected_frames": 72,
+          "mouth_distance": 16.2,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T09:40:58.632435",
+          "yawn_events": 2
+        },
+        "20250614_094101_722769": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.26982846546233397,
+          "face_detected_frames": 106,
+          "mouth_distance": 24.866666666666653,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T09:41:01.680809",
+          "yawn_events": 3
+        },
+        "20250614_094104_751475": {
+          "critical_alerts": 0,
+          "drowsiness_events": 0,
+          "ear": 0.2380042928960854,
+          "face_detected_frames": 137,
+          "mouth_distance": 20.1,
+          "status": "YAWN DETECTED",
+          "timestamp": "2025-06-14T09:41:04.712760",
+          "yawn_events": 4
+        },
+        "20250614_094107_794781": {
+          "critical_alerts": 0,
+          "drowsiness_events": 1,
+          "ear": 0.22209738688847303,
+          "face_detected_frames": 171,
+          "mouth_distance": 13.966666666666674,
+          "status": "DROWSINESS DETECTED",
+          "timestamp": "2025-06-14T09:41:07.756167",
+          "yawn_events": 4
+        },
+        "20250614_094110_810902": {
+          "critical_alerts": 0,
+          "drowsiness_events": 1,
+          "ear": 0.23657545689068984,
+          "face_detected_frames": 206,
+          "mouth_distance": 15.633333333333326,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T09:41:10.770592",
+          "yawn_events": 4
+        },
+        "20250614_094113_869816": {
+          "critical_alerts": 0,
+          "drowsiness_events": 1,
+          "ear": 0.28057128740371384,
+          "face_detected_frames": 242,
+          "mouth_distance": 16.933333333333316,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T09:41:13.828709",
+          "yawn_events": 4
+        },
+        "20250614_094116_870262": {
+          "critical_alerts": 0,
+          "drowsiness_events": 2,
+          "ear": 0.18109705293645253,
+          "face_detected_frames": 276,
+          "mouth_distance": 17.099999999999987,
+          "status": "DROWSINESS DETECTED",
+          "timestamp": "2025-06-14T09:41:16.829781",
+          "yawn_events": 4
+        },
+        "20250614_094119_900529": {
+          "critical_alerts": 0,
+          "drowsiness_events": 2,
+          "ear": 0.28816242390014557,
+          "face_detected_frames": 311,
+          "mouth_distance": 17.566666666666663,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T09:41:19.855952",
+          "yawn_events": 4
+        },
+        "20250614_094122_926964": {
+          "critical_alerts": 0,
+          "drowsiness_events": 2,
+          "ear": 0.17742675395262772,
+          "face_detected_frames": 346,
+          "mouth_distance": 17.46666666666665,
+          "status": "NORMAL",
+          "timestamp": "2025-06-14T09:41:22.886514",
+          "yawn_events": 4
+        },
+        "20250614_094125_996969": {
+          "critical_alerts": 0,
+          "drowsiness_events": 3,
+          "ear": 0.17777258840600715,
+          "face_detected_frames": 382,
+          "mouth_distance": 17.19999999999999,
+          "status": "DROWSINESS DETECTED",
+          "timestamp": "2025-06-14T09:41:25.952275",
+          "yawn_events": 4
+        }
+      },
+      "last_update": "2025-06-14T09:41:26.039140",
+      "latest_alert": {
+        "acknowledged": false,
+        "alert_type": "drowsiness_detected",
+        "device_id": "device_02",
+        "severity": "medium",
+        "status": "active",
+        "timestamp": "2025-06-14T09:41:23.186724"
+      }
+    }
+  },
+  "users": {
+    "REOkc2ja2keQSeoJgibxNjiKsrz2": {
+      "deviceId": "device_02",
+      "email": "driver02@gmail.com",
+      "fullName": "ผู้ขับขี่ คนที่สอง",
+      "license": "12345678",
+      "phone": "0812345678",
+      "registeredAt": "2025-06-09T07:01:03.310Z",
+      "role": "driver",
+      "uid": "REOkc2ja2keQSeoJgibxNjiKsrz2"
+    },
+    "fYwYjfogcfUFLwasztCpHB1NyPf2": {
+      "deviceId": "null",
+      "email": "admin02@gmail.com",
+      "fullName": "แอดมิน คนที่สอง",
+      "lastLogin": 1751012319192,
+      "license": "0123456789",
+      "phone": "0812345678",
+      "registeredAt": "2025-06-27T08:17:25.708Z",
+      "role": "admin",
+      "uid": "fYwYjfogcfUFLwasztCpHB1NyPf2"
+    },
+    "sS1hDJhxOYXAmkvtpv5ysKNZCWx2": {
+      "deviceId": "device_01",
+      "email": "driver01@gmail.com",
+      "fullName": "ผู้ขับขี่ คนแรก",
+      "lastLogin": 1751013681837,
+      "license": "123456789",
+      "phone": "0812345678",
+      "registeredAt": "2025-06-09T04:55:29.047Z",
+      "role": "driver",
+      "uid": "sS1hDJhxOYXAmkvtpv5ysKNZCWx2"
+    },
+    "v8Mj0kz30ve0iULCBT73uK6DgAi2": {
+      "deviceId": "null",
+      "email": "admin01@gmail.com",
+      "fullName": "แอดมิน คนแรก",
+      "license": "12345678",
+      "phone": "0812345678",
+      "registeredAt": "2025-06-10T02:29:14.663Z",
+      "role": "admin"
+    }
+  }
+}
